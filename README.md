@@ -8,7 +8,7 @@ Backend for a room-booking platform, built with Java and Spring Boot. The applic
 - JWT access tokens
 - Rotating, database-backed refresh tokens
 - Logout and refresh-token revocation
-- Email verification and verification-email resend
+- User-requested email verification with cooldown and rolling rate limits
 - Forgot/reset password with short-lived, single-use email tokens
 - Current-user lookup and password changes
 - Consistent JSON error responses
@@ -76,7 +76,7 @@ docker compose -f compose.local.yaml down
 | `POST` | `/api/v1/auth/refresh` | Public | Rotate a refresh token |
 | `POST` | `/api/v1/auth/logout` | Public | Revoke a refresh token |
 | `POST` | `/api/v1/auth/email-verification/confirm` | Public | Verify an email address |
-| `POST` | `/api/v1/auth/email-verification/resend` | Bearer token | Request another verification email |
+| `POST` | `/api/v1/auth/email-verification/request` | Bearer token | Request a verification email |
 | `POST` | `/api/v1/auth/password/forgot` | Public | Request a password-reset email |
 | `POST` | `/api/v1/auth/password/reset` | Public | Reset a password with a one-time token |
 | `GET` | `/api/v1/users/email-exists?email=...` | Public | Check whether an email is registered |
@@ -97,7 +97,7 @@ Important settings include:
 
 - `spring.datasource.*` for PostgreSQL
 - `spring.mail.*` for SMTP
-- `app.email-verification.*` for verification links and token lifetime
+- `app.email-verification.*` for verification links, token lifetime, cooldown, and rate limit
 - `app.password-reset.*` for reset links and token lifetime
 - `security.jwt.*` for token signing and expiration
 

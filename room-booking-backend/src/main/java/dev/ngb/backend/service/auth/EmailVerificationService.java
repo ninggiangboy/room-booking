@@ -3,6 +3,7 @@ package dev.ngb.backend.service.auth;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -10,6 +11,7 @@ import dev.ngb.backend.dto.UserResponse;
 import dev.ngb.backend.dto.VerifyEmailRequest;
 import dev.ngb.backend.event.EmailVerificationIssued;
 import dev.ngb.backend.exception.EmailAlreadyVerifiedException;
+import dev.ngb.backend.exception.EmailVerificationRateLimitException;
 import dev.ngb.backend.exception.InvalidEmailVerificationTokenException;
 import dev.ngb.backend.exception.UserAccountDisabledException;
 import dev.ngb.backend.exception.UserNotFoundException;
@@ -23,6 +25,7 @@ import dev.ngb.backend.service.user.UserFinder;
 import dev.ngb.backend.service.validation.UserAccountPolicy;
 import dev.ngb.backend.util.HashUtils;
 import dev.ngb.backend.util.SecureTokenUtils;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
@@ -33,9 +36,9 @@ import org.springframework.transaction.annotation.Transactional;
  * Manages one-time email-verification tokens and marks verified accounts.
  *
  * <p>{@code @Service} registers the use case, and Lombok generates constructor injection for final
- * dependencies. {@code @Value} injects token lifetime configuration into the remaining mutable
- * field. Public entry points are transactional so token consumption and user updates commit or
- * roll back together.</p>
+ * dependencies. {@code @Value} injects token lifetime and request-limit configuration into the
+ * remaining mutable fields. Public entry points are transactional so token creation, consumption,
+ * rate-limit checks, and user updates commit or roll back together.</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -51,8 +54,31 @@ public class EmailVerificationService {
 
     @Value("${app.email-verification.token-ttl:24h}")
     private Duration tokenTtl;
+    @Value("${app.email-verification.request-cooldown:60s}")
+    private Duration requestCooldown;
+    @Value("${app.email-verification.rate-limit-window:1h}")
+    private Duration rateLimitWindow;
+    @Value("${app.email-verification.rate-limit-max-requests:5}")
+    private int rateLimitMaxRequests;
 
-    void issue(User user) {
+    /** Ensures invalid request-limit configuration fails during application startup. */
+    @PostConstruct
+    void validateConfiguration() {
+        if (tokenTtl == null || tokenTtl.isNegative() || tokenTtl.isZero()) {
+            throw new IllegalStateException("email verification token TTL must be positive");
+        }
+        if (requestCooldown == null || requestCooldown.isNegative() || requestCooldown.isZero()) {
+            throw new IllegalStateException("email verification request cooldown must be positive");
+        }
+        if (rateLimitWindow == null || rateLimitWindow.isNegative() || rateLimitWindow.isZero()) {
+            throw new IllegalStateException("email verification rate-limit window must be positive");
+        }
+        if (rateLimitMaxRequests < 1) {
+            throw new IllegalStateException("email verification rate-limit maximum must be positive");
+        }
+    }
+
+    private void issue(User user) {
         if (user.getEmailVerifiedAt() != null) {
             throw new EmailAlreadyVerifiedException(user);
         }
@@ -80,18 +106,24 @@ public class EmailVerificationService {
     }
 
     /**
-     * Replaces the current verification token for an active, unverified account.
+     * Issues a verification token for an active, unverified account when request limits permit.
+     *
+     * <p>The user row is locked before inspecting token history so concurrent requests for the
+     * same account cannot independently pass the cooldown or rolling-window checks.</p>
      *
      * @param userId authenticated account requesting another message
      * @throws UserNotFoundException when the account no longer exists
      * @throws UserAccountDisabledException when the account is not active
      * @throws EmailAlreadyVerifiedException when verification is already complete
+     * @throws EmailVerificationRateLimitException when the cooldown or rolling quota is exceeded
      */
     @Transactional
     public void requestVerification(UUID userId) {
         Objects.requireNonNull(userId, "userId must not be null");
-        User user = userFinder.findById(userId);
+        User user = userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
         userAccountPolicy.requireActive(user);
+        enforceRequestLimits(userId);
         issue(user);
     }
 
@@ -131,6 +163,36 @@ public class EmailVerificationService {
         token.setConsumedAt(now);
         authTokenRepository.save(token);
         return token.getUserId();
+    }
+
+    private void enforceRequestLimits(UUID userId) {
+        Instant now = clock.instant();
+        Instant windowStart = now.minus(rateLimitWindow);
+        List<AuthToken> recentTokens = authTokenRepository
+                .findAllByUserIdAndTypeAndCreatedAtGreaterThanEqualOrderByCreatedAtAsc(
+                        userId, AuthTokenType.EMAIL_VERIFICATION, windowStart);
+
+        if (!recentTokens.isEmpty()) {
+            Instant cooldownEndsAt = recentTokens.getLast().getCreatedAt().plus(requestCooldown);
+            if (cooldownEndsAt.isAfter(now)) {
+                throw rateLimitedUntil(now, cooldownEndsAt);
+            }
+        }
+
+        if (recentTokens.size() >= rateLimitMaxRequests) {
+            int firstRelevantIndex = recentTokens.size() - rateLimitMaxRequests;
+            Instant quotaResetsAt = recentTokens.get(firstRelevantIndex)
+                    .getCreatedAt()
+                    .plus(rateLimitWindow);
+            throw rateLimitedUntil(now, quotaResetsAt);
+        }
+    }
+
+    private static EmailVerificationRateLimitException rateLimitedUntil(
+            Instant now, Instant retryAt) {
+        long remainingMillis = Duration.between(now, retryAt).toMillis();
+        long retryAfterSeconds = Math.max(1, Math.ceilDiv(remainingMillis, 1_000));
+        return new EmailVerificationRateLimitException(retryAt, retryAfterSeconds);
     }
 
 }

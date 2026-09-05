@@ -128,7 +128,7 @@ public class AuthController {
     }
 
     /**
-     * Issues a replacement verification token for the authenticated user.
+     * Requests a verification email for the authenticated user.
      *
      * <p>{@code @AuthenticationPrincipal} injects the UUID placed in the security context by the
      * JWT filter; the client cannot choose this identifier in the request body.</p>
@@ -136,8 +136,8 @@ public class AuthController {
      * @param userId authenticated account identifier
      * @return {@code 204 No Content}
      */
-    @PostMapping("/email-verification/resend")
-    public ResponseEntity<Void> resendVerification(@AuthenticationPrincipal UUID userId) {
+    @PostMapping("/email-verification/request")
+    public ResponseEntity<Void> requestVerification(@AuthenticationPrincipal UUID userId) {
         emailVerificationService.requestVerification(userId);
         return ResponseEntity.noContent().build();
     }

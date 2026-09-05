@@ -4,6 +4,7 @@ import dev.ngb.backend.model.AuthToken;
 import dev.ngb.backend.model.AuthTokenType;
 import org.springframework.data.repository.ListCrudRepository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -64,4 +65,27 @@ public interface AuthTokenRepository extends ListCrudRepository<AuthToken, UUID>
     List<AuthToken> findAllByUserIdAndTypeAndConsumedAtIsNull(
             UUID userId,
             AuthTokenType type);
+
+    /**
+     * Finds tokens issued to one user during a rate-limit window, oldest first.
+     *
+     * <p>Spring Data parses {@code findAllByUserIdAndTypeAndCreatedAtGreaterThanEqual} into
+     * equality predicates for user and type plus {@code created_at >= ?}. The
+     * {@code OrderByCreatedAtAsc} suffix adds ascending creation-time ordering:</p>
+     *
+     * <pre>{@code
+     * SELECT ... FROM auth_tokens
+     * WHERE user_id = ? AND type = ? AND created_at >= ?
+     * ORDER BY created_at ASC
+     * }</pre>
+     *
+     * @param userId token owner
+     * @param type token purpose
+     * @param earliestCreatedAt inclusive beginning of the rate-limit window
+     * @return tokens in the window ordered from oldest to newest
+     */
+    List<AuthToken> findAllByUserIdAndTypeAndCreatedAtGreaterThanEqualOrderByCreatedAtAsc(
+            UUID userId,
+            AuthTokenType type,
+            Instant earliestCreatedAt);
 }

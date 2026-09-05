@@ -1,6 +1,7 @@
 package dev.ngb.backend.repository;
 
 import dev.ngb.backend.model.User;
+import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.ListCrudRepository;
 
 import java.util.Optional;
@@ -17,6 +18,24 @@ import java.util.UUID;
  * remain an implementation detail of Spring Data JDBC.</p>
  */
 public interface UserRepository extends ListCrudRepository<User, UUID> {
+
+    /**
+     * Loads one user while taking a transaction-scoped row lock.
+     *
+     * <p>The explicit query is:</p>
+     *
+     * <pre>{@code
+     * SELECT * FROM users WHERE id = ? FOR UPDATE
+     * }</pre>
+     *
+     * <p>{@code userId} is bound to the named parameter. The lock serializes concurrent
+     * verification-email requests for the same account until the surrounding transaction ends.</p>
+     *
+     * @param userId account identifier
+     * @return optional locked user, empty when no row matches
+     */
+    @Query("SELECT * FROM users WHERE id = :userId FOR UPDATE")
+    Optional<User> findByIdForUpdate(UUID userId);
 
     /**
      * Finds the user whose normalized address equals the supplied value.

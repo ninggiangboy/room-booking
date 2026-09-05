@@ -4,6 +4,7 @@ import dev.ngb.backend.dto.ApiErrorResponse;
 import dev.ngb.backend.exception.DomainException;
 import dev.ngb.backend.exception.EmailAlreadyRegisteredException;
 import dev.ngb.backend.exception.EmailAlreadyVerifiedException;
+import dev.ngb.backend.exception.EmailVerificationRateLimitException;
 import dev.ngb.backend.exception.InvalidCredentialsException;
 import dev.ngb.backend.exception.InvalidEmailVerificationTokenException;
 import dev.ngb.backend.exception.InvalidRefreshTokenException;
@@ -12,6 +13,7 @@ import dev.ngb.backend.exception.UserAccountDisabledException;
 import dev.ngb.backend.exception.UserNotFoundException;
 import dev.ngb.backend.exception.ValidationException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -44,7 +46,13 @@ public class ApiExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleDomain(
             DomainException exception, HttpServletRequest request) {
         HttpStatus status = statusFor(exception);
-        return ResponseEntity.status(status).body(new ApiErrorResponse(
+        ResponseEntity.BodyBuilder response = ResponseEntity.status(status);
+        if (exception instanceof EmailVerificationRateLimitException rateLimitException) {
+            response.header(
+                    HttpHeaders.RETRY_AFTER,
+                    Long.toString(rateLimitException.getRetryAfterSeconds()));
+        }
+        return response.body(new ApiErrorResponse(
                 Instant.now(),
                 status.value(),
                 exception.getCode(),
@@ -109,6 +117,7 @@ public class ApiExceptionHandler {
             case UserAccountDisabledException ignored -> HttpStatus.FORBIDDEN;
             case EmailAlreadyRegisteredException ignored -> HttpStatus.CONFLICT;
             case EmailAlreadyVerifiedException ignored -> HttpStatus.CONFLICT;
+            case EmailVerificationRateLimitException ignored -> HttpStatus.TOO_MANY_REQUESTS;
             default -> HttpStatus.BAD_REQUEST;
         };
     }

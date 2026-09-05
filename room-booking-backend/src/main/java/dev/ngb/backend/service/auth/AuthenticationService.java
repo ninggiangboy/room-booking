@@ -44,7 +44,6 @@ public class AuthenticationService {
     private final PasswordPolicy passwordPolicy;
     private final UserAccountPolicy userAccountPolicy;
     private final UserRegistrationFactory userRegistrationFactory;
-    private final EmailVerificationService emailVerificationService;
 
     /**
      * Validates credentials and issues a fresh access/refresh token pair.
@@ -100,7 +99,7 @@ public class AuthenticationService {
     }
 
     /**
-     * Creates a validated guest account, verification token, and initial authenticated session.
+     * Creates a validated guest account and initial authenticated session.
      *
      * <p>All inserts share one transaction. The early existence check produces a fast readable
      * error, while the database unique constraint remains the final defense against concurrent
@@ -134,8 +133,6 @@ public class AuthenticationService {
         }
 
         userRoleRepository.save(newUser.initialRole());
-        emailVerificationService.issue(user);
-
         return createAuthResponse(user, List.of(Role.GUEST));
     }
 

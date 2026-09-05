@@ -94,6 +94,9 @@ Important properties are:
 | `spring.liquibase.change-log` | Root file for database migrations |
 | `app.email-verification.url` | Frontend URL placed in verification email |
 | `app.email-verification.token-ttl` | Verification-token lifetime |
+| `app.email-verification.request-cooldown` | Minimum delay between requests from one account |
+| `app.email-verification.rate-limit-window` | Rolling window used to count verification-email requests |
+| `app.email-verification.rate-limit-max-requests` | Maximum requests allowed within the rolling window |
 | `app.password-reset.url` | Frontend URL placed in password-reset email |
 | `app.password-reset.token-ttl` | Password-reset-token lifetime |
 | `security.jwt.secret` | Base64 HMAC signing key, at least 256 bits after decoding |
@@ -401,7 +404,18 @@ curl --request POST http://localhost:8080/api/v1/auth/register \
   }'
 ```
 
-The response status is `201 Created` and the body contains `accessToken`, `refreshToken`, and `user`. Copy both tokens for later steps.
+The response status is `201 Created` and the body contains `accessToken`, `refreshToken`, and `user`. Registration does not send an email. Copy both tokens for later steps.
+
+### Request an email-verification link
+
+The authenticated user starts verification explicitly. Requests have a configurable cooldown and
+rolling-window quota; exceeding either limit returns `429 Too Many Requests` with `retryAt` and
+`retryAfterSeconds` in the error data.
+
+```bash
+curl --request POST http://localhost:8080/api/v1/auth/email-verification/request \
+  --header 'Authorization: Bearer PASTE_ACCESS_TOKEN_HERE'
+```
 
 ### Verify email
 
@@ -432,15 +446,6 @@ Copy the new access and refresh tokens. In the examples below, replace placehold
 
 ```bash
 curl http://localhost:8080/api/v1/users/me \
-  --header 'Authorization: Bearer PASTE_ACCESS_TOKEN_HERE'
-```
-
-### Resend verification email
-
-This endpoint is protected and is useful before the account has been verified:
-
-```bash
-curl --request POST http://localhost:8080/api/v1/auth/email-verification/resend \
   --header 'Authorization: Bearer PASTE_ACCESS_TOKEN_HERE'
 ```
 
