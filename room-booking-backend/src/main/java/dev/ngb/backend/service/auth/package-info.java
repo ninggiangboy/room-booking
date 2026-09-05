@@ -1,5 +1,6 @@
 /**
- * Authentication, JWT, refresh-token, registration, and email-verification workflows.
+ * Authentication, JWT, refresh-token, registration, email-verification, and password-recovery
+ * workflows.
  *
  * <p>Package-private methods and classes intentionally limit sensitive token operations to trusted
  * collaborators in this package.</p>

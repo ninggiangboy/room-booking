@@ -7,6 +7,7 @@ import dev.ngb.backend.exception.EmailAlreadyVerifiedException;
 import dev.ngb.backend.exception.InvalidCredentialsException;
 import dev.ngb.backend.exception.InvalidEmailVerificationTokenException;
 import dev.ngb.backend.exception.InvalidRefreshTokenException;
+import dev.ngb.backend.exception.InvalidPasswordResetTokenException;
 import dev.ngb.backend.exception.UserAccountDisabledException;
 import dev.ngb.backend.exception.UserNotFoundException;
 import dev.ngb.backend.exception.ValidationException;
@@ -103,6 +104,7 @@ public class ApiExceptionHandler {
             case InvalidCredentialsException ignored -> HttpStatus.UNAUTHORIZED;
             case InvalidRefreshTokenException ignored -> HttpStatus.UNAUTHORIZED;
             case InvalidEmailVerificationTokenException ignored -> HttpStatus.BAD_REQUEST;
+            case InvalidPasswordResetTokenException ignored -> HttpStatus.BAD_REQUEST;
             case UserNotFoundException ignored -> HttpStatus.NOT_FOUND;
             case UserAccountDisabledException ignored -> HttpStatus.FORBIDDEN;
             case EmailAlreadyRegisteredException ignored -> HttpStatus.CONFLICT;

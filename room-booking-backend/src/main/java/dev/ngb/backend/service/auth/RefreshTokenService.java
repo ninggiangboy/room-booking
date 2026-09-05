@@ -1,22 +1,19 @@
 package dev.ngb.backend.service.auth;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.HexFormat;
 import java.util.Objects;
 import java.util.UUID;
 
+import dev.ngb.backend.exception.InvalidRefreshTokenException;
 import dev.ngb.backend.model.AuthToken;
 import dev.ngb.backend.model.AuthTokenType;
 import dev.ngb.backend.model.User;
 import dev.ngb.backend.repository.AuthTokenRepository;
-import dev.ngb.backend.exception.InvalidRefreshTokenException;
+import dev.ngb.backend.util.DurationUtils;
+import dev.ngb.backend.util.HashUtils;
+import dev.ngb.backend.util.SecureTokenUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -29,8 +26,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class RefreshTokenService {
-
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final AuthTokenRepository authTokenRepository;
     private final Clock clock;
@@ -49,21 +44,22 @@ public class RefreshTokenService {
             @Value("${security.jwt.refresh-token-expiration:30d}") Duration tokenExpiration) {
         this.authTokenRepository = authTokenRepository;
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
-        this.tokenExpiration = requirePositive(tokenExpiration);
+        this.tokenExpiration = DurationUtils.requirePositive(
+                tokenExpiration, "refresh token expiration");
     }
 
     String issue(User user) {
         Objects.requireNonNull(user, "user must not be null");
         Objects.requireNonNull(user.getId(), "user id must not be null");
 
-        String rawToken = generateToken();
+        String rawToken = SecureTokenUtils.generateUrlSafe();
         Instant now = clock.instant();
         // Only the SHA-256 hash is persisted; the raw secret is returned once to the client.
         authTokenRepository.save(AuthToken.builder()
                 .id(UUID.randomUUID())
                 .userId(user.getId())
                 .type(AuthTokenType.REFRESH_TOKEN)
-                .tokenHash(hash(rawToken))
+                .tokenHash(HashUtils.sha256Hex(rawToken))
                 .expiresAt(now.plus(tokenExpiration))
                 .createdAt(now)
                 .build());
@@ -84,7 +80,8 @@ public class RefreshTokenService {
      * @param rawToken raw secret whose stored hash identifies the token row
      */
     public void revoke(String rawToken) {
-        authTokenRepository.findByTokenHashAndType(hash(rawToken), AuthTokenType.REFRESH_TOKEN)
+        authTokenRepository.findByTokenHashAndType(
+                        HashUtils.sha256Hex(rawToken), AuthTokenType.REFRESH_TOKEN)
                 .filter(token -> token.getConsumedAt() == null)
                 .ifPresent(token -> {
                     token.setConsumedAt(clock.instant());
@@ -94,36 +91,13 @@ public class RefreshTokenService {
 
     private AuthToken findUsable(String rawToken) {
         AuthToken token = authTokenRepository.findByTokenHashAndType(
-                        hash(rawToken), AuthTokenType.REFRESH_TOKEN)
+                        HashUtils.sha256Hex(rawToken), AuthTokenType.REFRESH_TOKEN)
                 .orElseThrow(InvalidRefreshTokenException::new);
         Instant now = clock.instant();
-        if (token.getConsumedAt() != null || !token.getExpiresAt().isAfter(now)) {
+        if (!token.isUsableAt(now)) {
             throw new InvalidRefreshTokenException();
         }
         return token;
     }
 
-    private static String generateToken() {
-        byte[] bytes = new byte[32];
-        SECURE_RANDOM.nextBytes(bytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-    }
-
-    private static String hash(String rawToken) {
-        try {
-            byte[] digest = MessageDigest.getInstance("SHA-256")
-                    .digest(rawToken.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(digest);
-        } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("SHA-256 is not available", exception);
-        }
-    }
-
-    private static Duration requirePositive(Duration duration) {
-        if (duration == null || duration.isZero() || duration.isNegative()) {
-            throw new IllegalArgumentException(
-                    "refresh token expiration must be positive");
-        }
-        return duration;
-    }
 }

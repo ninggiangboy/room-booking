@@ -11,6 +11,7 @@ The repository is the backend of a room-booking platform. The Java application c
 - short-lived JWT access tokens;
 - rotating, database-backed refresh tokens;
 - email verification;
+- forgot/reset password;
 - current-user lookup and password changes;
 - consistent JSON errors.
 
@@ -93,6 +94,8 @@ Important properties are:
 | `spring.liquibase.change-log` | Root file for database migrations |
 | `app.email-verification.url` | Frontend URL placed in verification email |
 | `app.email-verification.token-ttl` | Verification-token lifetime |
+| `app.password-reset.url` | Frontend URL placed in password-reset email |
+| `app.password-reset.token-ttl` | Password-reset-token lifetime |
 | `security.jwt.secret` | Base64 HMAC signing key, at least 256 bits after decoding |
 | `security.jwt.access-token-expiration` | JWT access-token lifetime |
 | `security.jwt.refresh-token-expiration` | Refresh-token lifetime |
@@ -374,11 +377,13 @@ Raw passwords must contain at least eight characters, including an uppercase let
 
 An access token is a signed JWT containing the user ID as `sub`, plus email and roles. It is short-lived and is not stored in the database. The server verifies its signature and expiration on every protected request.
 
-### Refresh and verification tokens
+### Opaque one-time tokens
 
-These are random opaque secrets. The client receives the raw token once, while the database stores only its SHA-256 hash. A leaked database therefore does not immediately reveal usable raw tokens.
+Refresh, email-verification, and password-reset tokens are random opaque secrets. The client receives the raw token once, while the database stores only its SHA-256 hash. A leaked database therefore does not immediately reveal usable raw tokens. `SecureTokenUtils` owns secure generation, `HashUtils` owns hashing, and `AuthToken.isUsableAt` centralizes the consumed/expired check.
 
 Refresh tokens rotate: refreshing consumes the old token and returns a new one. Replaying the old value fails. Issuing a new email-verification token consumes older unconsumed verification tokens.
+
+Password recovery deliberately returns the same `204 No Content` response for registered and unregistered valid emails, preventing account enumeration. A successful reset consumes its one-time token and revokes every unconsumed refresh token for that user. Previously issued access JWTs are stateless and remain valid only until their short expiration.
 
 ## 9. Try the complete API flow
 
@@ -475,6 +480,29 @@ curl --request POST http://localhost:8080/api/v1/auth/logout \
 
 Logout returns `204 No Content`. It is idempotent: sending the same request again does not fail, but that token can no longer refresh the session.
 
+### Recover a forgotten password
+
+Requesting recovery is public and always returns `204 No Content` for a syntactically valid email, whether the account exists or not:
+
+```bash
+curl --request POST http://localhost:8080/api/v1/auth/password/forgot \
+  --header 'Content-Type: application/json' \
+  --data '{"email":"beginner@example.com"}'
+```
+
+Open Mailpit at `http://localhost:8025`, select the password-reset message, and copy the `token` query parameter. Consume it with a password that satisfies the project policy:
+
+```bash
+curl --request POST http://localhost:8080/api/v1/auth/password/reset \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "token": "PASTE_PASSWORD_RESET_TOKEN_HERE",
+    "newPassword": "Recovered-Password3!"
+  }'
+```
+
+A successful reset returns `204 No Content`. The token is single-use, and all existing refresh tokens for the account are revoked. Log in with the new password to obtain a new token pair.
+
 ### Check whether an email exists
 
 ```bash
@@ -515,6 +543,7 @@ The existing numbered SQL files are historical, ordered changesets:
 | `006` | Reviews and favorites |
 | `007` | Initial email-verification tokens |
 | `008` | Generalized authentication tokens, including refresh tokens |
+| `009` | Password-reset token type added to the authentication-token constraint |
 
 Important data conventions are documented in `docs/data-model/README.md`: money uses integer minor units, stay ranges are half-open, timestamps use timezone-aware values, and deletion is normally represented by status rather than removing historical rows.
 
@@ -525,9 +554,10 @@ Important data conventions are documented in `docs/data-model/README.md`: money 
 3. `SecurityConfig` and `JwtAuthenticationFilter` to understand public and protected routes.
 4. `AuthenticationService` to follow the main use cases.
 5. `User`, `AuthToken`, and their repositories to connect Java objects to tables.
-6. `EmailVerificationService` and `EmailVerificationNotifier` to see transactions and events.
-7. `ApiExceptionHandler` and the exception package to understand failures.
-8. The Liquibase master file and `docs/data-model/README.md` to understand the broader roadmap.
+6. `EmailVerificationService`, `PasswordResetService`, and `AuthEmailNotifier` to see reusable token utilities, transactions, and post-commit events.
+7. `UserFinder` and `UserAccountPolicy` to see shared domain behavior extracted from workflows.
+8. `ApiExceptionHandler` and the exception package to understand failures.
+9. The Liquibase master file and `docs/data-model/README.md` to understand the broader roadmap.
 
 Use the IDE's “Go to declaration” action whenever an annotation, method, or type is unfamiliar.
 
@@ -554,7 +584,7 @@ When debugging authentication, inspect these values in order:
 3. the authentication stored in `SecurityContextHolder`;
 4. the `@AuthenticationPrincipal UUID` controller argument.
 
-Never print raw passwords, JWT signing secrets, refresh tokens, or verification tokens in application logs.
+Never print raw passwords, JWT signing secrets, refresh tokens, verification tokens, or password-reset tokens in application logs.
 
 ## 14. Adding a small feature safely
 
@@ -588,6 +618,10 @@ The shared configuration intentionally has no secret. Start with the `local` pro
 
 Check that Mailpit is running, open `http://localhost:8025`, and inspect the application log. Email is sent after the token transaction commits.
 
+### Password-reset email does not arrive
+
+The endpoint intentionally does not reveal whether an account exists. Confirm the submitted email belongs to an active local account, then check Mailpit and the application log. Requesting another reset invalidates the previous unconsumed reset token.
+
 ### A protected request returns 401
 
 Confirm the header starts with `Bearer `, the access token has not expired, and you did not accidentally pass a refresh token. Refresh tokens are not JWT access tokens.
@@ -618,5 +652,73 @@ An applied changeset was probably edited. Restore that historical file and creat
 4. Refresh once, then try the old refresh token again and explain why it fails.
 5. Replace the application `Clock` with a fixed clock in a unit test and test token expiration.
 6. Draw the tables touched during registration and mark the transaction boundary.
+7. Request two password-reset emails and explain why only the newest token remains usable.
+8. Reset a password and verify that an older refresh token can no longer create a session.
 
 These exercises cover the project's central ideas without requiring a new production feature.
+
+## 18. Maintaining comments and documentation
+
+Documentation is part of the definition of done. Review it in the same change as production code so names, routes, configuration, and security behavior cannot drift.
+
+### JavaDoc rules
+
+- Add type-level JavaDoc to every new class, interface, record, enum, and annotation. State its responsibility, architectural layer, and important Spring/Lombok behavior.
+- Document public methods and package-private business entry points with purpose, side effects, transaction/security behavior, `@param`, `@return`, and meaningful `@throws` tags.
+- For request/response records, add an `@param` for every record component. Explain `@Valid`, `@NotBlank`, `@Email`, or `@Size` when validation behavior is not obvious.
+- For Lombok types, document what the annotations generate and why. Do not write fictional constructors or getters that would duplicate Lombok-generated code.
+- Document enum constants when their business meaning is not completely obvious. Document security-sensitive fields such as hashes, raw-token boundaries, expiry, consumption, and optimistic-lock versions.
+- For every declared repository method, include conceptual generated SQL in a `<pre>{@code ...}</pre>` block, parameter binding, return-cardinality semantics, and how Spring parses the method name. For `@Query`, copy and explain the exact query.
+- Use `//` implementation comments only for the reason behind a non-obvious decision, such as race protection, token hashing, or post-commit failure handling. Do not narrate straightforward assignments or method calls.
+- Never place passwords, signing secrets, raw bearer tokens, production credentials, or real personal data in comments or examples.
+
+### Documentation update map
+
+When a change affects any item in the left column, update the corresponding documentation in the same commit:
+
+| Code change | Required documentation |
+| --- | --- |
+| Public endpoint, authentication, or payload | Root `README.md` API table and runnable flow in `GUIDE.md` |
+| New configuration property or local port | Properties comments, README configuration, GUIDE setup/configuration/troubleshooting |
+| New package or major component | Package `package-info.java`, project tree, and recommended reading order |
+| Token, password, transaction, or security behavior | JavaDoc plus GUIDE design/security explanation |
+| New database migration | Changelog master, migration map, and relevant data-model document |
+| Renamed or removed type | Search README, GUIDE, JavaDoc links, tests, and examples for the old name |
+
+Never edit comments inside an already-applied Liquibase changeset merely to improve prose, because changing historical files can affect checksum validation. Explain historical migrations in the GUIDE or data-model docs; document new SQL while creating its new changeset.
+
+### Pre-commit documentation check
+
+From the repository root, first inspect the complete change surface:
+
+```bash
+git status --short
+git diff --name-status
+git diff --check
+```
+
+Search both tracked changes and untracked Java files for files that contain no JavaDoc at all:
+
+```bash
+{
+  git diff --name-only --diff-filter=AM -- '*.java'
+  git ls-files --others --exclude-standard -- '*.java'
+} | sort -u | while IFS= read -r file; do
+  if test -f "$file" && ! rg -q '/\*\*' "$file"; then
+    echo "Review JavaDoc: $file"
+  fi
+done
+```
+
+This command is only a first-pass guard: manually verify every new type, record component, public method, repository method, and non-obvious contract using the rules above. Remember that normal `git diff` does not display untracked file contents until they are added to Git.
+
+Finally generate and verify all artifacts:
+
+```bash
+cd room-booking-backend
+./gradlew test
+./gradlew build
+./gradlew javadoc
+```
+
+Open `build/docs/javadoc/index.html` and follow links for newly documented types. Treat new missing-member, missing-tag, invalid-link, or malformed-HTML warnings as documentation defects. Warnings that mention only implicit or Lombok-generated constructors are non-functional and should not be “fixed” by adding duplicate boilerplate constructors; verify instead that the type-level JavaDoc explains how construction and dependency injection work.

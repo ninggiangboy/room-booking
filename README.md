@@ -9,6 +9,7 @@ Backend for a room-booking platform, built with Java and Spring Boot. The applic
 - Rotating, database-backed refresh tokens
 - Logout and refresh-token revocation
 - Email verification and verification-email resend
+- Forgot/reset password with short-lived, single-use email tokens
 - Current-user lookup and password changes
 - Consistent JSON error responses
 - Liquibase-managed PostgreSQL schema
@@ -76,6 +77,8 @@ docker compose -f compose.local.yaml down
 | `POST` | `/api/v1/auth/logout` | Public | Revoke a refresh token |
 | `POST` | `/api/v1/auth/email-verification/confirm` | Public | Verify an email address |
 | `POST` | `/api/v1/auth/email-verification/resend` | Bearer token | Request another verification email |
+| `POST` | `/api/v1/auth/password/forgot` | Public | Request a password-reset email |
+| `POST` | `/api/v1/auth/password/reset` | Public | Reset a password with a one-time token |
 | `GET` | `/api/v1/users/email-exists?email=...` | Public | Check whether an email is registered |
 | `GET` | `/api/v1/users/me` | Bearer token | Get the current user |
 | `PUT` | `/api/v1/users/me/password` | Bearer token | Change the current user's password |
@@ -95,6 +98,7 @@ Important settings include:
 - `spring.datasource.*` for PostgreSQL
 - `spring.mail.*` for SMTP
 - `app.email-verification.*` for verification links and token lifetime
+- `app.password-reset.*` for reset links and token lifetime
 - `security.jwt.*` for token signing and expiration
 
 The local credentials and JWT secret are for development only. Inject environment-specific secrets in deployed environments and never commit production credentials.
@@ -111,7 +115,8 @@ room-booking-backend/
 │   ├── exception/    # Domain and API errors
 │   ├── model/        # Spring Data JDBC entities
 │   ├── repository/   # Persistence interfaces
-│   └── service/      # Business logic
+│   ├── service/      # Business logic
+│   └── util/         # Shared normalization, duration, hashing, and token helpers
 ├── src/main/resources/
 │   └── db/changelog/ # Liquibase migrations
 ├── docs/data-model/  # Data-model documentation
@@ -130,6 +135,7 @@ cd room-booking-backend
 
 - [Beginner's guide](room-booking-backend/GUIDE.md)
 - [Data model](room-booking-backend/docs/data-model/README.md)
+- [Comment and documentation maintenance](room-booking-backend/GUIDE.md#18-maintaining-comments-and-documentation)
 
 ## Database changes
 

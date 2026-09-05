@@ -1,14 +1,8 @@
 package dev.ngb.backend.service.auth;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.HexFormat;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -25,6 +19,10 @@ import dev.ngb.backend.model.User;
 import dev.ngb.backend.repository.AuthTokenRepository;
 import dev.ngb.backend.repository.UserRepository;
 import dev.ngb.backend.repository.UserRoleRepository;
+import dev.ngb.backend.service.user.UserFinder;
+import dev.ngb.backend.service.validation.UserAccountPolicy;
+import dev.ngb.backend.util.HashUtils;
+import dev.ngb.backend.util.SecureTokenUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
@@ -43,11 +41,11 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class EmailVerificationService {
 
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-
     private final AuthTokenRepository authTokenRepository;
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
+    private final UserFinder userFinder;
+    private final UserAccountPolicy userAccountPolicy;
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
@@ -68,13 +66,13 @@ public class EmailVerificationService {
             authTokenRepository.save(token);
         });
 
-        String rawToken = generateToken();
+        String rawToken = SecureTokenUtils.generateUrlSafe();
         // Persist only a hash so a database leak cannot reveal a usable verification link.
         authTokenRepository.save(AuthToken.builder()
                 .id(UUID.randomUUID())
                 .userId(user.getId())
                 .type(AuthTokenType.EMAIL_VERIFICATION)
-                .tokenHash(hash(rawToken))
+                .tokenHash(HashUtils.sha256Hex(rawToken))
                 .expiresAt(now.plus(tokenTtl))
                 .createdAt(now)
                 .build());
@@ -92,8 +90,8 @@ public class EmailVerificationService {
     @Transactional
     public void requestVerification(UUID userId) {
         Objects.requireNonNull(userId, "userId must not be null");
-        User user = findUser(userId);
-        ensureActive(user);
+        User user = userFinder.findById(userId);
+        userAccountPolicy.requireActive(user);
         issue(user);
     }
 
@@ -107,8 +105,8 @@ public class EmailVerificationService {
     @Transactional
     public UserResponse verify(VerifyEmailRequest request) {
         UUID userId = consume(request.token());
-        User user = findUser(userId);
-        ensureActive(user);
+        User user = userFinder.findById(userId);
+        userAccountPolicy.requireActive(user);
 
         if (user.getEmailVerifiedAt() == null) {
             Instant now = clock.instant();
@@ -122,10 +120,10 @@ public class EmailVerificationService {
 
     private UUID consume(String rawToken) {
         AuthToken token = authTokenRepository.findByTokenHashAndType(
-                        hash(rawToken), AuthTokenType.EMAIL_VERIFICATION)
+                        HashUtils.sha256Hex(rawToken), AuthTokenType.EMAIL_VERIFICATION)
                 .orElseThrow(InvalidEmailVerificationTokenException::new);
         Instant now = clock.instant();
-        if (token.getConsumedAt() != null || !token.getExpiresAt().isAfter(now)) {
+        if (!token.isUsableAt(now)) {
             throw new InvalidEmailVerificationTokenException();
         }
 
@@ -135,30 +133,4 @@ public class EmailVerificationService {
         return token.getUserId();
     }
 
-    private static String generateToken() {
-        byte[] bytes = new byte[32];
-        SECURE_RANDOM.nextBytes(bytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-    }
-
-    private User findUser(UUID userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-    }
-
-    private static void ensureActive(User user) {
-        if (!user.isActive()) {
-            throw new UserAccountDisabledException(user);
-        }
-    }
-
-    private static String hash(String rawToken) {
-        try {
-            byte[] digest = MessageDigest.getInstance("SHA-256")
-                    .digest(rawToken.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(digest);
-        } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("SHA-256 is not available", exception);
-        }
-    }
 }

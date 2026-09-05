@@ -1,6 +1,7 @@
 package dev.ngb.backend.model;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 
 import lombok.AccessLevel;
@@ -47,4 +48,15 @@ public class AuthToken {
     /** Optimistic-lock value checked and incremented by Spring Data. */
     @Version
     private Long version;
+
+    /**
+     * Checks whether this one-time token can be consumed at the supplied instant.
+     *
+     * @param instant current time
+     * @return {@code true} when the token is unconsumed and has not expired
+     */
+    public boolean isUsableAt(Instant instant) {
+        Objects.requireNonNull(instant, "instant must not be null");
+        return consumedAt == null && expiresAt.isAfter(instant);
+    }
 }

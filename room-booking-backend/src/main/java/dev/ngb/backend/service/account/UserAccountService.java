@@ -7,16 +7,16 @@ import java.util.UUID;
 import dev.ngb.backend.dto.UserResponse;
 import dev.ngb.backend.dto.ChangePasswordRequest;
 import dev.ngb.backend.exception.InvalidCredentialsException;
-import dev.ngb.backend.exception.UserAccountDisabledException;
 import dev.ngb.backend.exception.UserNotFoundException;
 import dev.ngb.backend.exception.ValidationException;
 import dev.ngb.backend.model.User;
 import dev.ngb.backend.repository.UserRepository;
 import dev.ngb.backend.repository.UserRoleRepository;
+import dev.ngb.backend.service.user.UserFinder;
 import dev.ngb.backend.service.validation.PasswordPolicy;
+import dev.ngb.backend.service.validation.UserAccountPolicy;
 import dev.ngb.backend.util.StringUtils;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.NonNull;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,8 +34,10 @@ public class UserAccountService {
 
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
+    private final UserFinder userFinder;
     private final PasswordEncoder passwordEncoder;
     private final PasswordPolicy passwordPolicy;
+    private final UserAccountPolicy userAccountPolicy;
     private final Clock clock;
 
     /**
@@ -50,7 +52,7 @@ public class UserAccountService {
     @Transactional(readOnly = true)
     public UserResponse getUser(UUID userId) {
         Objects.requireNonNull(userId, "userId must not be null");
-        User user = findUser(userId);
+        User user = userFinder.findById(userId);
         return UserResponse.from(user, userRoleRepository.findRolesByUserId(userId));
     }
 
@@ -81,8 +83,8 @@ public class UserAccountService {
         Objects.requireNonNull(userId, "userId must not be null");
         passwordPolicy.validate("newPassword", request.newPassword());
 
-        User user = findUser(userId);
-        ensureActive(user);
+        User user = userFinder.findById(userId);
+        userAccountPolicy.requireActive(user);
         validatePasswordChange(request.currentPassword(), request.newPassword(), user.getPasswordHash());
 
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
@@ -104,14 +106,4 @@ public class UserAccountService {
         }
     }
 
-    private User findUser(UUID userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-    }
-
-    private static void ensureActive(User user) {
-        if (!user.isActive()) {
-            throw new UserAccountDisabledException(user);
-        }
-    }
 }

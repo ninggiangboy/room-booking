@@ -11,6 +11,7 @@ import java.util.function.Function;
 
 import javax.crypto.SecretKey;
 
+import dev.ngb.backend.util.DurationUtils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.JwtParser;
@@ -50,7 +51,8 @@ public class AccessTokenService {
             @Value("${security.jwt.access-token-expiration:15m}") Duration accessTokenExpiration,
             Clock clock) {
         this.signingKey = createSigningKey(base64Secret);
-        this.accessTokenExpiration = requirePositive(accessTokenExpiration);
+        this.accessTokenExpiration = DurationUtils.requirePositive(
+                accessTokenExpiration, "access token expiration");
         this.clock = Objects.requireNonNull(clock, "clock must not be null");
         this.jwtParser = Jwts.parser()
                 .verifyWith(signingKey)
@@ -182,14 +184,6 @@ public class AccessTokenService {
         }
 
         return Keys.hmacShaKeyFor(keyBytes);
-    }
-
-    private static Duration requirePositive(Duration duration) {
-        if (duration == null || duration.isZero() || duration.isNegative()) {
-            throw new IllegalArgumentException(
-                    "access token expiration must be positive");
-        }
-        return duration;
     }
 
     private static void requireToken(String token) {

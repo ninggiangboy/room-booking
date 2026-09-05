@@ -67,6 +67,8 @@ public class SecurityConfig {
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/refresh",
                                 "/api/v1/auth/logout",
+                                "/api/v1/auth/password/forgot",
+                                "/api/v1/auth/password/reset",
                                 "/api/v1/auth/email-verification/confirm")
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/email-exists")

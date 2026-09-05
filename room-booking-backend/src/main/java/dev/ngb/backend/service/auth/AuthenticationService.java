@@ -17,6 +17,7 @@ import dev.ngb.backend.model.User;
 import dev.ngb.backend.repository.UserRepository;
 import dev.ngb.backend.repository.UserRoleRepository;
 import dev.ngb.backend.service.validation.PasswordPolicy;
+import dev.ngb.backend.service.validation.UserAccountPolicy;
 import dev.ngb.backend.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -41,6 +42,7 @@ public class AuthenticationService {
     private final AccessTokenService accessTokenService;
     private final RefreshTokenService refreshTokenService;
     private final PasswordPolicy passwordPolicy;
+    private final UserAccountPolicy userAccountPolicy;
     private final UserRegistrationFactory userRegistrationFactory;
     private final EmailVerificationService emailVerificationService;
 
@@ -66,7 +68,7 @@ public class AuthenticationService {
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new InvalidCredentialsException();
         }
-        ensureActive(user);
+        userAccountPolicy.requireActive(user);
 
         return createAuthResponse(user, userRoleRepository.findRolesByUserId(user.getId()));
     }
@@ -83,7 +85,7 @@ public class AuthenticationService {
         var userId = refreshTokenService.consume(request.refreshToken());
         User user = userRepository.findById(userId)
                 .orElseThrow(InvalidCredentialsException::new);
-        ensureActive(user);
+        userAccountPolicy.requireActive(user);
         return createAuthResponse(user, userRoleRepository.findRolesByUserId(userId));
     }
 
@@ -146,9 +148,4 @@ public class AuthenticationService {
         return new AuthResponse(accessToken, refreshToken, UserResponse.from(user, roles));
     }
 
-    private static void ensureActive(User user) {
-        if (!user.isActive()) {
-            throw new UserAccountDisabledException(user);
-        }
-    }
 }

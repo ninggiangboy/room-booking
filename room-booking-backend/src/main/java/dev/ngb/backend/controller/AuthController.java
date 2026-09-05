@@ -1,14 +1,17 @@
 package dev.ngb.backend.controller;
 
 import dev.ngb.backend.dto.AuthResponse;
+import dev.ngb.backend.dto.ForgotPasswordRequest;
 import dev.ngb.backend.dto.LoginRequest;
 import dev.ngb.backend.dto.LogoutRequest;
 import dev.ngb.backend.dto.RefreshTokenRequest;
 import dev.ngb.backend.dto.RegisterRequest;
+import dev.ngb.backend.dto.ResetPasswordRequest;
 import dev.ngb.backend.dto.UserResponse;
 import dev.ngb.backend.dto.VerifyEmailRequest;
 import dev.ngb.backend.service.auth.AuthenticationService;
 import dev.ngb.backend.service.auth.EmailVerificationService;
+import dev.ngb.backend.service.auth.PasswordResetService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -36,6 +39,7 @@ public class AuthController {
 
     private final AuthenticationService authenticationService;
     private final EmailVerificationService emailVerificationService;
+    private final PasswordResetService passwordResetService;
 
     /**
      * Creates a guest account and returns its first access/refresh token pair.
@@ -83,6 +87,32 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@Valid @RequestBody LogoutRequest request) {
         authenticationService.logout(request);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Requests a one-time reset link. The same empty response is returned whether the account
+     * exists or not, preventing email-address enumeration.
+     *
+     * @param request validated account email
+     * @return {@code 204 No Content} for both known and unknown valid addresses
+     */
+    @PostMapping("/password/forgot")
+    public ResponseEntity<Void> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.requestReset(request);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Consumes a one-time reset token and replaces the account password.
+     *
+     * @param request validated reset token and new password
+     * @return {@code 204 No Content}
+     */
+    @PostMapping("/password/reset")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request);
         return ResponseEntity.noContent().build();
     }
 
