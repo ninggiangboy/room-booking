@@ -51,7 +51,7 @@ The Compose file starts:
 
 | Service | Address | Purpose |
 | --- | --- | --- |
-| PostgreSQL | `localhost:5432` | Persistent relational data |
+| PostgreSQL + PostGIS | `localhost:5432` | Persistent relational and spatial data |
 | MinIO API | `http://localhost:9000` | S3-compatible storage for future image features |
 | MinIO console | `http://localhost:9001` | Browser UI for local object storage |
 | Mailpit SMTP | `localhost:1025` | Captures outgoing development email |
@@ -549,6 +549,7 @@ The existing numbered SQL files are historical, ordered changesets:
 | `007` | Initial email-verification tokens |
 | `008` | Generalized authentication tokens, including refresh tokens |
 | `009` | Password-reset token type added to the authentication-token constraint |
+| `010` | Global geographic catalog, localized aliases, and PostGIS map/radius indexes |
 
 Important data conventions are documented in `docs/data-model/README.md`: money uses integer minor units, stay ranges are half-open, timestamps use timezone-aware values, and deletion is normally represented by status rather than removing historical rows.
 

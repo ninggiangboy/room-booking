@@ -1,9 +1,11 @@
 name: room-booking-local
 
 services:
-  # PostgreSQL stores application data; its named volume survives container recreation.
+  # PostgreSQL with PostGIS stores relational and spatial data; its volume survives recreation.
   postgres:
-    image: postgres:17-alpine
+    image: postgis/postgis:17-3.6-alpine
+    # The upstream PostGIS image is currently amd64-only; Docker Desktop emulates it on Apple Silicon.
+    platform: linux/amd64
     restart: unless-stopped
     environment:
       POSTGRES_DB: room_booking

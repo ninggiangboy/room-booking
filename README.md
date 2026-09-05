@@ -12,7 +12,7 @@ Backend for a room-booking platform, built with Java and Spring Boot. The applic
 - Forgot/reset password with short-lived, single-use email tokens
 - Current-user lookup and password changes
 - Consistent JSON error responses
-- Liquibase-managed PostgreSQL schema
+- Liquibase-managed PostgreSQL and PostGIS schema
 
 > The listing, calendar, booking, payment, review, and favorite schemas are present, but their Java APIs are not implemented yet.
 
@@ -22,7 +22,7 @@ Backend for a room-booking platform, built with Java and Spring Boot. The applic
 - Spring Boot 4.1
 - Spring Security
 - Spring Data JDBC
-- PostgreSQL 17
+- PostgreSQL 17 with PostGIS 3.6
 - Liquibase
 - Gradle
 - Mailpit for local email testing
@@ -55,7 +55,7 @@ Local services:
 
 | Service | Address |
 | --- | --- |
-| PostgreSQL | `localhost:5432` |
+| PostgreSQL + PostGIS | `localhost:5432` |
 | MinIO API | `http://localhost:9000` |
 | MinIO console | `http://localhost:9001` |
 | Mailpit SMTP | `localhost:1025` |
@@ -135,6 +135,8 @@ cd room-booking-backend
 
 - [Beginner's guide](room-booking-backend/GUIDE.md)
 - [Data model](room-booking-backend/docs/data-model/README.md)
+- [Global location-search design](room-booking-backend/docs/features/location-search.md)
+- [Location-search schema](room-booking-backend/docs/data-model/010-location-search.md)
 - [Comment and documentation maintenance](room-booking-backend/GUIDE.md#18-maintaining-comments-and-documentation)
 
 ## Database changes
