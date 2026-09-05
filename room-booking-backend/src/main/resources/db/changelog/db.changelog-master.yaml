@@ -1,0 +1,30 @@
+# Liquibase applies these files in order. Never edit an applied numbered changeset;
+# add the next forward migration and include it at the end of this list instead.
+databaseChangeLog:
+  - include:
+      file: changes/000-platform.sql
+      relativeToChangelogFile: true
+  - include:
+      file: changes/001-identity.sql
+      relativeToChangelogFile: true
+  - include:
+      file: changes/002-listing-catalog.sql
+      relativeToChangelogFile: true
+  - include:
+      file: changes/003-calendar-pricing.sql
+      relativeToChangelogFile: true
+  - include:
+      file: changes/004-booking.sql
+      relativeToChangelogFile: true
+  - include:
+      file: changes/005-payment.sql
+      relativeToChangelogFile: true
+  - include:
+      file: changes/006-trust-engagement.sql
+      relativeToChangelogFile: true
+  - include:
+      file: changes/007-email-verification.sql
+      relativeToChangelogFile: true
+  - include:
+      file: changes/008-auth-tokens.sql
+      relativeToChangelogFile: true
