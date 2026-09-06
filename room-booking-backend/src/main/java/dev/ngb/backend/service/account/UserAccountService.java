@@ -18,7 +18,6 @@ import dev.ngb.backend.repository.UserRepository;
 import dev.ngb.backend.repository.UserRoleRepository;
 import dev.ngb.backend.service.user.UserFinder;
 import dev.ngb.backend.service.validation.PasswordPolicy;
-import dev.ngb.backend.service.validation.UserAccountPolicy;
 import dev.ngb.backend.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -42,7 +41,6 @@ public class UserAccountService {
     private final UserFinder userFinder;
     private final PasswordEncoder passwordEncoder;
     private final PasswordPolicy passwordPolicy;
-    private final UserAccountPolicy userAccountPolicy;
     private final Clock clock;
 
     /**
@@ -84,8 +82,7 @@ public class UserAccountService {
     public void changePassword(UUID userId, ChangePasswordRequest request) {
         passwordPolicy.validate("newPassword", request.newPassword());
 
-        User user = userFinder.findById(userId);
-        userAccountPolicy.requireActive(user);
+        User user = userFinder.findActiveById(userId);
         validatePasswordChange(request.currentPassword(), request.newPassword(), user.getPasswordHash());
 
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
@@ -99,8 +96,7 @@ public class UserAccountService {
      */
     @Transactional
     public void deleteOwnAccount(UUID userId) {
-        User user = findForUpdate(userId);
-        userAccountPolicy.requireActive(user);
+        User user = userFinder.findActiveByIdForUpdate(userId);
         applyStatus(user, UserStatus.DELETED);
     }
 
@@ -118,17 +114,6 @@ public class UserAccountService {
         }
     }
 
-    private void revokeOutstandingTokens(UUID userId, Instant now) {
-        List<AuthToken> tokens = authTokenRepository.findAllByUserIdAndConsumedAtIsNull(userId);
-        tokens.forEach(token -> token.setConsumedAt(now));
-        authTokenRepository.saveAll(tokens);
-    }
-
-    private User findForUpdate(UUID userId) {
-        return userRepository.findByIdForUpdate(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-    }
-
     private void applyStatus(User user, UserStatus status) {
         if (user.getStatus() == status) {
             return;
@@ -139,6 +124,12 @@ public class UserAccountService {
         if (status != UserStatus.ACTIVE) {
             revokeOutstandingTokens(user.getId(), now);
         }
+    }
+
+    private void revokeOutstandingTokens(UUID userId, Instant now) {
+        List<AuthToken> tokens = authTokenRepository.findAllByUserIdAndConsumedAtIsNull(userId);
+        tokens.forEach(token -> token.setConsumedAt(now));
+        authTokenRepository.saveAll(tokens);
     }
 
 }

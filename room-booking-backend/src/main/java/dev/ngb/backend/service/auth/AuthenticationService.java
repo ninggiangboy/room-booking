@@ -17,7 +17,7 @@ import dev.ngb.backend.model.User;
 import dev.ngb.backend.repository.UserRepository;
 import dev.ngb.backend.repository.UserRoleRepository;
 import dev.ngb.backend.service.validation.PasswordPolicy;
-import dev.ngb.backend.service.validation.UserAccountPolicy;
+import dev.ngb.backend.service.user.UserFinder;
 import dev.ngb.backend.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -42,7 +42,7 @@ public class AuthenticationService {
     private final AccessTokenService accessTokenService;
     private final RefreshTokenService refreshTokenService;
     private final PasswordPolicy passwordPolicy;
-    private final UserAccountPolicy userAccountPolicy;
+    private final UserFinder userFinder;
     private final UserRegistrationFactory userRegistrationFactory;
 
     /**
@@ -61,14 +61,12 @@ public class AuthenticationService {
     public AuthResponse login(LoginRequest request) {
         String normalizedEmail = StringUtils.normalizeLowerCase(request.email());
 
-        User user = userRepository.findByEmail(normalizedEmail)
-                .orElseThrow(InvalidCredentialsException::new);
+        User user = userFinder.findActiveByEmail(
+                normalizedEmail, InvalidCredentialsException::new);
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new InvalidCredentialsException();
         }
-        userAccountPolicy.requireActive(user);
-
         return createAuthResponse(user, userRoleRepository.findRolesByUserId(user.getId()));
     }
 
@@ -82,9 +80,7 @@ public class AuthenticationService {
     @Transactional
     public AuthResponse refresh(RefreshTokenRequest request) {
         var userId = refreshTokenService.consume(request.refreshToken());
-        User user = userRepository.findById(userId)
-                .orElseThrow(InvalidCredentialsException::new);
-        userAccountPolicy.requireActive(user);
+        User user = userFinder.findActiveById(userId, InvalidCredentialsException::new);
         return createAuthResponse(user, userRoleRepository.findRolesByUserId(userId));
     }
 

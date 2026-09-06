@@ -604,7 +604,7 @@ Important data conventions are documented in `docs/data-model/README.md`: money 
 4. `AuthenticationService` to follow the main use cases.
 5. `User`, `AuthToken`, and their repositories to connect Java objects to tables.
 6. `EmailVerificationService`, `PasswordResetService`, and `AuthEmailNotifier` to see reusable token utilities, transactions, and post-commit events.
-7. `UserFinder` and `UserAccountPolicy` to see shared domain behavior extracted from workflows.
+7. `UserFinder` to see shared user lookup and active-account behavior extracted from workflows.
 8. `ApiExceptionHandler` and the exception package to understand failures.
 9. The Liquibase master file and `docs/data-model/README.md` to understand the broader roadmap.
 

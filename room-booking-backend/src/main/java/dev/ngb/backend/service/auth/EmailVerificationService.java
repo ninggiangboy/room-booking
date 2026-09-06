@@ -21,7 +21,6 @@ import dev.ngb.backend.repository.AuthTokenRepository;
 import dev.ngb.backend.repository.UserRepository;
 import dev.ngb.backend.repository.UserRoleRepository;
 import dev.ngb.backend.service.user.UserFinder;
-import dev.ngb.backend.service.validation.UserAccountPolicy;
 import dev.ngb.backend.util.HashUtils;
 import dev.ngb.backend.util.SecureTokenUtils;
 import jakarta.annotation.PostConstruct;
@@ -47,7 +46,6 @@ public class EmailVerificationService {
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
     private final UserFinder userFinder;
-    private final UserAccountPolicy userAccountPolicy;
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
@@ -117,9 +115,7 @@ public class EmailVerificationService {
      */
     @Transactional
     public void requestVerification(UUID userId) {
-        User user = userRepository.findByIdForUpdate(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-        userAccountPolicy.requireActive(user);
+        User user = userFinder.findActiveByIdForUpdate(userId);
         enforceRequestLimits(userId);
         issue(user);
     }
@@ -134,8 +130,7 @@ public class EmailVerificationService {
     @Transactional
     public UserResponse verify(VerifyEmailRequest request) {
         UUID userId = consume(request.token());
-        User user = userFinder.findById(userId);
-        userAccountPolicy.requireActive(user);
+        User user = userFinder.findActiveById(userId);
 
         if (user.getEmailVerifiedAt() == null) {
             Instant now = clock.instant();

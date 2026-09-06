@@ -15,6 +15,7 @@ import dev.ngb.backend.model.AuthTokenType;
 import dev.ngb.backend.model.User;
 import dev.ngb.backend.repository.AuthTokenRepository;
 import dev.ngb.backend.repository.UserRepository;
+import dev.ngb.backend.service.user.UserFinder;
 import dev.ngb.backend.service.validation.PasswordPolicy;
 import dev.ngb.backend.util.DurationUtils;
 import dev.ngb.backend.util.HashUtils;
@@ -38,6 +39,7 @@ public class PasswordResetService {
 
     private final AuthTokenRepository authTokenRepository;
     private final UserRepository userRepository;
+    private final UserFinder userFinder;
     private final PasswordEncoder passwordEncoder;
     private final PasswordPolicy passwordPolicy;
     private final ApplicationEventPublisher eventPublisher;
@@ -49,6 +51,7 @@ public class PasswordResetService {
      *
      * @param authTokenRepository persistence gateway for reset and refresh tokens
      * @param userRepository persistence gateway for accounts
+     * @param userFinder shared user lookup and account-status gateway
      * @param passwordEncoder verifies and hashes passwords
      * @param passwordPolicy enforces password strength and BCrypt limits
      * @param eventPublisher publishes a raw token for post-commit email delivery
@@ -58,6 +61,7 @@ public class PasswordResetService {
     public PasswordResetService(
             AuthTokenRepository authTokenRepository,
             UserRepository userRepository,
+            UserFinder userFinder,
             PasswordEncoder passwordEncoder,
             PasswordPolicy passwordPolicy,
             ApplicationEventPublisher eventPublisher,
@@ -65,6 +69,7 @@ public class PasswordResetService {
             @Value("${app.password-reset.token-ttl:30m}") Duration tokenTtl) {
         this.authTokenRepository = authTokenRepository;
         this.userRepository = userRepository;
+        this.userFinder = userFinder;
         this.passwordEncoder = passwordEncoder;
         this.passwordPolicy = passwordPolicy;
         this.eventPublisher = eventPublisher;
@@ -83,9 +88,7 @@ public class PasswordResetService {
     @Transactional
     public void requestReset(ForgotPasswordRequest request) {
         String normalizedEmail = StringUtils.normalizeLowerCase(request.email());
-        userRepository.findByEmail(normalizedEmail)
-                .filter(User::isActive)
-                .ifPresent(this::issue);
+        userFinder.findActiveByEmailIfPresent(normalizedEmail).ifPresent(this::issue);
     }
 
     /**

@@ -11,9 +11,8 @@ import dev.ngb.backend.model.IdentityStatus;
 import dev.ngb.backend.model.Role;
 import dev.ngb.backend.model.User;
 import dev.ngb.backend.repository.HostProfileRepository;
-import dev.ngb.backend.repository.UserRepository;
 import dev.ngb.backend.repository.UserRoleRepository;
-import dev.ngb.backend.service.validation.UserAccountPolicy;
+import dev.ngb.backend.service.user.UserFinder;
 import dev.ngb.backend.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
@@ -30,10 +29,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class HostOnboardingService {
 
-    private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
     private final HostProfileRepository hostProfileRepository;
-    private final UserAccountPolicy userAccountPolicy;
+    private final UserFinder userFinder;
     private final Clock clock;
 
     /**
@@ -48,9 +46,7 @@ public class HostOnboardingService {
      */
     @Transactional
     public HostOnboardingResponse onboard(UUID userId, HostOnboardingRequest request) {
-        User user = userRepository.findByIdForUpdate(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-        userAccountPolicy.requireActive(user);
+        User user = userFinder.findActiveByIdForUpdate(userId);
 
         Instant now = clock.instant();
         HostProfile profile = hostProfileRepository.findById(userId).orElseGet(() ->
