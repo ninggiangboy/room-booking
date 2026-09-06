@@ -92,7 +92,8 @@ public class PasswordResetService {
     }
 
     /**
-     * Replaces the password, consumes the reset token, and revokes every active refresh token.
+     * Replaces the password, confirms control of the email address, consumes the reset token, and
+     * revokes every active refresh token.
      *
      * <p>Revoking refresh tokens signs the user out of existing renewable sessions after a
      * credential recovery. Existing short-lived JWT access tokens naturally expire.</p>
@@ -125,6 +126,9 @@ public class PasswordResetService {
         authTokenRepository.save(resetToken);
 
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        if (user.getEmailVerifiedAt() == null) {
+            user.setEmailVerifiedAt(now);
+        }
         userRepository.save(user);
 
         authTokenRepository.findAllByUserIdAndTypeAndConsumedAtIsNull(

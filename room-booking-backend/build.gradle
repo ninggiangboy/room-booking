@@ -28,6 +28,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    // Springdoc generates the OpenAPI contract and serves Swagger UI for the MVC API.
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0'
     implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
     // JSpecify makes nullness part of the public Java contract without a runtime dependency.
     compileOnly 'org.jspecify:jspecify:1.0.0'

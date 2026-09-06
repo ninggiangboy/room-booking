@@ -368,6 +368,35 @@ The API is stateless; it does not create a server session. `JwtAuthenticationFil
 
 Public endpoints are explicitly listed in `SecurityConfig`. Every other endpoint requires authentication. Missing authentication produces `401`; an authenticated user without sufficient authority produces `403`.
 
+OpenAPI documentation is intentionally public: Swagger UI is served at `/swagger-ui.html`, while
+the generated contract is available at `/v3/api-docs` (JSON) and `/v3/api-docs.yaml` (YAML).
+Swagger UI accepts an access JWT through its **Authorize** control; only the documentation routes
+are public, so invoking a protected operation still requires a valid bearer token.
+
+### OpenAPI operation documentation
+
+The OpenAPI contract places bearer authentication at the top level, so new protected operations
+inherit it by default. A public operation uses an empty `@SecurityRequirements` annotation to
+override that default; Swagger UI consequently leaves it unlocked and does not send an
+`Authorization` header for it.
+
+`AuthController` and `UserController` add an `@Operation` summary and description to every route.
+Their `@ApiResponses` declarations document the success status and schema plus each expected
+business or security error. Repeated error contracts are declared once as
+`components/responses` in `OpenApiConfig` and referenced at the route, for example:
+
+```java
+@ApiResponse(responseCode = "401", ref = "#/components/responses/Unauthorized")
+@ApiResponse(responseCode = "500", ref = "#/components/responses/InternalServerError")
+```
+
+The shared responses include their description and the `ApiErrorResponse` JSON schema. Create a
+new component only when its complete response contract is reused; keep endpoint-specific business
+errors (for example, `EMAIL_ALREADY_VERIFIED`) directly on that endpoint. Swagger UI groups the
+operations as **Authentication** and **Users**. This metadata is documentation only:
+`SecurityConfig`, the JWT filter, Bean Validation, and `ApiExceptionHandler` remain responsible
+for enforcing and returning the behavior described by the contract.
+
 ### Liquibase
 
 Liquibase applies versioned database changes on startup. `db.changelog-master.yaml` includes changesets in order. Never edit a changeset that has been applied to an environment: Liquibase records its checksum. Add the next numbered forward migration instead.
@@ -576,6 +605,20 @@ Business and validation failures use one JSON shape:
 
 Use `status` for HTTP handling, `code` for stable program logic, `message` for a readable explanation, and `data` for structured context. Do not make clients depend on exact message wording.
 
+Swagger UI documents the following common error codes at the operations where they can occur:
+
+| HTTP status | Code | Meaning |
+| --- | --- | --- |
+| `400` | `VALIDATION_ERROR` | Request data or a business validation rule is invalid. |
+| `400` | `INVALID_EMAIL_VERIFICATION_TOKEN` | Verification token is unknown, expired, or consumed. |
+| `400` | `INVALID_PASSWORD_RESET_TOKEN` | Password-reset token is unknown, expired, consumed, or unusable. |
+| `401` | `INVALID_CREDENTIALS` | Login credentials or the current password do not match. |
+| `401` | `INVALID_REFRESH_TOKEN` | Refresh token is invalid, expired, or already used. |
+| `403` | `USER_ACCOUNT_DISABLED` | The account is suspended or deleted. |
+| `409` | `EMAIL_ALREADY_REGISTERED` | The email address already belongs to an account. |
+| `409` | `EMAIL_ALREADY_VERIFIED` | Verification was requested for an already verified email. |
+| `429` | `EMAIL_VERIFICATION_RATE_LIMITED` | Verification request cooldown or quota was exceeded; see `Retry-After` and `data.retryAfterSeconds`. |
+
 ## 11. Database migration map
 
 The existing numbered SQL files are historical, ordered changesets:
@@ -771,3 +814,48 @@ cd room-booking-backend
 ```
 
 Open `build/docs/javadoc/index.html` and follow links for newly documented types. Treat new missing-member, missing-tag, invalid-link, or malformed-HTML warnings as documentation defects. Warnings that mention only implicit or Lombok-generated constructors are non-functional and should not be “fixed” by adding duplicate boilerplate constructors; verify instead that the type-level JavaDoc explains how construction and dependency injection work.
+
+## 19. Committing code
+
+Make one focused commit for one logical change. A feature commit should include its production code,
+tests (when the test suite covers that area), migration, and documentation; do not split those
+dependent pieces into separate commits. Avoid committing generated output (`build/`, `.gradle/`),
+IDE metadata, local secrets, or local environment files.
+
+Before committing, inspect exactly what will be included and run the relevant checks:
+
+```bash
+git status --short
+git diff --check
+git diff --cached
+cd room-booking-backend
+./gradlew test
+./gradlew build
+```
+
+Stage only the files that belong to the change, then commit with a concise, imperative subject.
+Use an optional scope when it makes the affected area clearer:
+
+```bash
+git add src/main/java/dev/ngb/backend/service/auth/AuthenticationService.java \
+  src/test/java/dev/ngb/backend/service/auth/AuthenticationServiceTest.java \
+  ../README.md GUIDE.md
+git commit -m "feat(auth): rotate refresh tokens"
+```
+
+Use these prefixes consistently:
+
+| Prefix | Use for | Example |
+| --- | --- | --- |
+| `feat` | A new user-facing capability | `feat(users): add host onboarding` |
+| `fix` | A defect correction | `fix(auth): reject expired refresh tokens` |
+| `refactor` | Internal restructuring without a behavior change | `refactor(user): centralize account lookup` |
+| `docs` | Documentation-only changes | `docs: clarify local startup` |
+| `test` | Test-only changes | `test(auth): cover token reuse` |
+| `chore` | Tooling, build, or maintenance work | `chore: update Gradle wrapper` |
+
+Keep the first line under about 72 characters, omit trailing punctuation, and use the imperative
+form (`add`, `fix`, `update`) rather than a past-tense summary. Add a commit body only when it
+explains an important reason, compatibility concern, configuration change, or database migration.
+If a change has been staged by mistake, remove it from the staging area without discarding the
+working copy with `git restore --staged <file>`.

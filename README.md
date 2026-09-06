@@ -24,6 +24,7 @@ Backend for a room-booking platform, built with Java and Spring Boot. The applic
 - Java 25
 - Spring Boot 4.1
 - Spring Security
+- Springdoc OpenAPI and Swagger UI
 - Spring Data JDBC
 - PostgreSQL 17 with PostGIS 3.6
 - Liquibase
@@ -95,6 +96,22 @@ Protected endpoints expect an access token:
 Authorization: Bearer <access-token>
 ```
 
+## OpenAPI documentation
+
+When the API is running, explore its interactive documentation at
+[`/swagger-ui.html`](http://localhost:8080/swagger-ui.html). The generated OpenAPI contract is
+available as [JSON](http://localhost:8080/v3/api-docs) and
+[YAML](http://localhost:8080/v3/api-docs.yaml). Use Swagger UI's **Authorize** control to provide
+an access JWT for protected operations.
+
+Swagger UI organizes operations into **Authentication** and **Users**. Bearer JWT authentication
+is the OpenAPI default; public operations explicitly override it and do not show a lock. Each
+operation documents its request body or parameters, successful response schema, and expected error
+responses. Repeated errors (such as `401`, disabled-account `403`, validation `400`, and `500`)
+are reusable entries in `components/responses`; operations reference them rather than duplicating
+their description and `ApiErrorResponse` schema. Inspect the error body's `code` field rather than
+parsing its human-readable `message`.
+
 ## Configuration
 
 Shared configuration is stored in `room-booking-backend/src/main/resources/application.properties`. Development defaults are in `application-local.properties` and match `compose.local.yaml`.
@@ -106,6 +123,7 @@ Important settings include:
 - `app.email-verification.*` for verification links, token lifetime, cooldown, and rate limit
 - `app.password-reset.*` for reset links and token lifetime
 - `security.jwt.*` for token signing and expiration
+- `springdoc.*` for OpenAPI and Swagger UI paths
 
 The local credentials and JWT secret are for development only. Inject environment-specific secrets in deployed environments and never commit production credentials.
 
@@ -144,6 +162,7 @@ cd room-booking-backend
 - [Global location-search design](room-booking-backend/docs/features/location-search.md)
 - [Location-search schema](room-booking-backend/docs/data-model/010-location-search.md)
 - [Comment and documentation maintenance](room-booking-backend/GUIDE.md#18-maintaining-comments-and-documentation)
+- [Commit code guide](room-booking-backend/GUIDE.md#19-committing-code)
 
 ## Database changes
 
