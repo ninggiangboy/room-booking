@@ -1,5 +1,7 @@
 package dev.ngb.backend.exception;
 
+import dev.ngb.backend.exception.base.ConflictException;
+
 import java.util.Map;
 
 /** Signals that registration cannot use an email already owned by another account. */

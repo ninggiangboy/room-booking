@@ -1,5 +1,7 @@
 package dev.ngb.backend.exception;
 
+import dev.ngb.backend.exception.base.TooManyRequestsException;
+
 import java.time.Instant;
 import java.util.Map;
 

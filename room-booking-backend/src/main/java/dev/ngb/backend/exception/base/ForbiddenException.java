@@ -1,4 +1,4 @@
-package dev.ngb.backend.exception;
+package dev.ngb.backend.exception.base;
 
 import java.util.Map;
 

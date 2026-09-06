@@ -1,5 +1,7 @@
 package dev.ngb.backend.exception;
 
+import dev.ngb.backend.exception.base.UnauthorizedException;
+
 /** Signals that a refresh token cannot be used to create another session. */
 public class InvalidRefreshTokenException extends UnauthorizedException {
 

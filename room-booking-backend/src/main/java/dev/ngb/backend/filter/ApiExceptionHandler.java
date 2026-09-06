@@ -1,14 +1,14 @@
 package dev.ngb.backend.filter;
 
 import dev.ngb.backend.dto.ApiErrorResponse;
-import dev.ngb.backend.exception.BadRequestException;
-import dev.ngb.backend.exception.ConflictException;
-import dev.ngb.backend.exception.DomainException;
-import dev.ngb.backend.exception.ForbiddenException;
-import dev.ngb.backend.exception.NotFoundException;
-import dev.ngb.backend.exception.TooManyRequestsException;
-import dev.ngb.backend.exception.UnauthorizedException;
-import dev.ngb.backend.exception.ValidationException;
+import dev.ngb.backend.exception.base.BadRequestException;
+import dev.ngb.backend.exception.base.ConflictException;
+import dev.ngb.backend.exception.base.DomainException;
+import dev.ngb.backend.exception.base.ForbiddenException;
+import dev.ngb.backend.exception.base.NotFoundException;
+import dev.ngb.backend.exception.base.TooManyRequestsException;
+import dev.ngb.backend.exception.base.UnauthorizedException;
+import dev.ngb.backend.exception.base.ValidationException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;

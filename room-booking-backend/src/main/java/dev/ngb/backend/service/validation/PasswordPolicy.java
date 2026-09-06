@@ -2,7 +2,7 @@ package dev.ngb.backend.service.validation;
 
 import java.nio.charset.StandardCharsets;
 
-import dev.ngb.backend.exception.ValidationException;
+import dev.ngb.backend.exception.base.ValidationException;
 import org.springframework.stereotype.Component;
 
 /**

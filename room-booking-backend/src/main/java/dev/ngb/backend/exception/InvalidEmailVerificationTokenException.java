@@ -1,5 +1,7 @@
 package dev.ngb.backend.exception;
 
+import dev.ngb.backend.exception.base.BadRequestException;
+
 /** Signals that a verification token is missing, unknown, consumed, or expired. */
 public class InvalidEmailVerificationTokenException extends BadRequestException {
 

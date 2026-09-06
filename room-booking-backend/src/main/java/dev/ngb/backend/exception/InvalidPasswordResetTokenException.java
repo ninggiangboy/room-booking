@@ -1,5 +1,7 @@
 package dev.ngb.backend.exception;
 
+import dev.ngb.backend.exception.base.BadRequestException;
+
 /**
  * Signals that a password-reset token is unknown, consumed, expired, or belongs to an unusable user.
  *

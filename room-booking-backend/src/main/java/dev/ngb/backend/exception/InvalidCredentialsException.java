@@ -1,5 +1,7 @@
 package dev.ngb.backend.exception;
 
+import dev.ngb.backend.exception.base.UnauthorizedException;
+
 /** Reports failed authentication without revealing whether the email or password was wrong. */
 public class InvalidCredentialsException extends UnauthorizedException {
 

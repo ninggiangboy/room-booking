@@ -5,7 +5,6 @@ import dev.ngb.backend.dto.HostOnboardingResponse;
 import dev.ngb.backend.dto.HostProfileResponse;
 import dev.ngb.backend.dto.UserResponse;
 import dev.ngb.backend.exception.UserNotFoundException;
-import dev.ngb.backend.exception.ValidationException;
 import dev.ngb.backend.model.HostProfile;
 import dev.ngb.backend.model.IdentityStatus;
 import dev.ngb.backend.model.Role;

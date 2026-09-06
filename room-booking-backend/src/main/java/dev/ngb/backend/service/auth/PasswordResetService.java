@@ -9,7 +9,7 @@ import dev.ngb.backend.dto.ForgotPasswordRequest;
 import dev.ngb.backend.dto.ResetPasswordRequest;
 import dev.ngb.backend.event.PasswordResetIssued;
 import dev.ngb.backend.exception.InvalidPasswordResetTokenException;
-import dev.ngb.backend.exception.ValidationException;
+import dev.ngb.backend.exception.base.ValidationException;
 import dev.ngb.backend.model.AuthToken;
 import dev.ngb.backend.model.AuthTokenType;
 import dev.ngb.backend.model.User;

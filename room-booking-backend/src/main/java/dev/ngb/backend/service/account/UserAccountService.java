@@ -9,7 +9,7 @@ import dev.ngb.backend.dto.UserResponse;
 import dev.ngb.backend.dto.ChangePasswordRequest;
 import dev.ngb.backend.exception.InvalidCredentialsException;
 import dev.ngb.backend.exception.UserNotFoundException;
-import dev.ngb.backend.exception.ValidationException;
+import dev.ngb.backend.exception.base.ValidationException;
 import dev.ngb.backend.model.User;
 import dev.ngb.backend.model.AuthToken;
 import dev.ngb.backend.model.UserStatus;

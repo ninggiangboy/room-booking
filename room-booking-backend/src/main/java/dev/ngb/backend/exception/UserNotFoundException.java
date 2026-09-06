@@ -1,5 +1,7 @@
 package dev.ngb.backend.exception;
 
+import dev.ngb.backend.exception.base.NotFoundException;
+
 import java.util.Map;
 import java.util.UUID;
 
