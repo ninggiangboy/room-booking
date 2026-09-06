@@ -30,6 +30,15 @@ Track external payment attempts and refunds without coupling provider state to t
 - Cancellation, modification, and support policy own the immutable line-level refund entitlement and
   funding instruction that payment executes; that boundary is documented in
   [`../features/cancellation-modification-and-refund.md`](../features/cancellation-modification-and-refund.md).
+- Future payment/refund/payout risk inputs, challenges and scoped restrictions, fraud interpretation,
+  provider-observation evidence, chargeback-label caution, and authoritative money boundary follow
+  [`../features/trust-safety-fraud-and-moderation.md`](../features/trust-safety-fraud-and-moderation.md).
+  A provider decline, chargeback, or risk score is not itself a confirmed-fraud label.
+- Future support case strategy, frozen dispute-evidence manifests, damage/protection claim remedies,
+  explicit funders, appeal, and provider-deadline coordination follow
+  [`../features/disputes-damage-claims-and-support.md`](../features/disputes-damage-claims-and-support.md).
+  Payment retains provider movement and dispute-observation authority and executes only exact
+  authorized instructions.
 
 ## Exit criteria
 

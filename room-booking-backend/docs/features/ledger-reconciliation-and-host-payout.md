@@ -26,6 +26,12 @@ sections of [dynamic pricing and settlement](dynamic-pricing-and-settlement.md):
 - [messaging, notifications, and stay operations](messaging-notifications-and-stay-operations.md)
   owns safe delivery of payout/stay facts and supplies committed stay/incident evidence used by
   release policy;
+- [trust, safety, fraud, and content moderation](trust-safety-fraud-and-moderation.md) owns versioned
+  payout-risk decisions and explicit eligibility holds, while finance preserves host liability and
+  owns final release and in-flight payout recovery;
+- [disputes, damage claims, insurance, and customer support](disputes-damage-claims-and-support.md)
+  owns case/claim findings, remedy authorization, explicit funding, provider coordination, and
+  appeal, while finance validates and posts every hold, reserve, recovery, expense, and payout effect;
 - this feature owns accounting policy application, balanced journals, derived balances, host-fund
   release, payout instructions, finance statements, reconciliation, close, and controlled correction.
 

@@ -15,6 +15,15 @@ Booking conversations, fact-derived notification delivery, controlled arrival/ac
 observations, incidents, and evidence-backed completion requests are defined in
 [`messaging-notifications-and-stay-operations.md`](messaging-notifications-and-stay-operations.md);
 this document retains final booking lifecycle authority.
+[Trust, safety, fraud, and content moderation](trust-safety-fraud-and-moderation.md) owns versioned
+checkout risk decisions, bounded challenge/review, and scoped interventions; this document alone
+claims/releases inventory and enforces any applicable booking decision under its own invariants.
+The [disputes, damage claims, insurance, and support design](disputes-damage-claims-and-support.md)
+owns case coordination and remedy authorization but must request every booking or inventory change
+through the guarded commands defined here.
+[Reviews, aspect intelligence, and reputation](review-reputation-and-aspect-intelligence.md) owns
+directional review rights and publication after consuming the committed `StayCompleted` fact; it
+cannot infer or change the booking outcome defined here.
 
 The central product question is:
 
@@ -654,6 +663,11 @@ guest, host, smart-lock, or support policy, but should not require sensitive GPS
 occurs after contractual checkout plus grace, unless an incident/dispute requires review. No-show is
 a consequential decision with evidence, not absence of an app click. Retiring an active post-checkout
 claim is projection cleanup; booking/night history remains.
+
+Completion grants downstream eligibility; it does not itself create a review. D14 consumes the exact
+committed `StayCompleted` booking revision and applies the bounded review right, deadline,
+double-blind publication, and correction rules in
+[the review design](review-reputation-and-aspect-intelligence.md).
 
 ## iCalendar and channel managers
 

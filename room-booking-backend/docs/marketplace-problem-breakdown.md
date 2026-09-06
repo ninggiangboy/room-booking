@@ -26,6 +26,10 @@ authoritative detailed designs:
 - [Booking modification, cancellation, and refund policy](features/cancellation-modification-and-refund.md)
 - [Ledger, reconciliation, and host payout](features/ledger-reconciliation-and-host-payout.md)
 - [Messaging, notifications, and stay operations](features/messaging-notifications-and-stay-operations.md)
+- [Trust, safety, fraud, and content moderation](features/trust-safety-fraud-and-moderation.md)
+- [Disputes, damage claims, insurance, and customer support](features/disputes-damage-claims-and-support.md)
+- [Reviews, aspect intelligence, and reputation](features/review-reputation-and-aspect-intelligence.md)
+- [Data, experimentation, and machine-learning platform](features/data-experimentation-and-ml-platform.md)
 - [Current data-model roadmap](data-model/README.md)
 
 When this document and a feature-specific document discuss the same subject, the feature-specific
@@ -830,6 +834,9 @@ Start with verified reviews, category scores, one-per-direction uniqueness, basi
 rebuildable aggregates. Add double-blind publication and aspect extraction before feeding nuanced
 review signals into personalization.
 
+Detailed design:
+[Reviews, aspect intelligence, and reputation](features/review-reputation-and-aspect-intelligence.md).
+
 ### D15 — Trust, safety, fraud, and content moderation
 
 #### Problem
@@ -869,6 +876,9 @@ must span the full graph rather than live only at card checkout.
 - Manual review has SLA and safe fallback; it cannot hold guest money or host inventory indefinitely.
 - Risk holds are represented explicitly in booking and payout eligibility.
 
+Detailed design:
+[Trust, safety, fraud, and content moderation](features/trust-safety-fraud-and-moderation.md).
+
 ### D16 — Disputes, damage claims, insurance, and customer support
 
 #### Problem
@@ -897,6 +907,9 @@ policy, communication, financial remedy, and human authority.
 - Every remedy identifies who funds it and produces ledger entries where applicable.
 - AI output is advisory; an authorized human owns consequential decisions.
 - Safety and emergency flows have dedicated runbooks and access controls.
+
+Detailed design:
+[Disputes, damage claims, insurance, and customer support](features/disputes-damage-claims-and-support.md).
 
 ### D17 — Growth, loyalty, referrals, and incentives
 
@@ -958,6 +971,8 @@ platform's recommendations opaque or coercive.
 Product and model decisions require trustworthy event history and causal measurement. Transactional
 tables alone cannot answer every behavioral question, while analytics data cannot control bookings.
 
+Detailed design: [Data, experimentation, and machine-learning platform](features/data-experimentation-and-ml-platform.md).
+
 #### Subproblems
 
 - Versioned event taxonomy, schema registry, ownership, and documentation.
@@ -987,6 +1002,8 @@ tables alone cannot answer every behavioral question, while analytics data canno
 
 Ranking, review understanding, demand, price, fraud, support, and messaging models need shared
 governance and reproducibility without forcing premature infrastructure complexity.
+
+Detailed design: [Data, experimentation, and machine-learning platform](features/data-experimentation-and-ml-platform.md).
 
 #### Model families
 
@@ -1546,8 +1563,10 @@ demonstrated benefit greater than its consistency and operational cost.
 
 The detailed designs for **Availability, Reservation, and Booking Lifecycle**, **Payment
 Orchestration**, **Booking Modification, Cancellation, and Refund Policy**, **Ledger,
-Reconciliation, and Host Payout**, and **Messaging, Notifications, and Stay Operations** are now
-available:
+Reconciliation, and Host Payout**, **Messaging, Notifications, and Stay Operations**, **Trust,
+Safety, Fraud, and Content Moderation**, **Disputes, Damage Claims, Insurance, and Customer
+Support**, **Reviews, Aspect Intelligence, and Reputation**, and **Data, Experimentation, and
+Machine-learning Platform** are now available:
 
 - [`features/availability-reservation-and-booking.md`](features/availability-reservation-and-booking.md)
   defines complete-stay eligibility, inventory holds/claims, booking transitions, and the
@@ -1566,6 +1585,22 @@ available:
   defines booking-scoped conversation authority, fact-derived notification intent and delivery,
   controlled instruction/access release, readiness and stay evidence, incident triage, operational
   remedies, provider recovery, security boundaries, and rollout.
+- [`features/trust-safety-fraud-and-moderation.md`](features/trust-safety-fraud-and-moderation.md)
+  defines cross-domain signals and evidence, versioned policy decisions, scoped challenges and
+  restrictions, content moderation, human review and appeal, domain enforcement contracts,
+  adjudicated labels, model governance, privacy/fairness controls, failure recovery, and rollout.
+- [`features/disputes-damage-claims-and-support.md`](features/disputes-damage-claims-and-support.md)
+  defines booking-centric cases and timelines, classification/queues/SLA, evidence custody,
+  damage claims, payment disputes, protection/insurance integration, remedy/funding decisions,
+  agent authority, appeals, provider recovery, quality controls, and rollout.
+- [`features/review-reputation-and-aspect-intelligence.md`](features/review-reputation-and-aspect-intelligence.md)
+  defines verified directional rights, immutable revisions, double-blind reveal, exact-revision
+  moderation integration, transparent aggregates, aspect evidence/profiles, contextual reputation,
+  privacy/fairness controls, recovery, and rollout.
+- [`features/data-experimentation-and-ml-platform.md`](features/data-experimentation-and-ml-platform.md)
+  defines event/schema governance, durable ingestion, identity-safe attribution, semantic metrics,
+  deterministic experiments, point-in-time features and labels, model/artifact lifecycle, bounded
+  predictions, domain-owned decisions, privacy/fairness controls, recovery, and rollout.
 
 The immediate engineering target remains Phase 0 and Phase 1 of the availability design: record the
 unresolved launch/product decisions, then implement listing/calendar APIs and deterministic
@@ -1573,7 +1608,15 @@ complete-stay eligibility. Before payment implementation, explicit holds/claims 
 authority must be stable. The payment and cancellation designs can proceed through their Phase 0
 provider/legal/security/policy decisions in parallel. The D12–D13 design can proceed through its
 Phase 0 participant, notification, disclosure, access, incident, and stay-outcome decisions in
-parallel. The next focused design should cover D15 — Trust, Safety, Fraud, and Moderation.
+parallel. The D15 design can proceed through its Phase 0 threat, authority, policy, privacy,
+reviewer, appeal, and safety-runbook decisions in parallel. The D16 design can proceed through its
+Phase 0 support, legal, finance, claims, provider, evidence, authority, SLA, and appeal decisions in
+parallel. The D14 design can proceed through its Phase 0 review-window, publication, moderation,
+rating, privacy, fairness, reputation, and rollout decisions in parallel. The D19–D20 design can
+proceed through its Phase 0 event, metric, privacy, experiment, feature, label, model-governance,
+and ownership decisions, followed by one durable instrumented journey. The next focused design
+should cover D22 multi-market compliance and localization, with explicit links to D02 host-market
+eligibility, D07 tax/price behavior, D21 policy governance, and the launch-market decisions below.
 
 ## 16. Decisions that must be made explicitly
 
@@ -1740,21 +1783,23 @@ Completed focused designs:
 - [`cancellation-modification-and-refund.md`](features/cancellation-modification-and-refund.md)
 - [`ledger-reconciliation-and-host-payout.md`](features/ledger-reconciliation-and-host-payout.md)
 - [`messaging-notifications-and-stay-operations.md`](features/messaging-notifications-and-stay-operations.md)
+- [`trust-safety-fraud-and-moderation.md`](features/trust-safety-fraud-and-moderation.md)
+- [`disputes-damage-claims-and-support.md`](features/disputes-damage-claims-and-support.md)
+- [`review-reputation-and-aspect-intelligence.md`](features/review-reputation-and-aspect-intelligence.md)
+- [`data-experimentation-and-ml-platform.md`](features/data-experimentation-and-ml-platform.md)
 - [`personalized-discovery.md`](features/personalized-discovery.md)
 - [`dynamic-pricing-and-settlement.md`](features/dynamic-pricing-and-settlement.md)
 
 Remaining focused designs in recommended dependency order:
 
-1. `trust-safety-fraud-and-moderation.md`
-2. `disputes-damage-claims-and-support.md`
-3. `review-reputation-and-aspect-intelligence.md` if review operations need separation from discovery
-4. `data-experimentation-and-ml-platform.md`
-5. `multi-market-compliance-and-localization.md`
+1. `multi-market-compliance-and-localization.md`
 
-Proceed next with `trust-safety-fraud-and-moderation.md`. Implementation of availability/reservation
-should still reach its explicit hold/claim boundary before the payment vertical slice, while payment,
-cancellation, finance, and messaging/stay-operations Phase 0 decisions can proceed in parallel.
+Proceed next with `multi-market-compliance-and-localization.md`, combining the cross-market parts of
+D02, D07, D21, and D22 without duplicating the authoritative pricing, payment, finance, or identity
+designs. Implementation of availability/reservation should still reach its explicit hold/claim
+boundary before the payment vertical slice, while other feature Phase 0 decisions can proceed in
+parallel.
 
 Use the [standard feature-design document prompt](templates/feature-design-document-prompt.md) to
 expand any remaining domain into a consistent implementation-oriented document. A future request can
-be as short as: `Dùng feature-doc prompt chuẩn cho D15 — Trust, safety, fraud, and moderation.`
+be as short as: `Dùng feature-doc prompt chuẩn cho next document.`

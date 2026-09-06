@@ -32,6 +32,16 @@ owns the underlying quote, allocation, and tax contracts consumed by that decisi
 implementation-level design for balanced journals, host payable/release, payout, statements,
 reconciliation, and financial close is
 [`ledger-reconciliation-and-host-payout.md`](ledger-reconciliation-and-host-payout.md).
+[Trust, safety, fraud, and content moderation](trust-safety-fraud-and-moderation.md) owns versioned
+risk decisions and abuse controls for promotions, payment, and payout; it cannot alter quote math,
+secretly personalize public price, or determine financial ownership.
+[Disputes, damage claims, insurance, and customer support](disputes-damage-claims-and-support.md)
+owns case/claim remedy decisions and explicit funder selection; it consumes immutable quote and
+allocation facts and cannot rewrite historical price, tax, or ownership.
+[Data, experimentation, and machine-learning platform](data-experimentation-and-ml-platform.md)
+owns governed metrics, causal assignment/exposure, point-in-time features, artifacts, and bounded
+predictions. Pricing owns host/market constraints, deterministic calculation, quote and allocation
+truth, offer application, and the decision to reject or fall back from a prediction.
 
 ## Status and dependencies
 

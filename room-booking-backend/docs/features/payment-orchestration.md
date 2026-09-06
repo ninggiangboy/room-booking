@@ -25,8 +25,12 @@ Payment orchestration sits between three authoritative neighbors:
 - [messaging, notifications, and stay operations](messaging-notifications-and-stay-operations.md)
   owns fact-derived payment reminders and delivery evidence but cannot authorize, capture, refund,
   or change payment/booking state;
-- trust, risk, dispute, and support domains own other policy decisions that may challenge, hold,
-  contest, or remediate a payment.
+- [trust, safety, fraud, and content moderation](trust-safety-fraud-and-moderation.md) owns versioned
+  payment-risk interpretation, challenges, scoped restrictions, and fraud labels but cannot mark
+  provider money movement;
+- [disputes, damage claims, insurance, and customer support](disputes-damage-claims-and-support.md)
+  owns provider-dispute strategy, evidence manifests, participant communication, claim/remedy
+  authorization, and appeal, while payment retains provider-case and movement authority.
 
 This feature owns provider-facing payment commands, verified provider evidence, operational payment
 state, and recovery. It does not decide what a stay costs, whether inventory exists, who ultimately

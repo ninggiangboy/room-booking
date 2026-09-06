@@ -21,7 +21,18 @@ It expands D11 in the
   reservations, provider recovery, and reconciliation.
 - [Messaging, notifications, and stay operations](messaging-notifications-and-stay-operations.md) for
   delivery of committed change/cancellation facts and versioned check-in, no-show, incident, and
-  relocation evidence.
+  relocation evidence;
+- [Trust, safety, fraud, and content moderation](trust-safety-fraud-and-moderation.md) for versioned
+  risk decisions, protective restrictions, and fraud labels that may inform but never replace the
+  contractual entitlement and remedy authorities here;
+- [Disputes, damage claims, insurance, and customer support](disputes-damage-claims-and-support.md)
+  for case coordination, evidence-cited findings, exception/protection/goodwill remedy decisions,
+  funder allocation, agent authority, and appeal. Ordinary accepted-contract cancellation or
+  modification entitlement remains authoritative here.
+- [Reviews, aspect intelligence, and reputation](review-reputation-and-aspect-intelligence.md) for
+  verified directional rights and the treatment of completed, cancelled, no-show, early-departure,
+  relocated, refunded, and corrected booking outcomes. This domain supplies the contractual fact;
+  D14 owns review eligibility and publication.
 
 This feature owns the contractual decision that a booking is cancelled or replaced and the immutable
 calculation of its consequences. It does not infer that a provider refund succeeded, directly edit

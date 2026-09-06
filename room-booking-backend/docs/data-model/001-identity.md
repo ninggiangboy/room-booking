@@ -15,11 +15,23 @@ Support registration, authentication identity, authorization roles, and optional
 - Normalize email before writing even though `citext` protects uniqueness.
 - Store only a modern password hash; never store credentials or verification tokens in these tables.
 - Add `HOST` and create `host_profiles` in the same transaction when onboarding completes.
-- Treat `average_rating` and `review_count` as read-model counters whose source of truth is `reviews`.
+- Treat `average_rating` and `review_count` as read-model counters whose source of truth is qualified
+  review publication. Verified rights, immutable revisions, transparent aggregates, historical host
+  attribution, reviewer attention, and the prohibition on a generic human trust score follow
+  [`../features/review-reputation-and-aspect-intelligence.md`](../features/review-reputation-and-aspect-intelligence.md).
 - Future contact preferences, consent evidence, transactional-notification routing, booking
   participants, and purpose-bound support access follow
   [`../features/messaging-notifications-and-stay-operations.md`](../features/messaging-notifications-and-stay-operations.md);
   the existing authentication email sender is not that durable notification platform.
+- Future account-risk decisions, scoped capability restrictions, step-up challenges, account-takeover
+  review, appeals, and their boundary with the coarse `users.status` state follow
+  [`../features/trust-safety-fraud-and-moderation.md`](../features/trust-safety-fraud-and-moderation.md).
+  `identity_status = VERIFIED` is evidence of a completed verification step, not a permanent trust
+  score or authority for every future action.
+- Future support participants, verified representation, purpose-bound agent access, skill/market
+  authority, monetary limits, maker-checker, conflicts, break-glass, and access audit follow
+  [`../features/disputes-damage-claims-and-support.md`](../features/disputes-damage-claims-and-support.md).
+  Existing `ADMIN` is not an unrestricted support or financial authority.
 
 ## Exit criteria
 

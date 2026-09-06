@@ -26,8 +26,19 @@ for the stay contract and booking lifecycle. The
 modification, relocation entitlement, and financial remedy decisions. The
 [payment design](payment-orchestration.md) owns provider collection movement, while the
 [ledger and payout design](ledger-reconciliation-and-host-payout.md) owns economic postings and host
-release. This feature communicates and supplies evidence to those domains; it cannot silently
-change their state.
+release. [Trust, safety, fraud, and content moderation](trust-safety-fraud-and-moderation.md) owns
+cross-domain risk decisions, content moderation, protective restrictions, fraud labels, and appeals;
+the [disputes, damage claims, insurance, and support design](disputes-damage-claims-and-support.md)
+owns support cases, damage/provider claims, remedy authorization, financial funding decisions, and
+case appeals. This feature retains original message and incident evidence and the urgent operational
+route. It communicates and supplies evidence to those domains; it cannot silently change their state.
+[Reviews, aspect intelligence, and reputation](review-reputation-and-aspect-intelligence.md) owns
+review rights, double-blind publication, original review revisions, aggregates, and aspect evidence;
+D12 delivers its neutral reminders and D13 supplies completion evidence only.
+[Data, experimentation, and machine-learning platform](data-experimentation-and-ml-platform.md)
+owns cross-domain event/experiment contracts, point-in-time model data, and prediction lifecycle.
+D12–D13 own consent-critical delivery, message/access/incident truth, urgency floors, and deterministic
+fallback when analytical or model dependencies are unavailable.
 
 ## Status and dependencies
 
@@ -655,6 +666,11 @@ If eligible, stay operations emits a completion request/evidence bundle; booking
 guarded lifecycle transition and emits `StayCompleted`. If evidence conflicts or a material case is
 open, the result is `EXCEPTION` and enters review. Review eligibility and host-fund release consume
 the committed booking fact, not the worker's proposal.
+
+The exact directional rights, submission deadline, double-blind release, and correction behavior
+after `StayCompleted` are defined in
+[the review design](review-reputation-and-aspect-intelligence.md). D12/D13 never open a right merely
+because a reminder, access, checkout, or incident event exists.
 
 No-show is likewise an evidence-backed booking decision. Absence of a message/read/device event is
 insufficient. Host report, attempted contact, access readiness, guest response, and support evidence

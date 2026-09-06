@@ -44,6 +44,19 @@ PENDING_PAYMENT -> CONFIRMED -> COMPLETED
 - Booking-scoped conversations, fact-derived notifications, controlled arrival instructions/access,
   readiness and check-in/out evidence, incidents, and the booking-owned stay-outcome boundary follow
   [`../features/messaging-notifications-and-stay-operations.md`](../features/messaging-notifications-and-stay-operations.md).
+- Future checkout risk decisions, bounded challenge/manual-review behavior, explicit booking-action
+  restrictions, late-evidence interventions, and the decision-versus-booking authority boundary
+  follow
+  [`../features/trust-safety-fraud-and-moderation.md`](../features/trust-safety-fraud-and-moderation.md).
+  Risk cannot claim inventory or change booking state directly.
+- Future booking-centric support cases, immutable case timelines, damage claims, negotiated offers,
+  governed remedies, protection/insurance, and appeals follow
+  [`../features/disputes-damage-claims-and-support.md`](../features/disputes-damage-claims-and-support.md).
+  Support coordinates evidence and commands; booking remains the contract/inventory authority.
+- Future verified directional review rights, deadline snapshots, double-blind cycles, and booking
+  correction behavior follow
+  [`../features/review-reputation-and-aspect-intelligence.md`](../features/review-reputation-and-aspect-intelligence.md).
+  Reviews consume the committed `StayCompleted` fact; they do not decide or infer completion.
 
 ## Exit criteria
 

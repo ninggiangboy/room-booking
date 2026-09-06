@@ -28,6 +28,25 @@ The target booking-conversation, notification-intent and delivery, controlled ar
 and access, readiness, stay evidence, and operational-incident design is documented in
 [`../features/messaging-notifications-and-stay-operations.md`](../features/messaging-notifications-and-stay-operations.md).
 
+The target cross-domain signal, risk-decision, challenge/restriction, content-moderation, human
+review/appeal, fraud-label, privacy/fairness, and model-governance design is documented in
+[`../features/trust-safety-fraud-and-moderation.md`](../features/trust-safety-fraud-and-moderation.md).
+
+The target booking-centric support case, evidence custody, damage claim, payment dispute,
+protection/insurance, remedy/funding decision, agent authority, appeal, and quality design is
+documented in
+[`../features/disputes-damage-claims-and-support.md`](../features/disputes-damage-claims-and-support.md).
+
+The target verified review-right, immutable revision, double-blind publication, exact-revision
+moderation, public aggregate, aspect intelligence, reviewer attention, and contextual reputation
+design is documented in
+[`../features/review-reputation-and-aspect-intelligence.md`](../features/review-reputation-and-aspect-intelligence.md).
+
+The target event taxonomy, durable outbox/inbox, analytical lineage, semantic metric,
+experimentation, point-in-time feature/label, model registry, prediction, privacy, and recovery design
+is documented in
+[`../features/data-experimentation-and-ml-platform.md`](../features/data-experimentation-and-ml-platform.md).
+
 | Phase | Scope | Migration | Result |
 | --- | --- | --- | --- |
 | 000 | PostgreSQL foundation | `000-platform.sql` | UUID, case-insensitive email and range constraints are available |
@@ -71,8 +90,16 @@ Liquibase runs files through `db.changelog-master.yaml`. Never edit an applied c
 ## Future phases
 
 - Messaging, notifications, check-in, access, and stay operations, following the target design above.
+- Trust, safety, fraud prevention, content moderation, risk review, and appeals, following the target
+  design above.
 - Promotion/coupon rules.
 - Host payout ledger and marketplace reconciliation, following the target finance design above.
 - iCal import/export.
-- Disputes and support cases.
+- Disputes, damage claims, protection/insurance integration, and support cases, following the target
+  design above.
+- Review cycles, double-blind publication, exact-revision moderation, rebuildable rating/aspect
+  projections, and contextual reputation, following the target review design above.
+- Shared durable events, governed analytical products and metrics, deterministic experiments,
+  point-in-time ML data, model lifecycle, and bounded prediction serving, following the target
+  data/ML design above.
 - Hotel-style quantity inventory. That requires `properties -> room_types -> inventory_by_date` and must not reuse the single-inventory listing assumption silently.

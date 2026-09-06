@@ -4,6 +4,11 @@
 
 Prepare the database capabilities required by all later phases without creating domain tables.
 
+The future shared event-contract, outbox/inbox, analytical lineage, experiment, feature, model, and
+prediction foundations are specified in
+[`../features/data-experimentation-and-ml-platform.md`](../features/data-experimentation-and-ml-platform.md).
+They are not delivered by migration `000`; implementation must use new forward migrations.
+
 ## Delivered
 
 - `pgcrypto` supplies database-side UUID generation.

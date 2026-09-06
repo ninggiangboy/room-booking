@@ -21,6 +21,18 @@ Allow a host to manage one independently bookable accommodation, its images, and
 - Future exact-address/instruction release, co-host operational permissions, readiness tasks,
   maintenance, access integration, and stay incidents follow
   [`../features/messaging-notifications-and-stay-operations.md`](../features/messaging-notifications-and-stay-operations.md).
+- Future listing/media provenance, duplication and prohibited-content signals, version-bound
+  publication risk decisions, quarantine, moderation, reports, review, and appeal follow
+  [`../features/trust-safety-fraud-and-moderation.md`](../features/trust-safety-fraud-and-moderation.md).
+  The listing domain retains publication-state authority and enforces an applicable risk decision.
+- Future listing-mismatch complaints, exact-revision evidence, damage/property-loss claims,
+  support remedies, and protection-provider handoff follow
+  [`../features/disputes-damage-claims-and-support.md`](../features/disputes-damage-claims-and-support.md).
+  A support case links listing truth and requests an owner command; it never edits publication state.
+- Future verified review publication, listing-versus-host attribution, transparent rating aggregates,
+  aspect strengths/weaknesses, ownership-transfer lineage, and rebuildable quality profiles follow
+  [`../features/review-reputation-and-aspect-intelligence.md`](../features/review-reputation-and-aspect-intelligence.md).
+  Listing content remains authoritative; review-derived evidence cannot silently rewrite it.
 
 ## Exit criteria
 

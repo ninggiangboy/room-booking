@@ -34,6 +34,22 @@ financial accounting, and safe use of price/promotion models are defined separat
 [`dynamic-pricing-and-settlement.md`](dynamic-pricing-and-settlement.md). Discovery consumes its
 price and quote outputs; it does not recreate monetary logic inside the ranker.
 
+[Trust, safety, fraud, and content moderation](trust-safety-fraud-and-moderation.md) owns confirmed
+manipulation labels, content/listing/review moderation, and protective restrictions. Discovery may
+consume versioned eligible projections for retrieval quality and abuse-resistant learning, but it
+must not turn an unreviewed risk score or user report into search authority.
+
+[Reviews, aspect intelligence, and reputation](review-reputation-and-aspect-intelligence.md) owns
+verified review rights, original revisions, double-blind publication, transparent aggregates,
+aspect evidence, and reviewer-attention projections. The review-analysis sections below describe
+features consumed by discovery; D06 does not decide review eligibility, visibility, or aggregate
+truth and must respect D14 evidence/version/freshness contracts.
+
+[Data, experimentation, and machine-learning platform](data-experimentation-and-ml-platform.md)
+owns the event taxonomy, experiment assignment/exposure, point-in-time training data, feature/model
+registry, and prediction lifecycle used by discovery. D06 still owns hard eligibility, final result
+order, diversity/policy constraints, explanation, and deterministic fallback.
+
 ## Status and dependencies
 
 This is a target design, not a description of an implemented API. The current repository contains
@@ -289,6 +305,11 @@ Do not infer sensitive attributes from destination, language, names, review text
 proxies. Device and channel features require a demonstrated product benefit and privacy review.
 
 ## Review intelligence
+
+The authoritative review lifecycle, taxonomy, extraction, aggregation, correction, and contextual
+reputation design is defined in
+[Reviews, aspect intelligence, and reputation](review-reputation-and-aspect-intelligence.md). This
+section focuses on how D06 consumes those outputs for discovery and remains non-authoritative.
 
 ### Why structured category ratings are not enough
 
