@@ -2,6 +2,32 @@
 
 The database is delivered in small, ordered phases. Each phase can be deployed only after the previous phase has reached its exit criteria.
 
+For the product-wide problem map, domain boundaries, dependencies, and recommended delivery order
+beyond these initial schema phases, see
+[`../marketplace-problem-breakdown.md`](../marketplace-problem-breakdown.md).
+
+The target availability evaluation, inventory-hold, concurrency, booking lifecycle, modification,
+and external calendar design is documented in
+[`../features/availability-reservation-and-booking.md`](../features/availability-reservation-and-booking.md).
+
+The target provider-independent payment state, operation idempotency, webhook/query recovery,
+refund execution, dispute gateway, and reconciliation design is documented in
+[`../features/payment-orchestration.md`](../features/payment-orchestration.md).
+
+The target executable cancellation policy, booking revision, immutable entitlement, exact inventory
+release, modification delta, host cancellation, relocation, and refund-instruction design is
+documented in
+[`../features/cancellation-modification-and-refund.md`](../features/cancellation-modification-and-refund.md).
+
+The target accounting books, posting rules, immutable balanced journal, host payable and release,
+payout destinations/instructions, statements, reconciliation, recovery, and close design is
+documented in
+[`../features/ledger-reconciliation-and-host-payout.md`](../features/ledger-reconciliation-and-host-payout.md).
+
+The target booking-conversation, notification-intent and delivery, controlled arrival-instruction
+and access, readiness, stay evidence, and operational-incident design is documented in
+[`../features/messaging-notifications-and-stay-operations.md`](../features/messaging-notifications-and-stay-operations.md).
+
 | Phase | Scope | Migration | Result |
 | --- | --- | --- | --- |
 | 000 | PostgreSQL foundation | `000-platform.sql` | UUID, case-insensitive email and range constraints are available |
@@ -44,9 +70,9 @@ Liquibase runs files through `db.changelog-master.yaml`. Never edit an applied c
 
 ## Future phases
 
-- Messaging and notifications.
+- Messaging, notifications, check-in, access, and stay operations, following the target design above.
 - Promotion/coupon rules.
-- Host payout ledger and marketplace reconciliation.
+- Host payout ledger and marketplace reconciliation, following the target finance design above.
 - iCal import/export.
 - Disputes and support cases.
 - Hotel-style quantity inventory. That requires `properties -> room_types -> inventory_by_date` and must not reuse the single-inventory listing assumption silently.

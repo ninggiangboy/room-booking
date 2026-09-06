@@ -18,6 +18,9 @@ Allow a host to manage one independently bookable accommodation, its images, and
 - A listing may move from `DRAFT` to `PUBLISHED` only when required content, address, price and a cover image exist.
 - Store both `storage_key` and delivery URL so a CDN/provider can change later.
 - Coordinates are sufficient for MVP. Introduce PostGIS in a new migration when radius or map-boundary search is needed.
+- Future exact-address/instruction release, co-host operational permissions, readiness tasks,
+  maintenance, access integration, and stay incidents follow
+  [`../features/messaging-notifications-and-stay-operations.md`](../features/messaging-notifications-and-stay-operations.md).
 
 ## Exit criteria
 

@@ -16,6 +16,10 @@ Support registration, authentication identity, authorization roles, and optional
 - Store only a modern password hash; never store credentials or verification tokens in these tables.
 - Add `HOST` and create `host_profiles` in the same transaction when onboarding completes.
 - Treat `average_rating` and `review_count` as read-model counters whose source of truth is `reviews`.
+- Future contact preferences, consent evidence, transactional-notification routing, booking
+  participants, and purpose-bound support access follow
+  [`../features/messaging-notifications-and-stay-operations.md`](../features/messaging-notifications-and-stay-operations.md);
+  the existing authentication email sender is not that durable notification platform.
 
 ## Exit criteria
 

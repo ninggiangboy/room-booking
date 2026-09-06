@@ -16,6 +16,10 @@ Add post-stay reviews and guest favorites after the booking core is stable.
 - Optional category scores apply only to guest-to-listing reviews.
 - Publishing can be immediate for MVP. A later migration can add Airbnb-style double-blind deadlines.
 - Recalculate listing and host rating counters after a published review; counters are not the source of truth.
+- Review eligibility must consume the committed booking stay outcome, not a message read, device
+  signal, incident closure, or operations proposal; the target evidence and completion boundary is
+  documented in
+  [`../features/messaging-notifications-and-stay-operations.md`](../features/messaging-notifications-and-stay-operations.md).
 
 ## Exit criteria
 

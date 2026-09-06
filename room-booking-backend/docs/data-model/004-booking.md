@@ -26,6 +26,24 @@ PENDING_PAYMENT -> CONFIRMED -> COMPLETED
 - Both `PENDING_PAYMENT` and `CONFIRMED` block overlaps through a GiST exclusion constraint.
 - Snapshot listing name, address, cover image, check-in/out rules and cancellation policy at booking time.
 - Validate that `booking_nights` exactly covers `[check_in, check_out)` and reconciles to booking totals inside the service transaction.
+- The target state decomposition, explicit hold/claim model, idempotency, payment-expiry races,
+  modifications, and multi-unit evolution follow
+  [`../features/availability-reservation-and-booking.md`](../features/availability-reservation-and-booking.md).
+- Provider-independent collection obligations, authorization/capture, customer action, late-success
+  compensation, and verified outcome recovery follow
+  [`../features/payment-orchestration.md`](../features/payment-orchestration.md).
+- The current totals are summary foundations. Future line-item ownership, tax provenance, host
+  entitlement, and immutable financial allocation follow
+  [`../features/dynamic-pricing-and-settlement.md`](../features/dynamic-pricing-and-settlement.md).
+- The target balanced journal, host-payable release, payout, statement, and financial reconciliation
+  boundary follows
+  [`../features/ledger-reconciliation-and-host-payout.md`](../features/ledger-reconciliation-and-host-payout.md).
+- Executable accepted policy versions, immutable cancellation decisions, booking revisions,
+  modification delta holds, host cancellation/relocation, and exact release instructions follow
+  [`../features/cancellation-modification-and-refund.md`](../features/cancellation-modification-and-refund.md).
+- Booking-scoped conversations, fact-derived notifications, controlled arrival instructions/access,
+  readiness and check-in/out evidence, incidents, and the booking-owned stay-outcome boundary follow
+  [`../features/messaging-notifications-and-stay-operations.md`](../features/messaging-notifications-and-stay-operations.md).
 
 ## Exit criteria
 

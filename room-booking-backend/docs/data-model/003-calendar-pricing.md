@@ -15,6 +15,15 @@ Materialize each listing's sellable calendar so availability lookup, locking and
 - `AVAILABLE` means the host permits sale. Active bookings are checked separately and are not copied into this status.
 - Update multiple dates in one transaction and use `version` for competing host/calendar-sync writes.
 - Future seasonal or dynamic pricing rules should be compiled into this table. A booking snapshots the resulting nightly values.
+- Complete-stay eligibility, restriction precedence, explicit inventory claims, hold expiration,
+  multi-unit evolution, and external calendar synchronization follow
+  [`../features/availability-reservation-and-booking.md`](../features/availability-reservation-and-booking.md).
+- The target design for price rules, quotes, host net projections, promotions, tax, and financial
+  allocation is documented in
+  [`../features/dynamic-pricing-and-settlement.md`](../features/dynamic-pricing-and-settlement.md).
+- Authoritative ledger, realized host payable, payout, statement, and financial reconciliation
+  behavior follows
+  [`../features/ledger-reconciliation-and-host-payout.md`](../features/ledger-reconciliation-and-host-payout.md).
 
 ## Exit criteria
 

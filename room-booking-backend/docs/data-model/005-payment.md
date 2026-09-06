@@ -19,6 +19,17 @@ Track external payment attempts and refunds without coupling provider state to t
 - Mark the booking `CONFIRMED` only after a verified successful provider event.
 - Never store card or bank credentials, full provider payloads, or secrets.
 - Enforce cumulative refund amount not exceeding the succeeded payment in transactional application logic.
+- The target provider-independent obligation, attempt/operation/evidence model, authorization and
+  capture semantics, customer-action flow, webhook/query recovery, dispute gateway, and migration
+  path are documented in
+  [`../features/payment-orchestration.md`](../features/payment-orchestration.md).
+- Payment-provider state proves external money movement; it is not a ledger or a calculation of host
+  payout and platform revenue. The authoritative target journal, host-payable, payout, and
+  reconciliation design is documented in
+  [`../features/ledger-reconciliation-and-host-payout.md`](../features/ledger-reconciliation-and-host-payout.md).
+- Cancellation, modification, and support policy own the immutable line-level refund entitlement and
+  funding instruction that payment executes; that boundary is documented in
+  [`../features/cancellation-modification-and-refund.md`](../features/cancellation-modification-and-refund.md).
 
 ## Exit criteria
 

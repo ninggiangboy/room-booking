@@ -410,6 +410,10 @@ Initial ranking can combine textual match, distance, availability, price, rating
 a deterministic final tie-breaker. List and map presentations may eventually use different ranking
 strategies, but both operate on valid candidates from the same authoritative inventory rules.
 
+The evolution from this deterministic baseline to review-informed and guest-personalized ranking is
+defined in [`personalized-discovery.md`](personalized-discovery.md). Geographic retrieval remains a
+candidate-generation stage; personalization cannot override inventory or explicit search filters.
+
 ## Address capture
 
 The listing workflow should be provider-neutral:
