@@ -1,4 +1,4 @@
-package dev.ngb.backend.config;
+package dev.ngb.backend.filter;
 
 import dev.ngb.backend.dto.ApiErrorResponse;
 import dev.ngb.backend.exception.BadRequestException;

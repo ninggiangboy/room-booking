@@ -157,6 +157,7 @@ cd room-booking-backend
 
 ## Documentation
 
+- [Backend project foundations](room-booking-backend/docs/backend-project-foundations.md)
 - [Beginner's guide](room-booking-backend/GUIDE.md)
 - [Data model](room-booking-backend/docs/data-model/README.md)
 - [Global location-search design](room-booking-backend/docs/features/location-search.md)
