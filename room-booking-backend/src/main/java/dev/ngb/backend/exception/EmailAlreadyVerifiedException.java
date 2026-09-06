@@ -5,7 +5,7 @@ import java.util.Map;
 import dev.ngb.backend.model.User;
 
 /** Signals that an account does not need another email-verification token. */
-public class EmailAlreadyVerifiedException extends DomainException {
+public class EmailAlreadyVerifiedException extends ConflictException {
 
     /** Stable API code for an unnecessary verification request. */
     public static final String CODE = "EMAIL_ALREADY_VERIFIED";

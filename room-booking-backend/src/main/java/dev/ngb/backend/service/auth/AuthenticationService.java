@@ -112,7 +112,7 @@ public class AuthenticationService {
     @Transactional
     public AuthResponse registerUser(RegisterRequest request) {
         String normalizedEmail = StringUtils.normalizeLowerCase(request.email());
-        String normalizedDisplayName = StringUtils.normalize(request.displayName());
+        String normalizedDisplayName = StringUtils.normalizeRequired(request.displayName());
         passwordPolicy.validate(request.password());
 
         if (userRepository.existsByEmail(normalizedEmail)) {
@@ -132,7 +132,10 @@ public class AuthenticationService {
             throw new EmailAlreadyRegisteredException(normalizedEmail, exception);
         }
 
-        userRoleRepository.save(newUser.initialRole());
+        userRoleRepository.grantRole(
+                user.getId(),
+                newUser.initialRole().getId().getRole().name(),
+                newUser.initialRole().getCreatedAt());
         return createAuthResponse(user, List.of(Role.GUEST));
     }
 

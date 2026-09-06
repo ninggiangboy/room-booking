@@ -1,7 +1,7 @@
 package dev.ngb.backend.exception;
 
 /** Signals that a refresh token cannot be used to create another session. */
-public class InvalidRefreshTokenException extends DomainException {
+public class InvalidRefreshTokenException extends UnauthorizedException {
 
     /** Stable API code for every unusable refresh-token state. */
     public static final String CODE = "INVALID_REFRESH_TOKEN";

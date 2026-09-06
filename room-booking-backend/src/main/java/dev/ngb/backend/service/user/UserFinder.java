@@ -1,6 +1,5 @@
 package dev.ngb.backend.service.user;
 
-import java.util.Objects;
 import java.util.UUID;
 
 import dev.ngb.backend.exception.UserNotFoundException;
@@ -30,7 +29,6 @@ public class UserFinder {
      * @throws UserNotFoundException when no user has the identifier
      */
     public User findById(UUID userId) {
-        Objects.requireNonNull(userId, "userId must not be null");
         return userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
     }

@@ -4,10 +4,12 @@ import dev.ngb.backend.model.Role;
 import dev.ngb.backend.model.UserRole;
 import dev.ngb.backend.model.UserRoleId;
 import org.springframework.data.jdbc.repository.query.Query;
+import org.springframework.data.jdbc.repository.query.Modifying;
 import org.springframework.data.repository.ListCrudRepository;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -18,6 +20,34 @@ import java.util.UUID;
  * composite {@link UserRoleId} key and the {@code user_roles} table.</p>
  */
 public interface UserRoleRepository extends ListCrudRepository<UserRole, UserRoleId> {
+
+    /**
+     * Idempotently grants a role using explicit SQL for the composite primary key.
+     *
+     * <pre>{@code
+     * INSERT INTO user_roles (user_id, role, created_at)
+     * VALUES (:userId, :role, :createdAt)
+     * ON CONFLICT (user_id, role) DO NOTHING
+     * }</pre>
+     *
+     * <p>The named parameters bind the account UUID, enum name, and grant instant. The returned
+     * count is one for a new assignment and zero when the assignment already existed.</p>
+     *
+     * @param userId account receiving the role
+     * @param role enum name stored by the table constraint
+     * @param createdAt grant instant
+     * @return number of inserted rows, either zero or one
+     */
+    @Modifying
+    @Query("""
+            INSERT INTO user_roles (user_id, role, created_at)
+            VALUES (:userId, :role, :createdAt)
+            ON CONFLICT (user_id, role) DO NOTHING
+            """)
+    int grantRole(
+            @Param("userId") UUID userId,
+            @Param("role") String role,
+            @Param("createdAt") Instant createdAt);
 
     /**
      * Returns roles granted to one user in deterministic enum-text order.

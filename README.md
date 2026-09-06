@@ -11,6 +11,9 @@ Backend for a room-booking platform, built with Java and Spring Boot. The applic
 - User-requested email verification with cooldown and rolling rate limits
 - Forgot/reset password with short-lived, single-use email tokens
 - Current-user lookup and password changes
+- Atomic host onboarding with `HOST` role assignment
+- Administrator-controlled suspension/reactivation and user-initiated account soft deletion
+- Immediate rejection of access tokens belonging to suspended or deleted accounts
 - Consistent JSON error responses
 - Liquibase-managed PostgreSQL and PostGIS schema
 
@@ -82,6 +85,9 @@ docker compose -f compose.local.yaml down
 | `GET` | `/api/v1/users/email-exists?email=...` | Public | Check whether an email is registered |
 | `GET` | `/api/v1/users/me` | Bearer token | Get the current user |
 | `PUT` | `/api/v1/users/me/password` | Bearer token | Change the current user's password |
+| `POST` | `/api/v1/users/me/host-profile` | Bearer token | Create a host profile and grant the `HOST` role |
+| `DELETE` | `/api/v1/users/me` | Bearer token | Soft-delete the current account and revoke opaque tokens |
+| `PUT` | `/api/v1/admin/users/{userId}/status` | `ADMIN` bearer token | Activate or suspend a non-deleted account |
 
 Protected endpoints expect an access token:
 

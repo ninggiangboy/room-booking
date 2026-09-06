@@ -3,7 +3,7 @@ package dev.ngb.backend.exception;
 import java.util.Map;
 
 /** Signals that registration cannot use an email already owned by another account. */
-public class EmailAlreadyRegisteredException extends DomainException {
+public class EmailAlreadyRegisteredException extends ConflictException {
 
     /** Stable API code for an email registration conflict. */
     public static final String CODE = "EMAIL_ALREADY_REGISTERED";

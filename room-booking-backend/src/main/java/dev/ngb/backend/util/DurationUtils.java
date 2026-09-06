@@ -1,6 +1,7 @@
 package dev.ngb.backend.util;
 
 import java.time.Duration;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Common validation for externally configured durations.
@@ -21,7 +22,7 @@ public final class DurationUtils {
      * @return the validated duration
      * @throws IllegalArgumentException when the duration is null, zero, or negative
      */
-    public static Duration requirePositive(Duration duration, String name) {
+    public static Duration requirePositive(@Nullable Duration duration, String name) {
         if (duration == null || duration.isZero() || duration.isNegative()) {
             throw new IllegalArgumentException(name + " must be positive");
         }

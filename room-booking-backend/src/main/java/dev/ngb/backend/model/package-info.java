@@ -5,4 +5,5 @@
  * persistence session. Lombok generates mechanical constructors, builders, getters, and setters;
  * Spring Data annotations define table identity and optimistic locking.</p>
  */
+@org.jspecify.annotations.NullMarked
 package dev.ngb.backend.model;

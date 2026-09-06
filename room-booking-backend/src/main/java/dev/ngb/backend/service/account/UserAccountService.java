@@ -1,7 +1,8 @@
 package dev.ngb.backend.service.account;
 
 import java.time.Clock;
-import java.util.Objects;
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import dev.ngb.backend.dto.UserResponse;
@@ -10,6 +11,9 @@ import dev.ngb.backend.exception.InvalidCredentialsException;
 import dev.ngb.backend.exception.UserNotFoundException;
 import dev.ngb.backend.exception.ValidationException;
 import dev.ngb.backend.model.User;
+import dev.ngb.backend.model.AuthToken;
+import dev.ngb.backend.model.UserStatus;
+import dev.ngb.backend.repository.AuthTokenRepository;
 import dev.ngb.backend.repository.UserRepository;
 import dev.ngb.backend.repository.UserRoleRepository;
 import dev.ngb.backend.service.user.UserFinder;
@@ -34,6 +38,7 @@ public class UserAccountService {
 
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
+    private final AuthTokenRepository authTokenRepository;
     private final UserFinder userFinder;
     private final PasswordEncoder passwordEncoder;
     private final PasswordPolicy passwordPolicy;
@@ -51,7 +56,6 @@ public class UserAccountService {
      */
     @Transactional(readOnly = true)
     public UserResponse getUser(UUID userId) {
-        Objects.requireNonNull(userId, "userId must not be null");
         User user = userFinder.findById(userId);
         return UserResponse.from(user, userRoleRepository.findRolesByUserId(userId));
     }
@@ -61,12 +65,10 @@ public class UserAccountService {
      *
      * @param email possibly untrimmed, mixed-case query value
      * @return {@code true} when the normalized address exists
-     * @throws ValidationException when the value is null or blank
      */
     @Transactional(readOnly = true)
     public boolean emailExists(String email) {
         String normalizedEmail = StringUtils.normalizeLowerCase(email);
-        ValidationException.requireNonBlank("email", normalizedEmail);
         return userRepository.existsByEmail(normalizedEmail);
     }
 
@@ -80,7 +82,6 @@ public class UserAccountService {
      */
     @Transactional
     public void changePassword(UUID userId, ChangePasswordRequest request) {
-        Objects.requireNonNull(userId, "userId must not be null");
         passwordPolicy.validate("newPassword", request.newPassword());
 
         User user = userFinder.findById(userId);
@@ -88,8 +89,19 @@ public class UserAccountService {
         validatePasswordChange(request.currentPassword(), request.newPassword(), user.getPasswordHash());
 
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
-        user.setUpdatedAt(clock.instant());
         userRepository.save(user);
+    }
+
+    /**
+     * Soft-deletes the authenticated account and revokes all outstanding opaque tokens.
+     *
+     * @param userId authenticated account identifier
+     */
+    @Transactional
+    public void deleteOwnAccount(UUID userId) {
+        User user = findForUpdate(userId);
+        userAccountPolicy.requireActive(user);
+        applyStatus(user, UserStatus.DELETED);
     }
 
     private void validatePasswordChange(
@@ -103,6 +115,29 @@ public class UserAccountService {
             throw new ValidationException(
                     "newPassword",
                     "new password must be different from current password");
+        }
+    }
+
+    private void revokeOutstandingTokens(UUID userId, Instant now) {
+        List<AuthToken> tokens = authTokenRepository.findAllByUserIdAndConsumedAtIsNull(userId);
+        tokens.forEach(token -> token.setConsumedAt(now));
+        authTokenRepository.saveAll(tokens);
+    }
+
+    private User findForUpdate(UUID userId) {
+        return userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+    }
+
+    private void applyStatus(User user, UserStatus status) {
+        if (user.getStatus() == status) {
+            return;
+        }
+        Instant now = clock.instant();
+        user.setStatus(status);
+        userRepository.save(user);
+        if (status != UserStatus.ACTIVE) {
+            revokeOutstandingTokens(user.getId(), now);
         }
     }
 

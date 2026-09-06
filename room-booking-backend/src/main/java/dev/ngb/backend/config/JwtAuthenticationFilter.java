@@ -1,6 +1,8 @@
 package dev.ngb.backend.config;
 
 import dev.ngb.backend.service.auth.AccessTokenService;
+import dev.ngb.backend.repository.UserRepository;
+import dev.ngb.backend.repository.UserRoleRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -8,7 +10,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -35,6 +36,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final AccessTokenService accessTokenService;
+    private final UserRepository userRepository;
+    private final UserRoleRepository userRoleRepository;
 
     /**
      * Attempts bearer authentication, then always continues to the next filter.
@@ -42,17 +45,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * <p>{@code @Override} asks the compiler to verify that this signature implements the parent
      * hook. {@code @NonNull} documents Spring's nullness contract for framework-provided values.</p>
      *
-     * @param request current HTTP request
-     * @param response current HTTP response
+     * @param request     current HTTP request
+     * @param response    current HTTP response
      * @param filterChain remaining servlet filters
      * @throws ServletException when a downstream servlet/filter fails
-     * @throws IOException when request or response I/O fails
+     * @throws IOException      when request or response I/O fails
      */
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
-            @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain) throws ServletException, IOException {
+            HttpServletResponse response,
+            FilterChain filterChain) throws ServletException, IOException {
         String authorization = request.getHeader("Authorization");
         if (authorization != null
                 && authorization.startsWith(BEARER_PREFIX)

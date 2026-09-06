@@ -13,6 +13,8 @@ The repository is the backend of a room-booking platform. The Java application c
 - email verification;
 - forgot/reset password;
 - current-user lookup and password changes;
+- atomic host onboarding and role assignment;
+- administrator-controlled suspension/reactivation and terminal self-service soft deletion;
 - consistent JSON errors.
 
 The database also contains schemas for listings, availability, bookings, payments, reviews, and favorites. Those areas are a roadmap at this stage: their Liquibase migrations exist, but their Java controllers and services do not. Do not assume that a table automatically means an API feature is implemented.
@@ -362,7 +364,7 @@ Email delivery is intentionally triggered with an `AFTER_COMMIT` event listener.
 
 ### Spring Security
 
-The API is stateless; it does not create a server session. `JwtAuthenticationFilter` reads `Authorization: Bearer <token>`, verifies the JWT signature and expiration, then stores the user ID and roles in Spring's `SecurityContext` for the current request.
+The API is stateless; it does not create a server session. `JwtAuthenticationFilter` reads `Authorization: Bearer <token>`, verifies the JWT signature and expiration, then reloads the account status and current roles from PostgreSQL before storing them in Spring's `SecurityContext`. This makes role grants effective immediately and prevents an already-issued JWT from authenticating after suspension or soft deletion.
 
 Public endpoints are explicitly listed in `SecurityConfig`. Every other endpoint requires authentication. Missing authentication produces `401`; an authenticated user without sufficient authority produces `403`.
 
@@ -379,6 +381,8 @@ Raw passwords must contain at least eight characters, including an uppercase let
 ### Access tokens
 
 An access token is a signed JWT containing the user ID as `sub`, plus email and roles. It is short-lived and is not stored in the database. The server verifies its signature and expiration on every protected request.
+
+The JWT role claim is a session snapshot for clients. Authorization uses the current database roles, and the account must still be `ACTIVE`. Consequently, granting `HOST` takes effect on the next request, while suspending or deleting an account immediately blocks an otherwise valid access token.
 
 ### Opaque one-time tokens
 
@@ -459,6 +463,19 @@ curl --request POST http://localhost:8080/api/v1/auth/refresh \
 
 Save the new refresh token. The token used in this request has been consumed and cannot be used again.
 
+### Become a host
+
+An active account can create its host profile. The profile and `HOST` role are written in one transaction, and repeating the request is safe:
+
+```bash
+curl --request POST http://localhost:8080/api/v1/users/me/host-profile \
+  --header 'Authorization: Bearer PASTE_ACCESS_TOKEN_HERE' \
+  --header 'Content-Type: application/json' \
+  --data '{"bio":"I have hosted travelers since 2024."}'
+```
+
+The response contains the updated user roles and host profile. Current roles are reloaded from the database for each protected request, so the new authority is effective immediately.
+
 ### Change the password
 
 ```bash
@@ -513,6 +530,32 @@ A successful reset returns `204 No Content`. The token is single-use, and all ex
 ```bash
 curl 'http://localhost:8080/api/v1/users/email-exists?email=beginner%40example.com'
 ```
+
+### Suspend or reactivate an account
+
+An account with the `ADMIN` role can change another account's lifecycle status:
+
+```bash
+curl --request PUT http://localhost:8080/api/v1/admin/users/USER_UUID/status \
+  --header 'Authorization: Bearer PASTE_ADMIN_ACCESS_TOKEN_HERE' \
+  --header 'Content-Type: application/json' \
+  --data '{"status":"SUSPENDED"}'
+```
+
+The admin endpoint accepts only `ACTIVE` and `SUSPENDED`. It cannot delete an account or change a
+user that has already self-deleted. Suspension revokes all outstanding opaque tokens, and the
+account's access JWTs stop authenticating immediately.
+
+### Soft-delete the current account
+
+```bash
+curl --request DELETE http://localhost:8080/api/v1/users/me \
+  --header 'Authorization: Bearer PASTE_ACCESS_TOKEN_HERE'
+```
+
+The endpoint returns `204 No Content`. Historical references remain intact, but the account cannot
+log in, refresh a session, use an existing access token, request password recovery, or be restored
+through the admin status endpoint.
 
 ## 10. Error responses
 

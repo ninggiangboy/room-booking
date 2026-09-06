@@ -4,13 +4,10 @@ import java.time.Instant;
 import java.util.Map;
 
 /** Signals that an account requested verification email too frequently. */
-public class EmailVerificationRateLimitException extends DomainException {
+public class EmailVerificationRateLimitException extends TooManyRequestsException {
 
     /** Stable API code for both cooldown and rolling-window limits. */
     public static final String CODE = "EMAIL_VERIFICATION_RATE_LIMITED";
-    /** Whole-second delay exposed through the standard HTTP response header. */
-    private final long retryAfterSeconds;
-
     /**
      * Creates a rate-limit failure with a precise retry time.
      *
@@ -21,16 +18,7 @@ public class EmailVerificationRateLimitException extends DomainException {
         super(
                 CODE,
                 "too many email verification requests",
-                Map.of("retryAt", retryAt, "retryAfterSeconds", retryAfterSeconds));
-        this.retryAfterSeconds = retryAfterSeconds;
-    }
-
-    /**
-     * Returns the delay suitable for the HTTP {@code Retry-After} header.
-     *
-     * @return whole seconds until another request may be attempted
-     */
-    public long getRetryAfterSeconds() {
-        return retryAfterSeconds;
+                Map.of("retryAt", retryAt, "retryAfterSeconds", retryAfterSeconds),
+                retryAfterSeconds);
     }
 }

@@ -3,7 +3,6 @@ package dev.ngb.backend.service.auth;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Objects;
 import java.util.UUID;
 
 import dev.ngb.backend.dto.ForgotPasswordRequest;
@@ -69,7 +68,7 @@ public class PasswordResetService {
         this.passwordEncoder = passwordEncoder;
         this.passwordPolicy = passwordPolicy;
         this.eventPublisher = eventPublisher;
-        this.clock = Objects.requireNonNull(clock, "clock must not be null");
+        this.clock = clock;
         this.tokenTtl = DurationUtils.requirePositive(tokenTtl, "password reset token TTL");
     }
 
@@ -123,7 +122,6 @@ public class PasswordResetService {
         authTokenRepository.save(resetToken);
 
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
-        user.setUpdatedAt(now);
         userRepository.save(user);
 
         authTokenRepository.findAllByUserIdAndTypeAndConsumedAtIsNull(
@@ -150,7 +148,6 @@ public class PasswordResetService {
                 .type(AuthTokenType.PASSWORD_RESET)
                 .tokenHash(HashUtils.sha256Hex(rawToken))
                 .expiresAt(now.plus(tokenTtl))
-                .createdAt(now)
                 .build());
         eventPublisher.publishEvent(new PasswordResetIssued(user.getEmail(), rawToken));
     }

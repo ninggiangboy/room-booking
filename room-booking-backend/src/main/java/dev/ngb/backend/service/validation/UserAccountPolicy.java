@@ -1,6 +1,5 @@
 package dev.ngb.backend.service.validation;
 
-import java.util.Objects;
 
 import dev.ngb.backend.exception.UserAccountDisabledException;
 import dev.ngb.backend.model.User;
@@ -22,7 +21,6 @@ public class UserAccountPolicy {
      * @throws UserAccountDisabledException when the account is suspended or deleted
      */
     public void requireActive(User user) {
-        Objects.requireNonNull(user, "user must not be null");
         if (!user.isActive()) {
             throw new UserAccountDisabledException(user);
         }

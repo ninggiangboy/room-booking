@@ -6,4 +6,5 @@
  * controllers receive HTTP requests, services implement use cases, repositories access the
  * database, and models represent persisted data.</p>
  */
+@org.jspecify.annotations.NullMarked
 package dev.ngb.backend;

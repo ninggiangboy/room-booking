@@ -6,4 +6,5 @@
  * component. Bean Validation annotations on request components reject invalid input before a
  * controller invokes its service.</p>
  */
+@org.jspecify.annotations.NullMarked
 package dev.ngb.backend.dto;

@@ -4,7 +4,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 import dev.ngb.backend.dto.UserResponse;
@@ -100,7 +99,6 @@ public class EmailVerificationService {
                 .type(AuthTokenType.EMAIL_VERIFICATION)
                 .tokenHash(HashUtils.sha256Hex(rawToken))
                 .expiresAt(now.plus(tokenTtl))
-                .createdAt(now)
                 .build());
         eventPublisher.publishEvent(new EmailVerificationIssued(user.getEmail(), rawToken));
     }
@@ -119,7 +117,6 @@ public class EmailVerificationService {
      */
     @Transactional
     public void requestVerification(UUID userId) {
-        Objects.requireNonNull(userId, "userId must not be null");
         User user = userRepository.findByIdForUpdate(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
         userAccountPolicy.requireActive(user);
@@ -143,7 +140,6 @@ public class EmailVerificationService {
         if (user.getEmailVerifiedAt() == null) {
             Instant now = clock.instant();
             user.setEmailVerifiedAt(now);
-            user.setUpdatedAt(now);
             user = userRepository.save(user);
         }
 

@@ -7,6 +7,7 @@ import dev.ngb.backend.model.UserStatus;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Immutable API projection that deliberately excludes internal fields such as the password hash.
@@ -27,11 +28,11 @@ import java.util.UUID;
 public record UserResponse(
         UUID id,
         String email,
-        String phoneNumber,
+        @Nullable String phoneNumber,
         String displayName,
-        String avatarUrl,
+        @Nullable String avatarUrl,
         UserStatus status,
-        Instant emailVerifiedAt,
+        @Nullable Instant emailVerifiedAt,
         List<Role> roles) {
 
     /**

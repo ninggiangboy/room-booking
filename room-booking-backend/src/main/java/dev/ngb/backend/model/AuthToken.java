@@ -1,7 +1,6 @@
 package dev.ngb.backend.model;
 
 import java.time.Instant;
-import java.util.Objects;
 import java.util.UUID;
 
 import lombok.AccessLevel;
@@ -10,7 +9,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -31,7 +32,7 @@ public class AuthToken {
 
     /** Primary key of the token record, not the secret exposed to the client. */
     @Id
-    private UUID id;
+    private @Nullable UUID id;
     /** Account that owns this token. */
     private UUID userId;
     /** Purpose that prevents one token kind from being used as another. */
@@ -41,13 +42,13 @@ public class AuthToken {
     /** UTC instant after which the token is unusable. */
     private Instant expiresAt;
     /** UTC instant of use or revocation; {@code null} means not yet consumed. */
-    private Instant consumedAt;
-    /** UTC instant at which the token was issued. */
-    @Builder.Default
-    private Instant createdAt = Instant.now();
+    private @Nullable Instant consumedAt;
+    /** UTC instant at which the token was issued, maintained by Spring Data JDBC auditing. */
+    @CreatedDate
+    private Instant createdAt;
     /** Optimistic-lock value checked and incremented by Spring Data. */
     @Version
-    private Long version;
+    private @Nullable Long version;
 
     /**
      * Checks whether this one-time token can be consumed at the supplied instant.
@@ -56,7 +57,6 @@ public class AuthToken {
      * @return {@code true} when the token is unconsumed and has not expired
      */
     public boolean isUsableAt(Instant instant) {
-        Objects.requireNonNull(instant, "instant must not be null");
         return consumedAt == null && expiresAt.isAfter(instant);
     }
 }

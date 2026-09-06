@@ -67,6 +67,17 @@ public interface AuthTokenRepository extends ListCrudRepository<AuthToken, UUID>
             AuthTokenType type);
 
     /**
+     * Finds all outstanding tokens for an account, regardless of purpose.
+     *
+     * <p>Spring derives {@code WHERE user_id = ? AND consumed_at IS NULL}. The result may contain
+     * refresh, verification, and password-reset records and is empty when nothing is revocable.</p>
+     *
+     * @param userId token owner
+     * @return possibly empty list of unconsumed token records
+     */
+    List<AuthToken> findAllByUserIdAndConsumedAtIsNull(UUID userId);
+
+    /**
      * Finds tokens issued to one user during a rate-limit window, oldest first.
      *
      * <p>Spring Data parses {@code findAllByUserIdAndTypeAndCreatedAtGreaterThanEqual} into

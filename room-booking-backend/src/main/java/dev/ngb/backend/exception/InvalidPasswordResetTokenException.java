@@ -6,7 +6,7 @@ package dev.ngb.backend.exception;
  * <p>All invalid states intentionally share one public error to avoid exposing sensitive account
  * and token details.</p>
  */
-public class InvalidPasswordResetTokenException extends DomainException {
+public class InvalidPasswordResetTokenException extends BadRequestException {
 
     /** Stable API code for every unusable password-reset token state. */
     public static final String CODE = "INVALID_PASSWORD_RESET_TOKEN";

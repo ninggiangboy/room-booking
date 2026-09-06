@@ -6,4 +6,5 @@
  * controllers run, and the two security handlers keep authentication errors in the same JSON
  * format as normal API errors.</p>
  */
+@org.jspecify.annotations.NullMarked
 package dev.ngb.backend.config;

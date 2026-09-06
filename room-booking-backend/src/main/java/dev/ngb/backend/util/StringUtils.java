@@ -1,6 +1,7 @@
 package dev.ngb.backend.util;
 
 import java.util.Locale;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Common, null-safe string normalization operations.
@@ -19,18 +20,28 @@ public final class StringUtils {
      * @param value input text, possibly {@code null}
      * @return stripped text, or {@code null} when the input is {@code null}
      */
-    public static String normalize(String value) {
+    public static @Nullable String normalize(@Nullable String value) {
         return value == null ? null : value.strip();
     }
 
     /**
-     * Normalizes text and converts it to lower case using a stable, language-neutral locale.
+     * Normalizes required text and converts it to lower case using a stable, language-neutral
+     * locale.
      *
-     * @param value input text, possibly {@code null}
-     * @return normalized lower-case text, or {@code null}
+     * @param value non-null input text
+     * @return normalized lower-case text
      */
     public static String normalizeLowerCase(String value) {
-        String normalized = normalize(value);
-        return normalized == null ? null : normalized.toLowerCase(Locale.ROOT);
+        return value.strip().toLowerCase(Locale.ROOT);
+    }
+
+    /**
+     * Removes leading and trailing Unicode whitespace from required text.
+     *
+     * @param value non-null input text
+     * @return stripped text
+     */
+    public static String normalizeRequired(String value) {
+        return value.strip();
     }
 }

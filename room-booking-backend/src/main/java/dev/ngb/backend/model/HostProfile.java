@@ -10,7 +10,10 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -32,22 +35,22 @@ public class HostProfile {
     @Id
     private UUID userId;
     /** Optional host biography. */
-    private String bio;
+    private @Nullable String bio;
     /** Current identity-review workflow state. */
     @Builder.Default
     private IdentityStatus identityStatus = IdentityStatus.UNVERIFIED;
     /** Cached published-review average, represented exactly as a decimal. */
-    private BigDecimal averageRating;
+    private @Nullable BigDecimal averageRating;
     /** Number of reviews included in {@link #averageRating}. */
     @Builder.Default
     private int reviewCount = 0;
-    /** UTC creation time. */
-    @Builder.Default
-    private Instant createdAt = Instant.now();
-    /** UTC time of the most recent application update. */
-    @Builder.Default
-    private Instant updatedAt = Instant.now();
+    /** UTC creation time maintained by Spring Data JDBC auditing. */
+    @CreatedDate
+    private Instant createdAt;
+    /** UTC time of the most recent modification maintained by Spring Data JDBC auditing. */
+    @LastModifiedDate
+    private Instant updatedAt;
     /** Optimistic-lock version used to detect concurrent profile edits. */
     @Version
-    private Long version;
+    private @Nullable Long version;
 }

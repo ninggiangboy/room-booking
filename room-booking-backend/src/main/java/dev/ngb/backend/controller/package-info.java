@@ -5,4 +5,5 @@
  * response serialization. Controllers intentionally contain little business logic: validation,
  * transactions, and persistence belong to services.</p>
  */
+@org.jspecify.annotations.NullMarked
 package dev.ngb.backend.controller;

@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.relational.core.mapping.Table;
 
 /**
@@ -28,7 +29,7 @@ public class UserRole {
     /** Composite user-and-role primary key. */
     @Id
     private UserRoleId id;
-    /** UTC instant at which the role was granted. */
-    @Builder.Default
-    private Instant createdAt = Instant.now();
+    /** UTC instant at which the role was granted, maintained by Spring Data JDBC auditing. */
+    @CreatedDate
+    private Instant createdAt;
 }

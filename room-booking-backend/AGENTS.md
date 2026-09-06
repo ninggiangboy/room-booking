@@ -20,7 +20,7 @@ Use four-space indentation and standard Java formatting. Name classes and record
 
 ## Testing Guidelines
 
-Write JUnit tests alongside each change, with names such as `AuthenticationServiceTest` or `AuthControllerTest`. Cover successful behavior, validation failures, authorization boundaries, and persistence constraints. Use Spring test slices where possible and reserve full application-context tests for cross-layer behavior. No coverage threshold is configured; prioritize meaningful regression coverage and run `./gradlew test` before submitting.
+If the codebase has no tests yet, do not create tests solely for a task. Once testing has been established, add or update relevant tests alongside changes. Use JUnit names such as `AuthenticationServiceTest` or `AuthControllerTest`; cover successful behavior, validation failures, authorization boundaries, and persistence constraints. Use Spring test slices where possible and reserve full application-context tests for cross-layer behavior. No coverage threshold is configured; prioritize meaningful regression coverage and run `./gradlew test` before submitting when applicable.
 
 ## Comment & Documentation Guidelines
 

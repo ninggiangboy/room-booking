@@ -2,13 +2,18 @@ package dev.ngb.backend.controller;
 
 import dev.ngb.backend.dto.ChangePasswordRequest;
 import dev.ngb.backend.dto.EmailExistsResponse;
+import dev.ngb.backend.dto.HostOnboardingRequest;
+import dev.ngb.backend.dto.HostOnboardingResponse;
 import dev.ngb.backend.dto.UserResponse;
+import dev.ngb.backend.service.host.HostOnboardingService;
 import dev.ngb.backend.service.account.UserAccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,6 +34,7 @@ import java.util.UUID;
 public class UserController {
 
     private final UserAccountService userAccountService;
+    private final HostOnboardingService hostOnboardingService;
 
     /**
      * Returns the account represented by the current access token.
@@ -66,6 +72,32 @@ public class UserController {
             @AuthenticationPrincipal UUID userId,
             @Valid @RequestBody ChangePasswordRequest request) {
         userAccountService.changePassword(userId, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Atomically creates a host profile and grants the current account the host role.
+     *
+     * @param userId authenticated account identifier
+     * @param request optional host biography
+     * @return updated account roles and host profile
+     */
+    @PostMapping("/me/host-profile")
+    public HostOnboardingResponse onboardHost(
+            @AuthenticationPrincipal UUID userId,
+            @Valid @RequestBody HostOnboardingRequest request) {
+        return hostOnboardingService.onboard(userId, request);
+    }
+
+    /**
+     * Soft-deletes the current account and revokes all outstanding opaque tokens.
+     *
+     * @param userId authenticated account identifier
+     * @return {@code 204 No Content}
+     */
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteOwnAccount(@AuthenticationPrincipal UUID userId) {
+        userAccountService.deleteOwnAccount(userId);
         return ResponseEntity.noContent().build();
     }
 }

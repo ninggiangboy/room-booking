@@ -1,7 +1,7 @@
 package dev.ngb.backend.exception;
 
 /** Signals that a verification token is missing, unknown, consumed, or expired. */
-public class InvalidEmailVerificationTokenException extends DomainException {
+public class InvalidEmailVerificationTokenException extends BadRequestException {
 
     /** Stable API code for every unusable email-verification token state. */
     public static final String CODE = "INVALID_EMAIL_VERIFICATION_TOKEN";

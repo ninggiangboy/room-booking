@@ -1,7 +1,7 @@
 package dev.ngb.backend.exception;
 
 /** Reports failed authentication without revealing whether the email or password was wrong. */
-public class InvalidCredentialsException extends DomainException {
+public class InvalidCredentialsException extends UnauthorizedException {
 
     /** Stable API code shared by unknown-email and wrong-password failures. */
     public static final String CODE = "INVALID_CREDENTIALS";

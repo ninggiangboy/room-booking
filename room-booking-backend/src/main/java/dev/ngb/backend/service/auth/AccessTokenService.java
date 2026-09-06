@@ -3,10 +3,7 @@ package dev.ngb.backend.service.auth;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Date;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Function;
 
 import javax.crypto.SecretKey;
@@ -18,6 +15,7 @@ import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -53,7 +51,7 @@ public class AccessTokenService {
         this.signingKey = createSigningKey(base64Secret);
         this.accessTokenExpiration = DurationUtils.requirePositive(
                 accessTokenExpiration, "access token expiration");
-        this.clock = Objects.requireNonNull(clock, "clock must not be null");
+        this.clock = clock;
         this.jwtParser = Jwts.parser()
                 .verifyWith(signingKey)
                 .clock(() -> Date.from(this.clock.instant()))
@@ -78,9 +76,6 @@ public class AccessTokenService {
      * @return compact signed JWT string
      */
     public String generateAccessToken(UUID userId, Map<String, ?> additionalClaims) {
-        Objects.requireNonNull(userId, "userId must not be null");
-        Objects.requireNonNull(additionalClaims, "additionalClaims must not be null");
-
         Instant issuedAt = clock.instant();
         Instant expiresAt = issuedAt.plus(accessTokenExpiration);
 
@@ -111,10 +106,10 @@ public class AccessTokenService {
      * @param token compact signed JWT
      * @param claimsResolver function selecting or transforming a claim
      * @param <T> selected value type
-     * @return value produced by the resolver
+     * @return value produced by the resolver, possibly {@code null}
      */
-    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        Objects.requireNonNull(claimsResolver, "claimsResolver must not be null");
+    public <T> @Nullable T extractClaim(
+            String token, Function<Claims, @Nullable T> claimsResolver) {
         return claimsResolver.apply(extractClaims(token));
     }
 
@@ -135,7 +130,7 @@ public class AccessTokenService {
      * @param token candidate compact JWT
      * @return {@code true} when parsing, signature, and expiration checks succeed
      */
-    public boolean isTokenValid(String token) {
+    public boolean isTokenValid(@Nullable String token) {
         try {
             extractClaims(token);
             return true;
@@ -151,7 +146,7 @@ public class AccessTokenService {
      * @param expectedUserId required JWT subject
      * @return {@code true} only when the token is valid and belongs to that user
      */
-    public boolean isTokenValid(String token, UUID expectedUserId) {
+    public boolean isTokenValid(@Nullable String token, @Nullable UUID expectedUserId) {
         if (expectedUserId == null) {
             return false;
         }
@@ -163,7 +158,7 @@ public class AccessTokenService {
         }
     }
 
-    private static SecretKey createSigningKey(String base64Secret) {
+    private static SecretKey createSigningKey(@Nullable String base64Secret) {
         if (base64Secret == null || base64Secret.isBlank()) {
             throw new IllegalArgumentException("security.jwt.secret must not be blank");
         }
@@ -186,7 +181,7 @@ public class AccessTokenService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    private static void requireToken(String token) {
+    private static void requireToken(@Nullable String token) {
         if (token == null || token.isBlank()) {
             throw new IllegalArgumentException("token must not be blank");
         }

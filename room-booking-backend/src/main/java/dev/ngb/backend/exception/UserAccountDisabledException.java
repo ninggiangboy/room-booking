@@ -5,7 +5,7 @@ import java.util.Map;
 import dev.ngb.backend.model.User;
 
 /** Blocks business operations for an account whose status is not active. */
-public class UserAccountDisabledException extends DomainException {
+public class UserAccountDisabledException extends ForbiddenException {
 
     /** Stable API code for operations attempted by a non-active account. */
     public static final String CODE = "USER_ACCOUNT_DISABLED";

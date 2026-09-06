@@ -22,3 +22,11 @@ Support registration, authentication identity, authorization roles, and optional
 - A user can register with a unique email.
 - Roles can be granted without creating a second account.
 - Suspending or soft-deleting an account prevents authentication while preserving booking history.
+
+## Implementation status
+
+Complete. Registration creates the initial `GUEST` role, host onboarding atomically creates a
+`host_profiles` row and grants `HOST`, administrators can move non-deleted accounts between
+`ACTIVE` and `SUSPENDED`, and users can soft-delete only their own account. `DELETED` is terminal.
+Protected requests reload status and roles from the database, while suspension and deletion also
+revoke every outstanding opaque authentication token.

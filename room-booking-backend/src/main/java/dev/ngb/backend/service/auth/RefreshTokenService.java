@@ -3,7 +3,6 @@ package dev.ngb.backend.service.auth;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Objects;
 import java.util.UUID;
 
 import dev.ngb.backend.exception.InvalidRefreshTokenException;
@@ -43,15 +42,12 @@ public class RefreshTokenService {
             Clock clock,
             @Value("${security.jwt.refresh-token-expiration:30d}") Duration tokenExpiration) {
         this.authTokenRepository = authTokenRepository;
-        this.clock = Objects.requireNonNull(clock, "clock must not be null");
+        this.clock = clock;
         this.tokenExpiration = DurationUtils.requirePositive(
                 tokenExpiration, "refresh token expiration");
     }
 
     String issue(User user) {
-        Objects.requireNonNull(user, "user must not be null");
-        Objects.requireNonNull(user.getId(), "user id must not be null");
-
         String rawToken = SecureTokenUtils.generateUrlSafe();
         Instant now = clock.instant();
         // Only the SHA-256 hash is persisted; the raw secret is returned once to the client.
@@ -61,7 +57,6 @@ public class RefreshTokenService {
                 .type(AuthTokenType.REFRESH_TOKEN)
                 .tokenHash(HashUtils.sha256Hex(rawToken))
                 .expiresAt(now.plus(tokenExpiration))
-                .createdAt(now)
                 .build());
         return rawToken;
     }
