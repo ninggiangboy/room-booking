@@ -44,6 +44,10 @@ Examples of those consuming domains include:
 
 ## Status and dependencies
 
+The durable request/correlation, outbox/inbox, event-envelope, audit, security, and compatible
+migration primitives come from the [platform foundation](platform-foundation.md). D19/D20 own their
+taxonomy, schema governance, analytical lineage, experiment, feature, and model semantics.
+
 [Vietnam market readiness and internationalization](multi-market-compliance-and-localization.md)
 owns market/locale/privacy activation context and the rule that models are validated per market.
 
@@ -93,6 +97,11 @@ Recommended dependency order:
 
 This platform depends on stable domain identifiers and committed outcome facts. It must not delay
 correct non-ML implementations of search, quote, booking, payment, review, safety, or support.
+
+The [self-hosted AI/ML implementation playbook](../ai-ml-implementation-playbook.md) selects the
+initial CPU-only technology stack, Python service topology, internal artifact flow, common inference
+contract, and implementation order for engineers applying this target design. It is subordinate to
+the invariants and completion gates in this document and the consuming feature designs.
 
 ## Goals
 

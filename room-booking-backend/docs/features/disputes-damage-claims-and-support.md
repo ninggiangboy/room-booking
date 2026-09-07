@@ -1223,7 +1223,7 @@ respectively. They cannot rewrite the reviewed decision.
 
 | Neighbor | Supplies to D16 | Consumes from D16 |
 | --- | --- | --- |
-| Identity/authorization | Actor, roles, session assurance, delegation, account status | Purpose-bound access audit and supported account-action requests |
+| [Identity/authorization](identity-accounts-and-access.md) | Actor, roles, session assurance, delegation, account status | Purpose-bound access audit and supported account-action requests |
 | Booking/inventory | Contract snapshots, state, claim/revision outcomes | Authorized cancellation/modification/relocation commands |
 | Cancellation/tax/quote | Ordinary entitlement preview/decision, line allocation, tax treatment | Exception/remedy request with policy and evidence |
 | Payment | Movement/provider-dispute facts and execution result | Exact refund or dispute-strategy/evidence instruction |

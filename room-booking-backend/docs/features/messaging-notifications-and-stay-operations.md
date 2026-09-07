@@ -278,7 +278,7 @@ support domains accept or reject those commands under their own current versions
 
 | Fact or decision | Authoritative owner | Use in this feature |
 | --- | --- | --- |
-| Actor/session/role/contact verification | Identity and access | Authorization and routable contact input |
+| Actor/session/role/contact verification | [Identity and access](identity-accounts-and-access.md) | Authorization and routable contact input |
 | Co-host/listing operational permission | Listing/delegation policy | Conversation and task membership |
 | Current listing content and address | Listing catalog | Draft instructions; never rewrite booking history |
 | Accepted address/rules/time zone/check-in snapshot | Booking | Contractual instruction and schedule input |

@@ -38,6 +38,11 @@ owns collected cash, or whether a guest is contractually entitled to a refund.
 
 ## Status and dependencies
 
+The shared identity, time, money, request/error, idempotency, outbox/inbox, audit, secret, and
+compatible migration contracts come from the [platform foundation](platform-foundation.md). Payment
+adds provider-operation identities, monetary ceilings, verified evidence, and unknown-outcome
+recovery.
+
 [Vietnam market readiness and internationalization](multi-market-compliance-and-localization.md)
 owns the approved legal-entity, VND, provider-account, and effective policy context used here.
 

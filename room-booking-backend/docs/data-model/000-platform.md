@@ -5,10 +5,16 @@
 Record the PostgreSQL capabilities installed by the first historical changeset without creating
 domain tables.
 
-The future shared event-contract, outbox/inbox, analytical lineage, experiment, feature, model, and
-prediction foundations are specified in
+The target shared identifier, time, locale, money, request/error, command-idempotency, outbox/inbox,
+audit, security, compatible-deployment, and recovery contracts are specified in
+[`../features/platform-foundation.md`](../features/platform-foundation.md). They are not delivered by
+migration `000`; implementation must use new forward migrations.
+
+The future event taxonomy/schema governance, analytical lineage, experiment, feature, model, and
+prediction contracts are specified in
 [`../features/data-experimentation-and-ml-platform.md`](../features/data-experimentation-and-ml-platform.md).
-They are not delivered by migration `000`; implementation must use new forward migrations.
+D00 owns the durable transport primitives while D19/D20 own taxonomy, data, experiment, and model
+governance.
 
 ## Delivered
 

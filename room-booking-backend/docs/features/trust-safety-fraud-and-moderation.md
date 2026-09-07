@@ -561,7 +561,8 @@ device/session, role grant, host onboarding, and sensitive profile change. Contr
 credential/session intelligence, attempt velocity, breached-secret checks where approved, verified
 contact freshness, security-change cooldown, device/session anomaly, and step-up authentication.
 
-Identity owns credential validation, session creation/revocation, recovery proof, and account status.
+[Identity](identity-accounts-and-access.md) owns credential validation, session creation/revocation,
+assurance and step-up, recovery proof, capability grants, and account status.
 D15 may return challenge/deny or request a scoped restriction/session revocation. A global
 `SUSPENDED` state is reserved for policy-approved account-wide incapacity; lower-risk behavior uses
 scoped restrictions. Recovery must account for attacker-controlled contact changes and retain a safe

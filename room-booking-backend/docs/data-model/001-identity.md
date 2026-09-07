@@ -12,6 +12,12 @@ Support registration, authentication identity, authorization roles, and optional
 
 ## Service rules
 
+- The target principal and organization model, account lifecycle, credential and session integrity,
+  refresh reuse detection, assurance and step-up, resource-scoped capability authorization, bounded
+  delegation, account recovery, operator authority decomposition, and erasure boundaries follow
+  [`../features/identity-accounts-and-access.md`](../features/identity-accounts-and-access.md).
+  `users`, `user_roles`, and `auth_tokens` are historical foundations: `user_roles` answers whether
+  an account holds a role, never whether it may act on a specific resource.
 - Normalize email before writing even though `citext` protects uniqueness.
 - Store only a modern password hash; never store credentials or verification tokens in these tables.
 - Add `HOST` and create `host_profiles` in the same transaction when onboarding completes.
@@ -41,8 +47,14 @@ Support registration, authentication identity, authorization roles, and optional
 
 ## Implementation status
 
-Complete. Registration creates the initial `GUEST` role, host onboarding atomically creates a
-`host_profiles` row and grants `HOST`, administrators can move non-deleted accounts between
-`ACTIVE` and `SUSPENDED`, and users can soft-delete only their own account. `DELETED` is terminal.
-Protected requests reload status and roles from the database, while suspension and deletion also
-revoke every outstanding opaque authentication token.
+The schema is complete. Registration creates the initial `GUEST` role, host onboarding atomically
+creates a `host_profiles` row and grants `HOST`, and users can soft-delete only their own account.
+`DELETED` is terminal. Protected requests reload status and roles from the database, while deletion
+also revokes every outstanding opaque authentication token.
+
+The `SUSPENDED` status is enforced on the authentication path but no application code writes it:
+`SecurityConfig` reserves `/api/v1/admin/**` for the `ADMIN` role and `UpdateUserStatusRequest`
+exists, yet no controller or service implements administrator-driven suspension or reactivation.
+Treat it as a target capability described in
+[`../features/identity-accounts-and-access.md`](../features/identity-accounts-and-access.md), which
+also replaces the coarse `ADMIN` role with scoped operator capabilities.

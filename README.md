@@ -162,6 +162,8 @@ cd room-booking-backend
 - [Marketplace target state and implementation dependencies](room-booking-backend/docs/marketplace-problem-breakdown.md)
 - [Standard feature-design document prompt](room-booking-backend/docs/templates/feature-design-document-prompt.md)
 - [Data model](room-booking-backend/docs/data-model/README.md)
+- [Platform foundation design](room-booking-backend/docs/features/platform-foundation.md)
+- [Identity, accounts, and access design](room-booking-backend/docs/features/identity-accounts-and-access.md)
 - [Global location-search design](room-booking-backend/docs/features/location-search.md)
 - [Personalized search and discovery design](room-booking-backend/docs/features/personalized-discovery.md)
 - [Dynamic pricing, quotes, and settlement design](room-booking-backend/docs/features/dynamic-pricing-and-settlement.md)

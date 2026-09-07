@@ -32,6 +32,10 @@ The central product question is:
 
 ## Status and dependencies
 
+The shared identity, time, money, request/error, idempotency, outbox/inbox, audit, and compatible
+migration contracts come from the [platform foundation](platform-foundation.md). This feature adds
+the stricter inventory and booking invariants to those primitives.
+
 [Vietnam market readiness and internationalization](multi-market-compliance-and-localization.md)
 owns market, currency, locale, policy-bundle, and provider context consumed by this design.
 

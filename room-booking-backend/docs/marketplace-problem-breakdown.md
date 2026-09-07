@@ -21,6 +21,8 @@ implementation and verification only; every capability marked **required** must 
 gate before the release is considered complete. Individual feature documents remain the
 authoritative detailed designs:
 
+- [Platform foundation](features/platform-foundation.md)
+- [Identity, accounts, and access](features/identity-accounts-and-access.md)
 - [Global location and address search](features/location-search.md)
 - [Personalized search and discovery](features/personalized-discovery.md)
 - [Dynamic pricing, quotes, money allocation, and settlement](features/dynamic-pricing-and-settlement.md)
@@ -35,6 +37,10 @@ authoritative detailed designs:
 - [Data, experimentation, and machine-learning platform](features/data-experimentation-and-ml-platform.md)
 - [Vietnam market readiness and internationalization](features/multi-market-compliance-and-localization.md)
 - [Data-model history and target gaps](data-model/README.md)
+
+The [self-hosted AI/ML implementation playbook](ai-ml-implementation-playbook.md) gives engineers a
+concrete CPU-only stack and delivery path for applying the D19/D20 target design. It is an
+implementation companion and does not override the authoritative feature contracts.
 
 When this document and a feature-specific document discuss the same subject, the feature-specific
 document owns the detailed algorithm and contract. This document owns the platform-wide boundary,
@@ -339,6 +345,8 @@ contracts, migrations, audit, and events are improvised per feature, cross-domai
 Define shared types and conventions, database constraints, error envelopes, security baseline, audit
 metadata, and the outbox pattern before implementing multi-step external workflows.
 
+Detailed design: [Platform foundation](features/platform-foundation.md).
+
 ### D01 — Identity, accounts, and access
 
 #### Problem
@@ -368,6 +376,8 @@ access without enabling account takeover.
 
 An action can be attributed to one actor and authorization context; sessions can be revoked; role
 checks and resource ownership are enforced server-side; account recovery cannot bypass safeguards.
+
+Detailed design: [Identity, accounts, and access](features/identity-accounts-and-access.md).
 
 ### D02 — Host onboarding, KYC/KYB, and market eligibility
 
@@ -1649,13 +1659,20 @@ demonstrated benefit greater than its consistency and operational cost.
 
 ## 15. Gap from current repository to target release
 
-The detailed designs for **Availability, Reservation, and Booking Lifecycle**, **Payment
-Orchestration**, **Booking Modification, Cancellation, and Refund Policy**, **Ledger,
+The detailed designs for **Platform Foundation**, **Identity, Accounts, and Access**,
+**Availability, Reservation, and Booking Lifecycle**, **Payment Orchestration**, **Booking Modification, Cancellation, and Refund Policy**, **Ledger,
 Reconciliation, and Host Payout**, **Messaging, Notifications, and Stay Operations**, **Trust,
 Safety, Fraud, and Content Moderation**, **Disputes, Damage Claims, Insurance, and Customer
 Support**, **Reviews, Aspect Intelligence, and Reputation**, **Data, Experimentation, and
 Machine-learning Platform**, and **Vietnam Market Readiness and Internationalization** are now available:
 
+- [`features/platform-foundation.md`](features/platform-foundation.md) defines canonical identity,
+  time, locale, money, request/actor context, API errors, idempotency, outbox/inbox, audit,
+  compatible migration, security, observability, and recovery primitives used across domains;
+- [`features/identity-accounts-and-access.md`](features/identity-accounts-and-access.md) defines the
+  principal model, account lifecycle, credential and session integrity, refresh reuse detection,
+  assurance and step-up, resource-scoped capability authorization, organizations and bounded
+  delegation, account recovery, operator authority decomposition, and erasure boundaries;
 - [`features/availability-reservation-and-booking.md`](features/availability-reservation-and-booking.md)
   defines complete-stay eligibility, inventory holds/claims, booking transitions, and the
   payment-versus-expiry race;
@@ -1864,6 +1881,8 @@ queues and an accountable operational owner.
 
 Completed focused designs:
 
+- [`platform-foundation.md`](features/platform-foundation.md)
+- [`identity-accounts-and-access.md`](features/identity-accounts-and-access.md)
 - [`availability-reservation-and-booking.md`](features/availability-reservation-and-booking.md)
 - [`payment-orchestration.md`](features/payment-orchestration.md)
 - [`cancellation-modification-and-refund.md`](features/cancellation-modification-and-refund.md)
@@ -1876,11 +1895,17 @@ Completed focused designs:
 - [`personalized-discovery.md`](features/personalized-discovery.md)
 - [`dynamic-pricing-and-settlement.md`](features/dynamic-pricing-and-settlement.md)
 
-The focused target designs are complete, including
+The cross-market focused target design is also complete:
 [`multi-market-compliance-and-localization.md`](features/multi-market-compliance-and-localization.md),
 which combines the cross-market parts of D02, D07, D21, and D22 without duplicating pricing,
-payment, finance, or identity authority. New design documents are added only for a newly approved
-product category or when an existing authority cannot safely contain a required contract.
+payment, finance, or identity authority.
+
+The remaining domains without their own authoritative focused design, in checklist order, are D02,
+D03, D17, D18, D21, and D23. D22's cross-market contract is covered by the document above;
+domain-specific privacy and security rules also remain normative in each affected feature design.
+D01 is covered by [`identity-accounts-and-access.md`](features/identity-accounts-and-access.md),
+which also fixes the identity boundary D02 must build on. The next document selected by checklist
+order is therefore D02 unless an explicit request names a different domain.
 
 Use the [standard feature-design document prompt](templates/feature-design-document-prompt.md) to
 expand any remaining domain into a consistent implementation-oriented document. A future request can

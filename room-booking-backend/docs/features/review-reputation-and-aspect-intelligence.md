@@ -1483,7 +1483,7 @@ pagination, translation selection, current visibility, and freshness metadata.
 | D16 | Case/evidence references and authorized findings | Exact review/publication evidence and correction/moderation request path |
 | Listing/D03 | Listing identity/version and authorized representatives | Qualified public review/quality projection; no publication command |
 | Discovery/D06 | Purpose/feature contract and deletion controls | Versioned listing/aspect and reviewer-attention evidence |
-| Identity/D01 | actor status, role, delegation, privacy state | Public review attribution and purpose-bound reputation facts |
+| [Identity/D01](identity-accounts-and-access.md) | actor status, role, delegation, privacy state | Public review attribution and purpose-bound reputation facts |
 | D19/D20 | governed experiment/model registry and point-in-time tooling | review events, labels, extraction evaluation and feature snapshots |
 
 ## API behavior

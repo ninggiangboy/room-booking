@@ -16,6 +16,11 @@ The central question is:
 
 ## Status and dependencies
 
+Canonical country, locale, currency, IANA time-zone, money, request/event, audit, and migration
+primitives come from the [platform foundation](platform-foundation.md). This feature owns which
+market combinations and effective policies/providers are approved and what context must be
+snapshotted.
+
 This is a target design. No market registry, legal-entity configuration, localized policy service,
 or Vietnam provider configuration is implemented in Java. Existing tables contain partial country,
 currency, and time-zone fields but do not constitute market readiness.

@@ -9,6 +9,15 @@ For the product-wide problem map, domain boundaries, implementation dependencies
 completion gates beyond these historical changesets, see
 [`../marketplace-problem-breakdown.md`](../marketplace-problem-breakdown.md).
 
+The target shared identifier, time, locale, money, request/error, command-idempotency, outbox/inbox,
+audit, compatible migration/deployment, security, observability, and recovery primitives are
+documented in [`../features/platform-foundation.md`](../features/platform-foundation.md).
+
+The target principal and organization model, account lifecycle, credential/session integrity,
+refresh reuse detection, assurance and step-up, resource-scoped capability authorization, bounded
+delegation, account recovery, operator authority, and erasure design is documented in
+[`../features/identity-accounts-and-access.md`](../features/identity-accounts-and-access.md).
+
 The target availability evaluation, inventory-hold, concurrency, booking lifecycle, modification,
 and external calendar design is documented in
 [`../features/availability-reservation-and-booking.md`](../features/availability-reservation-and-booking.md).
@@ -103,6 +112,9 @@ Liquibase runs files through `db.changelog-master.yaml`. Never edit an applied c
 
 ## Forward migrations required for the target release
 
+- Account holders, organizations and membership, contact channels, durable sessions, credentials,
+  capability grants and scoped restrictions, authentication-attempt evidence, and identity audit,
+  following the target identity design above.
 - Property, accommodation type, physical unit, public listing, rate plan, and both inventory modes.
 - Market-keyed configuration and immutable Vietnam policy/provider/tax/invoice provenance.
 - Messaging, notifications, check-in, access, and stay operations, following the target design above.
@@ -115,9 +127,11 @@ Liquibase runs files through `db.changelog-master.yaml`. Never edit an applied c
   design above.
 - Review cycles, double-blind publication, exact-revision moderation, rebuildable rating/aspect
   projections, and contextual reputation, following the target review design above.
-- Shared durable events, governed analytical products and metrics, deterministic experiments,
-  point-in-time ML data, model lifecycle, bounded prediction serving, and model-artifact lineage,
-  following the target data/ML design above.
+- Shared command idempotency, durable outbox/inbox, append-only audit, and compatible deployment
+  primitives, following the target platform-foundation design above.
+- Governed event taxonomy, analytical products and metrics, deterministic experiments, point-in-time
+  ML data, model lifecycle, bounded prediction serving, and model-artifact lineage, following the
+  target data/ML design above.
 
 These are cumulative target gaps, not optional product phases. Their migration order follows foreign
 keys, backfill safety, and compatibility requirements; the release is incomplete until every

@@ -45,6 +45,10 @@ truth, offer application, and the decision to reject or fall back from a predict
 
 ## Status and dependencies
 
+The shared time, currency/money, request/error, idempotency, outbox/inbox, audit, and compatible
+migration contracts come from the [platform foundation](platform-foundation.md). This feature owns
+the stricter economic meaning, allocation, rounding, and financial invariants.
+
 [Vietnam market readiness and internationalization](multi-market-compliance-and-localization.md)
 owns market activation and approved legal/tax/provider context; pricing snapshots its exact version.
 
