@@ -41,6 +41,9 @@ delivery and operational observations as entitlement authority.
 
 ## Status and dependencies
 
+[Vietnam market readiness and internationalization](multi-market-compliance-and-localization.md)
+owns the effective market/legal/policy context snapshotted by cancellation and modification decisions.
+
 This is a target design. The repository contains schema foundations but no Java cancellation,
 modification, refund-policy, relocation, or support-remedy implementation.
 
@@ -80,10 +83,10 @@ Recommended dependency order:
 7. Add shortening, extension, date movement, party changes, and replacement bookings.
 8. Add governed exception programs only after evidence, approval, funding, and audit controls exist.
 
-The smallest correct vertical slice is one confirmed, single-unit, single-currency booking cancelled
-in full by the guest before check-in under one approved policy family. It still needs line-level
-explanation, exact inventory release, an immutable entitlement decision, idempotent refund handoff,
-and recovery from partial failure.
+The target release covers confirmed unique-rental and pooled hotel bookings in VND across pre-stay,
+in-stay, host-initiated, no-show, shortening, extension, relocation, and governed exception flows.
+Every flow needs line-level explanation, exact inventory release or quantity adjustment, an
+immutable entitlement decision, idempotent refund handoff, and recovery from partial failure.
 
 ## Goals
 
@@ -118,8 +121,8 @@ and recovery from partial failure.
   domains may produce an approved remedy or override consumed here.
 - Building unrestricted administrative create/read/update/delete (CRUD) operations over bookings,
   policy decisions, refunds, or ledger entries.
-- Launching general multi-listing carts, split stays, hotel quantity inventory, cross-currency
-  replacement, or automatic re-accommodation in the first release.
+- General multi-property carts, split-stay packages, cross-currency replacement, and auction flows;
+  these are excluded product categories. Hotel quantity and governed re-accommodation are required.
 - Allowing a machine-learning (ML) model or large language model (LLM) to decide entitlement, legal
   eligibility, authoritative money, inventory release, or booking state.
 
@@ -1726,9 +1729,11 @@ Every advisory output stores model/version, features/provenance, confidence, all
 decision owner, and fallback. Low confidence, model outage, or policy conflict falls back to
 deterministic ordering/templates or human review without changing contractual truth.
 
-## Rollout plan
+## Target-release dependencies and completion gates
 
-### Phase 0 — Product, legal, finance, and operational decisions
+These cumulative dependencies all belong to the target release; none is a reduced launch scope.
+
+### Dependency 0 — Product, legal, finance, and operational decisions
 
 Choose first market/currency/legal entity, contract parties, policy families, disclosure/consent,
 official check-in anchor, grace/cutoff semantics, fee/tax/promotion behavior, host liability,
@@ -1738,7 +1743,7 @@ threat model, provider capabilities, and operational ownership.
 Exit: each unresolved launch choice has an accountable owner, approved default, testable examples,
 and revisit trigger; no implementation relies on the legacy policy label alone.
 
-### Phase 1 — Executable policy and immutable booking foundation
+### Dependency 1 — Executable policy and immutable booking foundation
 
 Add forward schemas for policy/disclosure versions, acceptance, booking revisions, line-level
 financial allocation, evaluator traces, idempotency, timeline, and outbox. Backfill legacy bookings
@@ -1748,7 +1753,7 @@ in shadow/read-only mode.
 Exit: approved golden vectors pass; every newly confirmed booking references an executable policy and
 disclosure; shadow previews reconcile and legacy ambiguity is measurable.
 
-### Phase 2 — Full pre-stay guest cancellation
+### Dependency 2 — Full pre-stay guest cancellation
 
 Implement preview/acceptance, locked booking transition, exact single-unit claim release, immutable
 decision lines, downstream instructions, outbox, user-safe response, replay, and recovery. Start with
@@ -1757,7 +1762,7 @@ one policy family/provider path if needed, while preserving the target contracts
 Exit: concurrent/replayed cancellation releases once, returns one entitlement, survives crash at
 every boundary, and exposes refund as separately pending/succeeded/failed.
 
-### Phase 3 — Refund, ledger, payout, tax, and document integration
+### Dependency 3 — Refund, ledger, payout, tax, and document integration
 
 Connect exact refund instructions to payment reservations/operations; post balanced finance effects;
 hold or recover host payout; issue required invoice/credit-note changes; reconcile provider and
@@ -1766,7 +1771,7 @@ ledger outcomes. Add finance/support exception queues and runbooks.
 Exit: reference bookings reconcile guest, host, platform, tax, promotion, payment, ledger, payout,
 and document results; no failed downstream step changes the committed entitlement.
 
-### Phase 4 — Host cancellation and relocation
+### Dependency 4 — Host cancellation and relocation
 
 Add host-attributed preview/request, step-up, approvals, performance consequences, payout recovery,
 guest make-whole, relocation case/budget/offer flow, evidence, SLA, and appeals.
@@ -1774,7 +1779,7 @@ guest make-whole, relocation case/budget/offer flow, evidence, SLA, and appeals.
 Exit: near-arrival host cancellation reaches support within SLA, guest remedies and funding are
 traceable, replacement requires consent/normal booking commit, and host/platform effects reconcile.
 
-### Phase 5 — Partial cancellation, no-show, early departure, and support remedies
+### Dependency 5 — Partial cancellation, no-show, early departure, and support remedies
 
 Add per-night/quantity entitlement, consumption evidence, future-night release, no-show decision,
 host waiver, partial refund, goodwill budget, maker-checker, and correction/appeal.
@@ -1782,7 +1787,7 @@ host waiver, partial refund, goodwill budget, maker-checker, and correction/appe
 Exit: partial actions cannot reuse source allocation or over-release inventory; consequential manual
 actions are bounded, approved, audited, and recoverable.
 
-### Phase 6 — Extension and shortening
+### Dependency 6 — Extension and shortening
 
 Implement immutable booking revisions, complete proposed quote/delta allocation, net-new delta hold,
 positive authorization/negative refund instruction, atomic revision/claim commit, and compensation.
@@ -1790,11 +1795,11 @@ positive authorization/negative refund instruction, atomic revision/claim commit
 Exit: extend/shorten race tests preserve the original until commit, changes reconcile line by line,
 and failure releases only delta resources.
 
-### Phase 7 — General modification and governed exception programs
+### Dependency 7 — General modification and governed exception programs
 
 Add overlapping/disjoint date movement, party/rate-plan/service changes, host offers, linked listing
-replacement, then versioned extenuating-circumstance programs and controlled bulk execution. Add
-quantity inventory only through its separately approved model.
+replacement, then versioned extenuating-circumstance programs and controlled bulk execution. Apply
+the shared accommodation-type quantity model to both cancellation and replacement claims.
 
 Exit: all supported change types have explicit consent, policy, inventory, payment, and rollback
 semantics; bulk programs are dry-run, approved, budgeted, restartable, and auditable.
@@ -1910,9 +1915,9 @@ alternatives, decision, consequences, rollout, and revisit trigger:
 23. Forward migration, backfill, dual-write/read, rollout cohort, compatibility duration, and the
     conditions for retiring legacy policy/status/summary fields.
 
-Recommended default for the first release: one market and currency, one approved policy family,
-single-unit confirmed bookings, full guest cancellation before check-in, exact-preview acceptance,
+Target-release default: Vietnam and VND, approved versioned policy families, unique-rental and pooled
+hotel bookings, every supported cancellation/modification intent above, exact-preview acceptance,
 server receipt time with a snapshotted check-in anchor, immediate transactional claim release,
 line-level immutable entitlement, asynchronous provider refund, and manual review for ambiguous
-legacy/exception cases. Add host cancellation and modification only after payment, ledger, payout,
-and support recovery paths are operable.
+legacy/exception cases. Host cancellation and modification depend on payment, ledger, payout, and
+support recovery paths but remain part of the same completion gate.

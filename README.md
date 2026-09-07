@@ -30,7 +30,7 @@ Backend for a room-booking platform, built with Java and Spring Boot. The applic
 - Liquibase
 - Gradle
 - Mailpit for local email testing
-- MinIO for future object-storage features
+- MinIO for target media and protected-evidence object storage
 
 ## Prerequisites
 
@@ -159,7 +159,7 @@ cd room-booking-backend
 
 - [Backend project foundations](room-booking-backend/docs/backend-project-foundations.md)
 - [Beginner's guide](room-booking-backend/GUIDE.md)
-- [Marketplace problem breakdown and delivery roadmap](room-booking-backend/docs/marketplace-problem-breakdown.md)
+- [Marketplace target state and implementation dependencies](room-booking-backend/docs/marketplace-problem-breakdown.md)
 - [Standard feature-design document prompt](room-booking-backend/docs/templates/feature-design-document-prompt.md)
 - [Data model](room-booking-backend/docs/data-model/README.md)
 - [Global location-search design](room-booking-backend/docs/features/location-search.md)
@@ -174,6 +174,7 @@ cd room-booking-backend
 - [Disputes, damage claims, insurance, and customer support design](room-booking-backend/docs/features/disputes-damage-claims-and-support.md)
 - [Reviews, aspect intelligence, and reputation design](room-booking-backend/docs/features/review-reputation-and-aspect-intelligence.md)
 - [Data, experimentation, and machine-learning platform design](room-booking-backend/docs/features/data-experimentation-and-ml-platform.md)
+- [Vietnam market readiness and internationalization design](room-booking-backend/docs/features/multi-market-compliance-and-localization.md)
 - [Location-search schema](room-booking-backend/docs/data-model/010-location-search.md)
 - [Comment and documentation maintenance](room-booking-backend/GUIDE.md#18-maintaining-comments-and-documentation)
 - [Commit code guide](room-booking-backend/GUIDE.md#19-committing-code)

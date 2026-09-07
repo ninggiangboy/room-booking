@@ -4,7 +4,7 @@
 
 Migration `010-location-search.sql` adds the persistence and indexing required by the global
 location-search feature. The numeric prefix is the next Liquibase migration number; it does not
-introduce a new product or data-model roadmap phase.
+introduce a reduced product increment or redefine the target release.
 
 The complete product behavior, source strategy, import pipeline, API concepts, privacy rules, and
 rollout plan live in [`docs/features/location-search.md`](../features/location-search.md).

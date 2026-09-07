@@ -32,6 +32,9 @@ The central product question is:
 
 ## Status and dependencies
 
+[Vietnam market readiness and internationalization](multi-market-compliance-and-localization.md)
+owns market, currency, locale, policy-bundle, and provider context consumed by this design.
+
 This is a target design, not a description of implemented Java APIs. The current repository already
 provides useful transactional foundations:
 
@@ -51,13 +54,15 @@ The repository does not yet implement calendar, quote, hold, booking, payment, e
 cancellation, or channel-sync services. Existing migrations must be extended by forward migrations,
 not edited.
 
+The target-release inventory model supports both unique rentals and pooled hotel room types. A
+`property` owns one or more `accommodation types`; each type has a public `listing`, rate plans,
+per-date sellable capacity, and optional assignable `physical units`. A unique rental is represented
+by capacity one rather than by a separate simplified model.
+
 The central invariant is:
 
 > At most the configured sellable quantity of an inventory resource may be actively committed for
 > every listing-local stay date.
-
-For the current product, one listing is one independently bookable unit with quantity one. Hotel
-room-type inventory is a later, explicitly different model.
 
 The recommended dependency order is:
 
@@ -67,7 +72,7 @@ The recommended dependency order is:
 4. Explicit hold/claim, provisional booking, and idempotency foundation.
 5. Payment orchestration, verified provider outcomes, and confirmation recovery.
 6. Cancellation, refund, modification, check-in, and completion.
-7. iCalendar, request-to-book, channel managers, and quantity inventory.
+7. iCalendar, request-to-book, channel managers, pooled quantity, and physical-unit assignment.
 
 Search and personalized ranking may consume advisory availability in parallel, but they cannot delay
 or replace authoritative checkout revalidation.
@@ -76,13 +81,13 @@ or replace authoritative checkout revalidation.
 
 - Evaluate complete-stay availability with stable reason codes.
 - Support per-date restrictions, blocks, holds, bookings, and external blocks.
-- Prevent concurrent oversell for single-unit and future quantity inventory.
+- Prevent concurrent oversell for unique-unit and pooled quantity inventory.
 - Survive retries, client disconnects, process restarts, and delayed/duplicate webhooks.
 - Make accepted prices, policies, time calculations, and lifecycle changes reproducible.
 - Support cancellation, extension, shortening, date movement, and partial refund safely.
 - Expose a complete booking/inventory timeline to operations.
-- Evolve from instant-book single-unit MVP to request-to-book, iCalendar, channel managers, and
-  multi-room bookings without weakening existing invariants.
+- Support instant-book, request-to-book, iCalendar, channel managers, and multi-room bookings without
+  weakening shared invariants.
 
 ## Non-goals
 
@@ -170,8 +175,12 @@ overrides an active claim, or executes a contract transition.
 | --- | --- |
 | Stay date | Local calendar date at the listing representing one occupied night |
 | Stay range | Half-open local-date range `[check_in, check_out)` |
-| Inventory resource | Independently constrained unit being sold; initially one listing |
-| Inventory pool | Interchangeable room type with quantity greater than one |
+| Property | Physical and operational accommodation location |
+| Accommodation type | Sellable category whose per-date capacity is inventory authority |
+| Physical unit | Optional specifically assigned room, apartment, or home within an accommodation type |
+| Listing | Public presentation of an accommodation type; never inventory authority |
+| Inventory resource | Unique accommodation type constrained to capacity one |
+| Inventory pool | Accommodation type with interchangeable physical units and quantity greater than one |
 | Block | Host, operations, maintenance, legal, or external prohibition |
 | Claim | Database-enforced consumption of inventory by a hold, booking, or block |
 | Hold | Temporary claim owned by checkout, host approval, or modification |
@@ -280,7 +289,8 @@ expiry where relevant, and can never erase an existing guest contract.
 | Orphan gap | Resulting free gap between neighboring claims |
 
 The product must decide whether the existing `minimum_nights` means arrival-based or stay-through.
-Recommended MVP semantics are arrival-based. A future stay-through rule should use a separate field.
+Target-release semantics are arrival-based. If a configured market adopts stay-through rules, it
+uses a separate versioned field rather than reinterpreting arrival restrictions.
 
 Stable public reasons should include `LISTING_NOT_BOOKABLE`, `MISSING_CALENDAR_DAY`, `DATE_BLOCKED`,
 `INVENTORY_UNAVAILABLE`, `CAPACITY_EXCEEDED`, `MINIMUM_STAY_NOT_MET`, `MAXIMUM_STAY_EXCEEDED`,
@@ -560,7 +570,7 @@ wins.
 ## Quote expiry and repricing
 
 Quote expiry asks whether terms remain acceptable; hold expiry asks whether inventory remains owned;
-payment expiry asks whether the provider flow remains usable. They may align in MVP but are separate
+payment expiry asks whether the provider flow remains usable. They may align by policy but are separate
 facts.
 
 At hold creation validate quote subject/session, listing, trip, party, currency, rate plan, promotion,
@@ -601,11 +611,13 @@ guest uncertainty. Possible policies:
 - **Exclusive approval hold:** strong guest expectation, but slow/abusive hosts can suppress supply.
 - **Non-exclusive queue:** better utilization, but acceptance must atomically claim inventory and
   losing guests were never guaranteed dates.
-- **Hybrid:** most complex and should not launch first.
+- **Hybrid:** supported only when the approved Vietnam booking policy requires it; otherwise it is an
+  explicit excluded policy rather than unfinished request-to-book behavior.
 
-Recommendation: launch instant book first. If requests are needed, start with one exclusive
-`HOST_APPROVAL` hold, bounded response SLA, automatic timeout, host quality controls, and transparent
-countdown. Explicitly decide authorization/capture timing, approval versus authorization expiry,
+The target supports instant book and an exclusive `HOST_APPROVAL` request flow with bounded response
+SLA, automatic timeout, host quality controls, and transparent countdown. Implementation may verify
+instant book first because request-to-book depends on its claim invariants, but both flows share the
+release gate. Explicitly decide authorization/capture timing, approval versus authorization expiry,
 withdrawal, terms guarantee, and late approval behavior.
 
 ## Cancellation
@@ -896,63 +908,71 @@ Models never mark missing rows available, override a claim/constraint, invent ho
 accepted price, directly transition booking/payment/refund, or silently overbook based on predicted
 cancellations. LLMs may summarize support timelines but do not create contractual facts.
 
-## Rollout plan
+## Target-release dependencies and completion gates
 
-### Phase 0 — Decisions
+These steps are cumulative implementation dependencies for one complete release. They are not
+separate product versions, and every step below is required before the booking domain is complete.
 
-Record instant-book scope, single-unit scope, hold/extension limits, payment authorize/capture order,
+### Dependency 0 — Decisions
+
+Record instant-book and request-to-book policy, both inventory modes, hold/extension limits,
+payment authorize/capture order,
 minimum-stay semantics, horizon/notice rules, first-market cancellation behavior, provisional booking
 status, and canonical active-claim authority.
 
-### Phase 1 — Calendar and eligibility
+### Dependency 1 — Calendar and eligibility
 
-Implement rolling calendar generation, host date/block/restriction commands, complete-stay evaluator,
-reason codes, injected clock, exact date-range locking query, and metrics.
+Add the property/accommodation-type/physical-unit and per-date capacity forward migrations first.
+Implement rolling calendar generation, host date/block/restriction/capacity commands, complete-stay
+evaluator, reason codes, injected clock, stable date-range locking, and metrics for both inventory modes.
 
 Exit: the host controls a bounded calendar and every trip has a reproducible eligibility decision.
 
-### Phase 2 — Quote acceptance and holds
+### Dependency 2 — Quote acceptance and holds
 
 Add forward migrations for holds/claims, lifecycle detail, idempotency, timeline, and outbox. Implement
-atomic single-unit claim, explicit release, sweeper, and on-path cleanup. Keep the existing booking
-overlap constraint until the new invariant is backfilled, verified, and authoritative.
+atomic capacity-one range claims and pooled per-date quantity claims, explicit release, sweeper, and
+on-path cleanup. Keep the existing booking overlap constraint until both target invariants are
+backfilled, verified, and authoritative.
 
 Exit: competing guests cannot hold the same night and repeated checkout returns the same result.
 
-### Phase 3 — Payment and confirmation saga
+### Dependency 3 — Payment and confirmation saga
 
-Implement the first vertical slice from
+Implement the approved payment contract from
 [`payment-orchestration.md`](payment-orchestration.md): provider-independent attempt/operation,
 webhook verification/deduplication, late-success compensation, hold-to-booking claim conversion,
 recovery, and timeline.
 
 Exit: client/provider/process retries do not duplicate booking or charge.
 
-### Phase 4 — Cancellation and refund
+### Dependency 4 — Cancellation and refund
 
 Implement versioned preview, idempotent guest/host execution, exact inventory release, separate
 refund state, ledger correlation, and exception operation.
 
-### Phase 5 — Modification and stay
+### Dependency 5 — Modification and stay
 
 Implement delta quote/hold for extend, shorten, and move; preserve original on failure; add check-in,
 completion, early departure, and no-show decisions.
 
-### Phase 6 — iCalendar
+### Dependency 6 — iCalendar
 
 Implement secure connection, normalized import blocks, no-PII export, freshness, conflicts, backoff,
 and reconciliation.
 
-### Phase 7 — Request-to-book and professional supply
+### Dependency 7 — Request-to-book and professional supply
 
-Add host approval only after SLA/payment/inventory policy. Add pooled inventory with new pool/day/item
-tables and constraints, then channel-manager quantity reconciliation.
+Add host approval after its SLA/payment/inventory policy is approved, then complete physical-unit
+assignment, property-management/channel-manager integration, and quantity reconciliation over the
+pooled inventory foundation established in Dependencies 1–2.
 
 ## Verification checklist
 
 ### Availability and inventory correctness
 
-- Published single-unit listing has a 12–18 month local-date calendar; missing dates fail closed.
+- Every published accommodation type has a 12–18 month local-date calendar and explicit capacity;
+  missing dates fail closed.
 - Complete-stay restrictions and capacity are deterministic and explainable.
 - Accepted quote creates one explicit expiring hold and database-enforced active claim.
 - Concurrent overlapping holds/bookings cannot both win; adjacent stays remain valid.
@@ -982,7 +1002,7 @@ Create architecture decisions for:
 4. instant versus request-to-book policy;
 5. minimum-stay and CTA/CTD semantics;
 6. time-zone change and DST resolution;
-7. single-unit versus pool boundary;
+7. capacity-one versus pooled inventory constraints and physical-unit assignment timing;
 8. iCalendar precedence, missing-event grace, and stale-feed response;
 9. cancellation inventory-release point;
 10. modification delta/replacement strategy.

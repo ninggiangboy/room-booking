@@ -42,6 +42,9 @@ fallback when analytical or model dependencies are unavailable.
 
 ## Status and dependencies
 
+[Vietnam market readiness and internationalization](multi-market-compliance-and-localization.md)
+owns approved locales, content-policy context, provider accounts, and market activation.
+
 This is an implementation-oriented **target design**, not a description of implemented booking
 communication or property operations. No Java API, migration, provider adapter, worker, or state
 machine proposed here exists merely because it appears in this document.
@@ -50,11 +53,11 @@ The repository currently provides these foundations:
 
 - identity, role, authentication, verified-email, and host-profile tables and Java services;
 - listing address, IANA time zone, capacity, house-rule, image, and publication foundations in
-  [Phase 002](../data-model/002-listing-catalog.md);
+  [migration 002](../data-model/002-listing-catalog.md);
 - booking participants, local stay dates, accepted listing snapshot, lifecycle, and overlap defense
-  in [Phase 004](../data-model/004-booking.md) and `004-booking.sql`;
+  in [migration 004](../data-model/004-booking.md) and `004-booking.sql`;
 - completed-stay review and favorite foundations in
-  [Phase 006](../data-model/006-trust-engagement.md);
+  [migration 006](../data-model/006-trust-engagement.md);
 - a narrow `EmailSender` SMTP port plus after-commit authentication listeners for email verification
   and password reset.
 
@@ -74,12 +77,14 @@ Recommended dependency order:
    and incident intake.
 5. Add provider callbacks, push/SMS, scheduled reminders, attachments, support/moderation access,
    and operational integrations.
-6. Add smart-lock automation, property-management-system integration, advanced routing, translation,
-   and bounded AI assistance only after deterministic workflows produce reliable evidence.
+6. Add approved smart-lock/property-management integrations, Vietnamese translation, advanced routing,
+   and bounded AI assistance after deterministic workflows produce reliable evidence.
 
-The first production slice should support one market, one application locale plus approved fallback,
-single-unit confirmed bookings, guest/host booking conversation, in-app inbox, durable transactional
-email, manually managed check-in instructions, readiness confirmation, and human-routed incidents.
+The target release supports Vietnam with Vietnamese plus an approved fallback, unique-rental and
+pooled hotel bookings, inquiry/booking conversations, in-app inbox, approved transactional channels,
+controlled check-in/access instructions, readiness, incidents, provider recovery, and bounded AI
+assistance. Dependency order may validate a narrower path first, but that path is not the completed
+feature.
 
 ## Goals
 
@@ -101,8 +106,8 @@ email, manually managed check-in instructions, readiness confirmation, and human
   commands, without direct database edits.
 - Preserve original content, render versions, provider evidence, access history, and decision
   provenance for disputes, audits, privacy requests, and replay.
-- Start with a correct modular-monolith boundary and defer distributed infrastructure until load or
-  organizational evidence justifies it.
+- Use a correct modular-monolith boundary; distributed extraction is a measured-scale capability
+  activated only when load or organizational evidence justifies it.
 
 ## Non-goals
 
@@ -301,7 +306,8 @@ Supported scopes are explicit, not inferred from arbitrary user pairs:
 - `INCIDENT`: restricted thread for an incident, optionally linked to selected booking messages;
 - `SUPPORT`: controlled case communication with purpose-bound agent access.
 
-MVP should implement `BOOKING` only. An inquiry converted to booking should create or link a new
+The target release implements `INQUIRY`, `BOOKING`, and authorized operations/support conversation
+scopes. An inquiry converted to booking creates or links a new
 booking conversation rather than silently broadening pre-booking history to newly added operators.
 
 ### Membership and permissions
@@ -330,7 +336,7 @@ Messages receive a strictly increasing sequence within the conversation. The API
 opaque cursor containing sequence and authorization context, not timestamp offset. A send retry with
 the same `(conversation_id, sender_id, idempotency_key)` returns the original message.
 
-MVP messages are immutable after send. A later correction creates a revision linked to the original
+Messages are immutable after send. A correction creates a revision linked to the original
 and renders an “edited” state; a withdrawal hides ordinary presentation but preserves protected
 evidence. Hard deletion is limited to retention/privacy policy after holds expire and must not break
 referential audit. Users cannot erase another participant's copy of material dispute evidence.
@@ -397,7 +403,7 @@ Deterministic controls run synchronously before accepting obviously invalid or d
 - size/type/link limits and attachment quarantine;
 - repeated-message and bulk-recipient detection;
 - prohibited secret types and known malicious URL/hash checks;
-- market-policy contact masking before the permitted disclosure phase.
+- market-policy contact masking before the permitted disclosure stage.
 
 Risk rules and classifiers may flag scam, off-platform payment, credential theft, harassment,
 extortion, hate, sexual content, personal data, or evasion. A model score creates an action proposal,
@@ -405,7 +411,7 @@ not an invisible final decision. Policy maps evidence and confidence to allow, w
 delay, human review, restrict, or safety-escalate. Every intervention stores policy/model version,
 reason code, evidence references, actor, explanation class, appeal route, and outcome.
 
-Contact masking must be phase- and market-aware. Pre-booking content can mask telephone numbers,
+Contact masking must be booking-stage- and market-aware. Pre-booking content can mask telephone numbers,
 emails, external handles, payment links, and encoded variants. Post-confirmation policy may permit
 necessary contact details without permitting off-platform payment solicitation. Original evidence
 is retained under restricted access; ordinary recipients see the policy-approved projection.
@@ -458,7 +464,7 @@ delivery time changed entitlement.
 ### Channel selection and fallback
 
 Channel policy considers classification, verified destinations, consent, urgency, sensitivity,
-locale support, device capability, cost cap, recent failures, and market rules. Recommended MVP:
+locale support, device capability, cost cap, recent failures, and market rules. Target default:
 
 1. durable in-app notification/inbox projection;
 2. transactional email for booking-critical notices;
@@ -547,7 +553,7 @@ rewrite the accepted booking instruction basis silently.
 
 For partial platform outage, an encrypted, device-bound offline package may contain only already
 released, short-lived information. It expires, is remotely invalidatable when possible, never holds
-provider master credentials, and is excluded from backups/analytics. MVP may omit offline caching
+provider master credentials, and is excluded from backups/analytics. The target may omit offline caching
 and instead require a documented support/manual fallback.
 
 ## Access grants and smart-device integration
@@ -1328,9 +1334,12 @@ Fallback is deterministic templates, manual translation/operations, fixed severi
 human queues. Disabling every model must leave critical communication, access recovery, incident
 intake, and authoritative state correct.
 
-## Rollout plan
+## Target-release dependencies and completion gates
 
-### Phase 0 — Decisions, threat model, and reference journeys
+All dependencies below are required for the supported Vietnam journeys. Channel/provider breadth is
+limited to approved launch integrations, while failure and fallback behavior is complete.
+
+### Dependency 0 — Decisions, threat model, and reference journeys
 
 Agree first market/language/support hours, participant/delegation matrix, contact masking, message
 retention/edit/delete/legal hold, notification classification/consent/quiet hours, exact-address and
@@ -1341,7 +1350,7 @@ fixtures, provider evaluation, reference journeys, and failure/recovery test vec
 Exit: accountable owners approve boundaries and one end-to-end booking communication/access/incident
 example is reproducible on paper with no contradictory authority.
 
-### Phase 1 — Booking conversation and durable in-app timeline
+### Dependency 1 — Booking conversation and durable in-app timeline
 
 Add conversation, participant, immutable text message, sequence/idempotency, read position, basic
 rate limits/reporting, authorization, audit, outbox/inbox, and in-app timeline. No attachments,
@@ -1350,7 +1359,7 @@ translation, AI, or pre-booking inquiry.
 Exit: one confirmed booking creates one correctly scoped conversation; concurrent/retried sends and
 revoked co-host access pass database/security tests; timeline rebuild succeeds.
 
-### Phase 2 — Transactional intent and one email channel
+### Dependency 2 — Transactional intent and approved delivery channels
 
 Add versioned policy/template, typed render, intent, attempt, SMTP/provider adapter, retry/unknown,
 bounce/complaint where supported, in-app notification, preferences for optional purposes, and basic
@@ -1360,7 +1369,7 @@ equivalence and deduplication proof.
 Exit: each reference fact creates exactly one logical intent; critical render/send failures are
 visible/recoverable; provider outage and replay do not change booking truth or duplicate effects.
 
-### Phase 3 — Arrival instructions and manual access fallback
+### Dependency 3 — Arrival instructions and manual access fallback
 
 Add operational stay, versioned instruction sets, field classification/release, reveal audit,
 host publication deadlines, guest arrival view, no-store responses, and one approved manual access
@@ -1370,7 +1379,7 @@ Exit: unauthorized/pre-release exact-address and secret tests fail closed; a con
 retrieve released instructions during channel outage; missing/changed instructions create owned
 exceptions.
 
-### Phase 4 — Readiness, tasks, and incident vertical slice
+### Dependency 4 — Readiness, tasks, and incident flow
 
 Add turnover/readiness tasks, deadlines, basic host/staff assignment, incident intake, deterministic
 S0–S4 floor, human routing, evidence links, SLO clocks, timeline, and controlled remedy requests.
@@ -1378,7 +1387,7 @@ S0–S4 floor, human routing, evidence links, SLO clocks, timeline, and controll
 Exit: locked-out/property-not-ready/safety reference incidents route within agreed objectives, retain
 evidence, and request—never directly execute—booking/financial remedies.
 
-### Phase 5 — Access-provider integration and stay outcome
+### Dependency 5 — Access-provider integration and stay outcome
 
 Integrate one smart-lock or property-access provider with provision/query/revoke, encrypted secret
 reveal, unknown-outcome recovery, webhook inbox, reconciliation, manual fallback, and compromise
@@ -1387,7 +1396,7 @@ runbooks. Add policy-driven completion/no-show proposals and booking-owned final
 Exit: duplicate/reordered callbacks and cancellation races produce no usable invalid grant; provider
 outage has tested fallback; completion and no-show require approved evidence and remain replayable.
 
-### Phase 6 — Additional channels, media, localization, and integrations
+### Dependency 6 — Required channels, media, Vietnamese localization, and integrations
 
 Add push/SMS only with approved consent and preview policy, attachment quarantine/scanning, translation,
 scheduled host messages, richer readiness/maintenance, and selected property-management integration.
@@ -1396,7 +1405,7 @@ Use provider failover only after stable intent/attempt semantics exist.
 Exit: each new channel/integration passes contract, privacy, security, failure, cost, localization,
 and operational acceptance; mandatory work is isolated from bulk traffic.
 
-### Phase 7 — Bounded AI and measured scale
+### Dependency 7 — Bounded AI and measured-scale controls
 
 Shadow then assist with reply drafts, translation quality, moderation/risk triage, summaries, and
 staffing/channel predictions. Add human review, appeals, drift/fairness monitoring, and kill switches.
@@ -1449,17 +1458,17 @@ fairness, privacy, latency, or support regressions; disabling them preserves all
 - [ ] General logs, events, metrics, push/SMS previews, URLs, and caches contain no unnecessary
   sensitive content or access secret.
 
-### Operations and rollout
+### Operations and completion
 
 - [ ] Business/correctness/technical metrics, SLOs, alerts, dashboards, queues, runbooks, owners, and
-  escalation paths exist before enabling each phase.
+  escalation paths exist before enabling each required capability.
 - [ ] Template/policy/access/provider changes are versioned, reviewed, canaried where appropriate,
   reversible forward, and independently disableable.
 - [ ] Existing authentication email migration avoids dual-send and preserves token secrecy.
 - [ ] Support resolves reference failures through controlled product operations without SQL or
   editing immutable evidence.
-- [ ] MVP constraints and exit criteria are explicit; advanced channels, smart devices, AI, and
-  service extraction remain behind measured gates.
+- [ ] Target requirements and completion gates are explicit; optional smart-device/provider breadth
+  and service extraction remain behind measured gates, while bounded AI assistance is verified.
 
 ## Decisions required before implementation
 
@@ -1468,13 +1477,13 @@ alternatives, decision, consequences, rollout, and revisit trigger. At minimum d
 
 1. First market, languages/locales, user time-zone derivation, supported clients, operating/support
    hours, and accessibility commitments.
-2. Conversation scopes for MVP, inquiry-to-booking history behavior, travel-party participation, and
+2. Required conversation scopes, inquiry-to-booking history behavior, travel-party participation, and
    whether hosts can initiate contact before confirmation.
 3. Co-host/staff permission matrix, membership revocation semantics, support/moderator emergency
    access, purpose limits, step-up, and audit review.
 4. Message editing/withdrawal/tombstone behavior, read receipts, retention, user export/deletion,
    evidence preservation, and legal-hold policy per content class.
-5. Contact-detail and off-platform-payment policy by booking phase/market, intervention levels,
+5. Contact-detail and off-platform-payment policy by booking stage/market, intervention levels,
    user explanation, appeal, and safety-report bypass.
 6. Attachment types/sizes, quarantine/scanning provider, metadata treatment, evidence originals,
    object region, signed-link lifetime, and failure fallback.
@@ -1484,7 +1493,7 @@ alternatives, decision, consequences, rollout, and revisit trigger. At minimum d
    transactional, and marketing in each launch jurisdiction.
 9. Consent evidence, preference model, quiet hours, urgent exceptions, destination-change cutoff,
    bounce/complaint suppression, and critical-undeliverable handling.
-10. MVP transport/provider, provider-account/region strategy, idempotency/query/callback capability,
+10. Target transport/provider, provider-account/region strategy, idempotency/query/callback capability,
     retry/fallback/cost caps, data processing, retention, failover, and exit plan.
 11. Template authoring, locale fallback, typed variable ownership, approval/maker-checker thresholds,
     activation/canary/rollback, and mass-replay authority.

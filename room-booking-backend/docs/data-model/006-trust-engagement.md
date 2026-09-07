@@ -1,8 +1,9 @@
-# Phase 006 — Trust and engagement
+# Migration 006 — Trust and engagement foundation
 
 ## Goal
 
-Add post-stay reviews and guest favorites after the booking core is stable.
+Record the historical post-stay review and guest-favorite schema foundation. The complete review,
+moderation, intelligence, and reputation target requires forward migrations.
 
 ## Tables
 

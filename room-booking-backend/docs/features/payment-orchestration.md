@@ -38,6 +38,9 @@ owns collected cash, or whether a guest is contractually entitled to a refund.
 
 ## Status and dependencies
 
+[Vietnam market readiness and internationalization](multi-market-compliance-and-localization.md)
+owns the approved legal-entity, VND, provider-account, and effective policy context used here.
+
 This is a target design. No payment controller, service, repository, provider adapter, webhook
 handler, worker, or provider configuration is implemented in Java yet.
 
@@ -71,10 +74,12 @@ Recommended dependency order:
 4. Add one pay-now method with provider-independent attempt and operation records.
 5. Add verified webhook ingestion, server-side status retrieval, recovery, and reconciliation.
 6. Connect capture/refund facts to an idempotent ledger posting boundary.
-7. Add saved methods, delayed methods, deposits, installments, disputes, and multi-provider routing
-   only after the first flow is operationally reliable.
+7. Complete payment-provider disputes for the approved flow; add saved/delayed methods, deposits,
+   installments, or multi-provider routing only when required by an approved rate plan or measured
+   resilience/optimization need.
 
-The MVP should use one provider account, one legal entity, one collection currency, one guest-facing
+The Vietnam target release may use one active provider account, one legal entity, VND, and the
+approved guest-facing
 payment method, and one clear authorize/capture policy. Provider abstraction is required for domain
 isolation, but simultaneous multi-provider routing is not.
 
@@ -466,7 +471,7 @@ proof because they have not crossed the submission fence.
 
 ## Authorization, capture, sale, and void strategy
 
-### Recommended MVP strategy
+### Target-release provider strategy
 
 Prefer authorization followed by capture when the selected provider/method and booking policy make
 the hold-to-confirm race safer, and when authorization lifetime is sufficient. Otherwise use a
@@ -496,7 +501,7 @@ The exact policy is a launch decision, not a universal rule:
 - The capture command references the authorization and exact schedule component.
 - Under an obligation lock, reserve the requested capture amount before submission.
 - Sum of successful plus in-flight reserved captures may not exceed policy-permitted amount.
-- Partial captures are disabled for MVP unless needed by the selected provider flow.
+- Partial captures are enabled only for a supported booking/payment schedule and otherwise fail closed.
 - Provider fees are not subtracted from captured guest amount; finance records them separately.
 
 ### Direct-sale rules
@@ -595,9 +600,10 @@ deadline. Retries require a valid mandate/token and distinguish provider/network
 the guest for a new method. Quiet hours, legal notification, and card-network/provider rules are
 market decisions.
 
-Installments should be deferred until pay-now, webhook recovery, refund allocation, ledger posting,
-and reconciliation are proven. Migration `005`'s one-success-per-booking index must be replaced only
-as part of an explicit schedule migration and verified backfill.
+Installments are a designed extension unless an approved Vietnam rate plan requires them. Their
+implementation depends on proven pay-now, webhook recovery, refund allocation, ledger posting, and
+reconciliation. Migration `005`'s one-success-per-booking index must be replaced only as part of an
+explicit schedule migration and verified backfill.
 
 ## Saved payment methods and credential boundary
 
@@ -1686,7 +1692,7 @@ switches, alerts, dashboards, support timeline, compensation, and post-incident 
 Do not introduce Kafka, event sourcing, sharding, multi-region active-active payment writes, or a
 separate payment microservice before measured throughput, ownership, isolation, regional, or
 availability needs justify the operational cost. A modular monolith with outbox/inbox and provider
-workers is sufficient for the first correct vertical slice.
+workers is the target deployment while those thresholds remain unmet.
 
 ## Appropriate use of AI
 
@@ -1719,18 +1725,21 @@ chargeback/fraud outcome, guest experience, and operational reliability—not ap
 Use causal experiments for routing changes and keep a deterministic eligibility layer above the
 model.
 
-## Rollout plan
+## Target-release dependencies and completion gates
 
-### Phase 0 — Legal, product, security, and provider decisions
+Dependencies 0–5 are cumulative target-release requirements. Additional collection methods and
+simultaneous provider routing are designed extensions, not missing correctness in the approved flow.
+
+### Dependency 0 — Legal, product, security, and provider decisions
 
 Decide merchant/legal entity, launch country/currency, one PSP/account, method, authorization versus
 sale, capture timing, booking confirmation condition, hold/late-success policy, refund ownership,
 PCI integration, SCA/3DS handling, retention, and operational roles. Produce ADRs, provider contract
 matrix, threat model, data-flow diagram, and sandbox runbook.
 
-Exit: accountable owners approve the end-to-end money/data flow and every unresolved MVP decision.
+Exit: accountable owners approve the end-to-end money/data flow and every unresolved target decision.
 
-### Phase 1 — Provider-independent obligation and operation foundation
+### Dependency 1 — Provider-independent obligation and operation foundation
 
 Add forward migrations for provider accounts, payment orders, attempts/operations, scoped
 idempotency, observations, outbox/inbox, and support timeline. Backfill existing rows conservatively
@@ -1739,7 +1748,7 @@ without provider calls. Implement deterministic state reducers and amount invari
 Exit: legacy/new projections reconcile on representative data; every operation has stable identity,
 amount authority, and recovery state.
 
-### Phase 2 — One pay-now provider vertical slice
+### Dependency 2 — Approved Vietnam payment flow
 
 Implement one adapter and method using hosted/SDK tokenization, start/read APIs, durable submission,
 known decline, action-required/pending handling, verified capture/authorization, and booking
@@ -1748,7 +1757,7 @@ confirmation handoff. No multi-provider routing or installments.
 Exit: one checkout can reach confirmation without raw credentials entering the backend, and client
 replay/process restart cannot duplicate the provider effect.
 
-### Phase 3 — Webhook, query recovery, and outage controls
+### Dependency 3 — Webhook, query recovery, and outage controls
 
 Add exact raw-body signature verification, account-scoped inbox, out-of-order reducer, status query,
 unknown-outcome worker, dead-letter handling, scoped kill switches, provider dashboards, and runbooks.
@@ -1756,7 +1765,7 @@ unknown-outcome worker, dead-letter handling, scoped kill switches, provider das
 Exit: duplicate/delayed/lost webhook, timeout, browser disconnect, provider outage, and crash game
 days converge to one explainable outcome.
 
-### Phase 4 — Refund and finance handoff
+### Dependency 4 — Refund and finance handoff
 
 Consume versioned refund instructions, reserve cumulative refundable amount, execute partial/full
 refunds, compensate late booking failures, and emit capture/refund/reversal facts to idempotent ledger
@@ -1765,7 +1774,7 @@ consumers. Add restricted exception tools.
 Exit: concurrent/replayed refunds cannot exceed capture; captured/refunded values reconcile with the
 booking financial snapshot and ledger handoff.
 
-### Phase 5 — Operational reconciliation and disputes
+### Dependency 5 — Operational reconciliation and disputes
 
 Add provider status/transaction imports, orphan/mismatch cases, immutable repair workflow, dispute
 ingestion/deadlines/evidence gateway, and finance reconciliation correlation.
@@ -1773,7 +1782,7 @@ ingestion/deadlines/evidence gateway, and finance reconciliation correlation.
 Exit: every provider transaction in the reconciliation period is matched or assigned to an owned,
 aged, auditable exception; dispute deadlines are monitored.
 
-### Phase 6 — Saved methods and scheduled collections
+### Designed extension — Saved methods and scheduled collections
 
 Add consented token references, deposit/balance schedule, dunning, authorization expiry, and default
 handoff. Remove the legacy one-success-per-booking constraint only after new cumulative invariants and
@@ -1782,7 +1791,7 @@ backfill verification are authoritative.
 Exit: multiple scheduled collections and retries reconcile exactly to one obligation without
 changing accepted booking history.
 
-### Phase 7 — Additional methods/providers and smart routing
+### Measured-scale capability — Additional providers and smart routing
 
 Add providers/methods one at a time through capability contracts, account-specific webhook and
 reconciliation, pre-submit deterministic failover, then shadow/experiment-based constrained routing.
@@ -1842,7 +1851,8 @@ optimization can be disabled without stopping the deterministic route.
 - [ ] Migration `005` remains unchanged; all evolution uses forward migrations.
 - [ ] Legacy `SUCCEEDED` meaning and one-success constraint have an explicit backfill/transition plan.
 - [ ] No payment code is launched before quote/booking amount authority and inventory hold boundary.
-- [ ] One provider/method vertical slice passes before installments or smart routing.
+- [ ] The approved provider/method integration proof passes before any required extension such as
+  installments or measured-scale smart routing; it is not treated as a reduced product release.
 - [ ] Provider retirement preserves refunds, disputes, webhook/query, and reconciliation for historic
   operations.
 
@@ -1858,7 +1868,8 @@ consequences, rollout, and revisit trigger for:
 5. Exact booking confirmation condition and payment-versus-hold-expiry winner/compensation policy.
 6. Authorization lifetime, capture deadline, void strategy, and behavior when void result is unknown.
 7. Whether request-to-book authorizes before host approval and how expiring authorization is handled.
-8. Pay-now-only MVP versus deposit, pay-later, installment, and balance-collection roadmap.
+8. Which pay-now, deposit, pay-later, installment, and balance-collection flows are supported by the
+   approved Vietnam provider and required booking policies.
 9. Supported SCA/3DS/redirect flows, exemption policy ownership, return/deep-link allowlist, and
    challenge-driven hold extension.
 10. Saved-method consent, token scope, portability, revocation, billing metadata, and retention.
@@ -1884,9 +1895,10 @@ consequences, rollout, and revisit trigger for:
 21. SLOs and monetary/age thresholds for paging, compensation, reconciliation, and maker-checker.
 22. Which payment facts finance requires before ledger posting and host payout can proceed.
 
-Recommended default for the first release: one provider account and tokenized pay-now method,
+Target-release default: one approved Vietnam provider account and tokenized pay-now method,
 authorize then confirm and capture where the provider contract supports it, deterministic routing,
 no stored raw credentials, no installments, durable operation/outbox/inbox state, server-verified
 outcomes, automatic query recovery, idempotent late-success compensation, and daily operational plus
-financial reconciliation. This is intentionally narrower than the final model while preserving the
-identities and invariants needed to evolve safely.
+financial reconciliation. Deposits, installments, balance collection, and simultaneous routing are
+explicit product extensions unless a supported rate plan requires them; the selected pay-now scope
+is complete rather than a temporary payment implementation.

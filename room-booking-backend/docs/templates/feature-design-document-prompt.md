@@ -67,18 +67,21 @@ Before writing:
 
 1. Read the applicable `AGENTS.md` completely and follow it.
 2. Read the complete relevant domain section in `docs/marketplace-problem-breakdown.md`, including
-   its dependencies, workflows, roadmap phases, cross-domain invariants, and open decisions.
+   its dependencies, workflows, target-release requirements, cross-domain invariants, and open
+   decisions.
 3. Inspect related feature documents, data-model documents, Liquibase migrations, Java packages,
    configuration, README, and GUIDE. Use `rg`/`rg --files` first for repository discovery.
 4. Use these as the canonical format references where available:
    - `docs/features/personalized-discovery.md`
    - `docs/features/dynamic-pricing-and-settlement.md`
    - `docs/features/availability-reservation-and-booking.md`
+   - `docs/features/multi-market-compliance-and-localization.md`
 5. Identify precisely:
    - what already exists in schema/code;
    - what is documented but not implemented;
    - what the target design proposes;
-   - what must be deferred;
+   - what is a required target capability, a designed extension boundary, or a measured-scale
+     capability;
    - which neighboring domains own facts consumed by this feature.
 6. Do not describe a target API, table, worker, event, provider integration, or model as implemented
    unless repository evidence proves it exists.
@@ -93,7 +96,8 @@ DOCUMENT LANGUAGE AND STYLE
   only where they clarify flow, state, ownership, or data relationships.
 - Prefer stable domain terms over vendor-specific terminology.
 - Define every acronym on first use.
-- Separate normative rules (`must`, invariants, constraints) from recommendations and future options.
+- Separate normative rules (`must`, invariants, constraints) from recommendations and explicitly
+  excluded product categories.
 - Avoid filler, generic textbook explanations, duplicated master-map prose, and premature technology.
 - Link to the authoritative neighboring document instead of copying its full logic.
 - Keep the document navigable despite its depth; use subsections for independently reviewable topics.
@@ -172,8 +176,10 @@ irrelevant; do not silently omit risk, failure, testing, or decision sections.
   privileged operations, retention, and audit.
 
 ## Observability and operations
-- Define business/correctness metrics, technical metrics, SLO candidates, alerts, dashboards, manual
-  operations, reconciliation/review queues, and runbook expectations.
+- Define business/correctness metrics, technical metrics, SLO candidates, alerts, authorized recovery
+  commands, reconciliation/review domain queues, and inputs required by external runbooks. Do not
+  design user interfaces, staffing/training plans, or standalone operational runbook artifacts unless
+  the user explicitly expands scope.
 
 ## Failure behavior
 - Provide a table of dependency failures, duplicate/out-of-order inputs, timeouts, crashes, stale
@@ -195,11 +201,13 @@ irrelevant; do not silently omit risk, failure, testing, or decision sections.
   may not own.
 - If AI has no valid role, say so briefly rather than inventing one.
 
-## Rollout plan
-- Use `### Phase 0`, `### Phase 1`, and so on.
-- Each phase must describe scope, dependencies, compatibility/backfill where relevant, and measurable
-  exit criteria.
-- Deliver the smallest correct vertical slice before advanced automation, optimization, or scale.
+## Target-release dependencies and completion gates
+- Describe the dependency order required to implement the complete target safely; do not present
+  dependencies as reduced product releases.
+- Classify every capability as required target behavior, a designed extension boundary, or a
+  measured-scale capability with an explicit activation threshold.
+- Include compatibility/backfill requirements and measurable cumulative completion gates. A partial
+  vertical slice may validate integration but must not be described as the finished product.
 
 ## Verification checklist
 - Group reviewable acceptance items under functional/correctness, recovery, security, and operations
@@ -230,7 +238,8 @@ did not spell it out:
 - privacy, secrets, fraud/abuse, privileged actions, audit, and retention;
 - business metrics, correctness metrics, latency/availability signals, alerts, and SLOs;
 - deterministic, integration, concurrency, property, recovery, security, and provider-contract tests;
-- MVP versus later scope, rollout gates, backward compatibility, backfill, rollback/kill switch;
+- target-release requirements, explicit product exclusions, measured-scale activation thresholds,
+  backward compatibility, backfill, rollback/kill switch;
 - valid AI/ML opportunities and explicit prohibited authority;
 - build-versus-buy boundary where a provider is involved;
 - open decisions, recommended defaults, and revisit triggers.
@@ -238,9 +247,14 @@ did not spell it out:
 PROJECT-WIDE RULES TO PRESERVE
 
 - A missing availability row is unavailable.
+- The target release supports both unique rentals and pooled hotel room types. Use `property`,
+  `accommodation type`, optional `physical unit`, public `listing`, and per-date inventory quantity
+  consistently; do not make a listing row the inventory authority.
 - Stay ranges are half-open `[check_in, check_out)` and use listing-local dates.
 - Events and deadlines use timestamps; listing time zones use IANA identifiers.
 - Money uses integer minor units and ISO 4217 currency; no floating-point money.
+- Vietnam is the only active launch market, while contracts carry market, currency, locale,
+  time-zone, policy, and provider provenance so another market does not require a breaking change.
 - Search, caches, provider records, and analytics are not transactional sources of truth.
 - Client-calculated totals and client-requested state transitions are never trusted.
 - Confirmed contractual and financial history is immutable; changes use new versions, adjustments,
@@ -248,6 +262,9 @@ PROJECT-WIDE RULES TO PRESERVE
 - Database constraints remain the final defense for inventory and monetary invariants.
 - Do not keep database transactions/locks open across uncontrolled network calls.
 - LLMs are not authoritative for availability, money, tax, legal policy, safety, or booking state.
+- Personalized ranking, review intelligence, bounded pricing recommendation, and fraud/content
+  moderation are required target capabilities, with model lineage, deterministic guardrails,
+  fallback, shadow/canary verification, and kill switches.
 - Do not introduce microservices, Kafka, CQRS, event sourcing, sharding, vector stores, or advanced ML
   without a measured need and an accountable owner.
 - Never edit an already-applied Liquibase changeset; propose or add a forward migration only when
@@ -314,5 +331,6 @@ Dùng feature-doc prompt chuẩn, lần lượt tạo các document cho D09, D11
 và verify từng document trước khi chuyển sang document tiếp theo; không triển khai code/migration.
 ```
 
-This still requires each document to have its own purpose, boundaries, model, rollout, verification,
-and decision set. Do not merge unrelated domains merely to reduce file count.
+This still requires each document to have its own purpose, boundaries, model, dependency and
+completion gates, verification, and decision set. Do not merge unrelated domains merely to reduce
+file count.

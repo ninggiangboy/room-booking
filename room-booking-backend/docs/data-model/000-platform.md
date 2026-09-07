@@ -1,8 +1,9 @@
-# Phase 000 — PostgreSQL foundation
+# Migration 000 — PostgreSQL foundation
 
 ## Goal
 
-Prepare the database capabilities required by all later phases without creating domain tables.
+Record the PostgreSQL capabilities installed by the first historical changeset without creating
+domain tables.
 
 The future shared event-contract, outbox/inbox, analytical lineage, experiment, feature, model, and
 prediction foundations are specified in
@@ -17,9 +18,11 @@ They are not delivered by migration `000`; implementation must use new forward m
 
 ## Operational notes
 
-Managed PostgreSQL may require an administrator to allow these extensions before the application role runs Liquibase. No PostGIS dependency is introduced yet; latitude and longitude remain ordinary numeric columns in the catalog phase.
+Managed PostgreSQL may require an administrator to allow these extensions before the application
+role runs Liquibase. Migration `000` did not introduce PostGIS; catalog coordinates remained numeric
+until migration `010` added the target spatial foundation.
 
-## Exit criteria
+## Migration verification
 
 - All three extensions are installed.
 - The application role can call `gen_random_uuid()`.

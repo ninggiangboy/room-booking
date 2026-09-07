@@ -1,4 +1,4 @@
-# Phase 001 — Identity
+# Migration 001 — Identity foundation
 
 ## Goal
 

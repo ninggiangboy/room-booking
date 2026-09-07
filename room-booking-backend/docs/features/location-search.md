@@ -6,6 +6,10 @@ This document defines how the room-booking platform stores listing addresses, ma
 provider-neutral global destination catalog, and retrieves listings for destination, radius, and
 map-viewport searches.
 
+[Vietnam market readiness and internationalization](multi-market-compliance-and-localization.md)
+owns active-market, locale, address-policy, provider, and privacy context. This design provides the
+Vietnam catalog and keeps country/locale identifiers suitable for a second market.
+
 `010-location-search.sql` is the next ordered Liquibase migration. The `010` prefix is migration
 history, not a product or data-model phase number.
 
@@ -21,7 +25,7 @@ The design follows four principles:
 4. External dataset identifiers remain provenance, while application UUIDs remain domain
    identity.
 
-## Scope
+## Current migration baseline and target scope
 
 The current migration provides:
 
@@ -32,7 +36,7 @@ The current migration provides:
 - a generated and spatially indexed listing point;
 - database indexes for destination, radius and map-viewport candidate retrieval.
 
-This migration does not provide:
+This migration does not provide the following target behavior:
 
 - a GeoNames or geoBoundaries importer;
 - seeded destination records;
@@ -43,7 +47,10 @@ This migration does not provide:
 - overlapping travel-region graphs;
 - public approximate-coordinate generation.
 
-Those capabilities can be added independently without changing the identity of existing listings.
+The target release requires the approved Vietnam dataset importer, destination/listing APIs,
+Vietnamese and fallback names, listing pin confirmation, spatial search, and privacy-safe public
+coordinates. Map tiles and overlapping travel-region graphs are external or designed extensions;
+their absence does not reduce search correctness.
 
 ## Domain concepts
 
@@ -468,7 +475,10 @@ Changing the Compose image does not erase the existing named PostgreSQL volume. 
 application startup after the change, Liquibase creates the required extensions and applies the
 forward migration. Production backups and an upgrade rehearsal remain required before rollout.
 
-## Rollout plan
+## Target-release dependencies and completion gates
+
+The listed work is one cumulative location capability for the target release, not a sequence of
+reduced product launches.
 
 1. Deploy the PostGIS-capable database image or enable extensions in the managed database.
 2. Apply `010-location-search.sql`; existing numeric coordinates generate spatial points

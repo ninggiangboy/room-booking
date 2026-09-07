@@ -41,6 +41,9 @@ and whether an advisory prediction may influence a human workflow.
 
 ## Status and dependencies
 
+[Vietnam market readiness and internationalization](multi-market-compliance-and-localization.md)
+owns market-specific authority, legal/provider context, retention, and localized policy evidence.
+
 This is a target design. The repository does not currently implement support cases, queues, service-
 level agreement (SLA) clocks, claims, evidence custody, negotiations, remedy decisions, agent
 authority limits, protection/insurance integration, or support-specific Application Programming
@@ -90,7 +93,7 @@ Recommended dependency order:
 7. Add AI summarization, routing, evidence retrieval, and recommendation only after reliable labels,
    citation coverage, privacy controls, evaluation, human authority, and kill switches exist.
 
-The minimum viable product (MVP) should support authenticated guest and host intake for a confirmed
+The target release supports authenticated guest and host intake for a confirmed
 booking, a booking-centric timeline, deterministic priority and ownership, human case handling,
 approved full/partial refund and platform-credit remedies, independent approval above thresholds,
 and complete audit. Damage protection, provider chargeback representment, automated evidence
@@ -1776,9 +1779,11 @@ Model output is advisory and visibly labeled with confidence/limitations. An aut
 citations and owns consequential decisions. Disabling every model must leave intake, safety routing,
 policy lookup, case handling, remedies, providers, appeals, and reconciliation operable.
 
-## Rollout plan
+## Target-release dependencies and completion gates
 
-### Phase 0 — Product, legal, finance, safety, and operational decisions
+All dependencies below form one complete case and remedy capability for the target release.
+
+### Dependency 0 — Product, legal, finance, safety, and operational decisions
 
 Approve launch market/hours/languages, case and severity taxonomies, emergency role, SLAs/business
 calendars, policy precedence, remedy catalog/funding, agent authority/approval, evidence/retention,
@@ -1789,7 +1794,7 @@ Exit: product, support, safety, risk, legal/privacy, finance/tax, payment, booki
 approve the authority map, reference outcomes, and prohibited actions; unresolved market obligations
 are documented as launch blockers.
 
-### Phase 1 — Case, timeline, routing, and audit foundation
+### Dependency 1 — Case, timeline, routing, and audit foundation
 
 Add booking-centric case intake, participants, classification/severity, deterministic safety floor,
 case transitions, SLA clocks, queues/work leases, internal notes, participant contacts, immutable
@@ -1799,7 +1804,7 @@ Exit: authenticated guest/host reference cases deduplicate correctly, urgent cas
 dependency failure, access isolation holds, SLA/reopen behavior is testable, and restore/replay
 rebuilds the timeline without side effects.
 
-### Phase 2 — Evidence and ordinary support vertical slice
+### Dependency 2 — Evidence and ordinary support flow
 
 Add protected uploads/references, scan/quarantine, provenance/custody, access audit, redaction,
 retention, investigation templates, findings, versioned communication, and structured evidence
@@ -1808,7 +1813,7 @@ requests. Support informational and operational remedies through D13/notificatio
 Exit: cannot-access, host-unreachable, cleanliness, and listing-mismatch cases preserve exact evidence,
 meet routing/communication controls, and never expose or mutate unauthorized source data.
 
-### Phase 3 — Governed monetary remedies
+### Dependency 3 — Governed monetary remedies
 
 Add policy/remedy catalogs, immutable preview/decision, funder allocation, authority and maker-checker,
 transactional ceilings/reservations, exact refund/credit/host-adjustment instructions, payment/ledger/
@@ -1818,7 +1823,7 @@ Exit: full/partial refund and platform goodwill reference cases reconcile bookin
 ledger, host/platform/tax effects, and retries exactly; no agent can issue an arbitrary or duplicate
 amount.
 
-### Phase 4 — Damage claim, negotiation, and appeal
+### Dependency 4 — Damage claim, negotiation, and appeal
 
 Add claim eligibility/items, versioned valuation, responsibility findings, party response windows,
 offers/counteroffers, payout-hold request, itemized decision, claim remedy/recovery, appeal, and
@@ -1827,7 +1832,7 @@ quality sampling. Keep adjudication human-led.
 Exit: damage reference cases cover pre-existing/wear/repair/replacement/shared/inconclusive outcomes,
 deadlines, caps, funding, payout races, appeal reversal, privacy, and additive D15 label feedback.
 
-### Phase 5 — Payment-provider disputes
+### Dependency 5 — Payment-provider disputes
 
 Integrate payment-owned dispute notices, fixed deadlines, strategy decisions, frozen evidence
 manifests, representment/acceptance commands, provider result, finance posting/recovery, refund race,
@@ -1836,7 +1841,7 @@ and daily reconciliation.
 Exit: retrieval, won, lost, accepted, expired, duplicate, out-of-order, outage, late webhook, and
 refund-plus-chargeback cases are reproducible and financially reconciled.
 
-### Phase 6 — Protection or insurance provider integration
+### Dependency 6 — Protection or insurance provider integration
 
 After legal/product approval, snapshot coverage/disclosures, implement one provider adapter,
 information requests, partial/denied/approved outcomes, claim payment/recovery, complaint handoff,
@@ -1845,7 +1850,7 @@ portability, outage/manual fallback, and reconciliation. Do not market unapprove
 Exit: one end-to-end provider claim cohort meets consent, deadline, evidence, access, accounting,
 complaint, recovery, and unknown-outcome controls with a tested provider exit plan.
 
-### Phase 7 — Bounded intelligence and measured scale
+### Dependency 7 — Bounded intelligence and measured-scale controls
 
 Add citation-grounded summaries, routing suggestions, evidence extraction, policy retrieval,
 provider narrative drafts, quality assistance, staffing forecasts, and only then measured deployment
@@ -2001,5 +2006,5 @@ trigger. Recommended defaults below are assumptions, not implemented policy.
 31. AI data allowlist, model/provider residency, access-aware retrieval, prompt injection defense,
     citation and unsupported-claim thresholds, human verification, monitoring, rollout, kill switch,
     and prohibited authority.
-32. MVP cohort and sequence. Recommended: case/timeline/routing/audit, protected evidence, ordinary
-    bounded remedies, then damage/appeal, payment disputes, provider protection, and AI.
+32. Dependency order and completion gate. Required: case/timeline/routing/audit, protected evidence,
+    governed remedies, damage/appeal, payment disputes, approved provider protection, and bounded AI.

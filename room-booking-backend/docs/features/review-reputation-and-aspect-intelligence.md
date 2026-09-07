@@ -40,7 +40,10 @@ public aggregates, and whether a qualified extraction becomes a visible aspect c
 
 ## Status and dependencies
 
-This is an implementation-oriented target design as of 2026-09-06. It is not a description of a
+[Vietnam market readiness and internationalization](multi-market-compliance-and-localization.md)
+owns locale, privacy, retention, policy, and market-validation context for review and model outputs.
+
+This is an implementation-oriented target design as of 2026-09-07. It is not a description of a
 working review API or production intelligence pipeline.
 
 The repository currently provides these foundations:
@@ -57,7 +60,7 @@ The repository currently provides these foundations:
 - [`002-listing-catalog.sql`](../../src/main/resources/db/changelog/changes/002-listing-catalog.sql)
   owns listing and current host identity but has no listing rating counters, review epoch, or
   quality/aspect profile.
-- [Phase 006 data-model notes](../data-model/006-trust-engagement.md) already require completed
+- [Migration 006 data-model notes](../data-model/006-trust-engagement.md) already require completed
   bookings, verified participants, one review per direction, and rebuildable counters.
 
 The current schema does **not** implement review rights, window/deadline snapshots, double-blind
@@ -91,10 +94,11 @@ Recommended dependency order:
 7. Add contextual reputation and guest preference evidence only after privacy, fairness, appeal,
    point-in-time data, and misuse controls are approved.
 
-The minimum viable product (MVP) is verified guest-to-listing feedback, one review per direction,
-an effective-dated review window, deterministic double-blind release, basic exact-revision
-moderation, and rebuildable public aggregates. Aspect summaries, reviewer calibration,
-host-to-guest decision use, attachments, and learned reputation are later capabilities.
+The target release includes verified guest-to-listing and host-to-guest feedback, one review per
+direction, an effective-dated review window, deterministic double-blind release, governed
+exact-revision moderation, rebuildable public aggregates, versioned aspect summaries, and
+evidence-qualified learned reputation. Public attachments and reviewer-score calibration are
+designed extensions; host-to-guest use remains bounded by explicit fairness and appeal policy.
 
 ## Goals
 
@@ -374,7 +378,7 @@ does not move the review to a different actor.
 
 The default cycle may create:
 
-| Direction | Author | Subject | Public audience | Default MVP use |
+| Direction | Author | Subject | Public audience | Target-release use |
 | --- | --- | --- | --- | --- |
 | `GUEST_TO_LISTING` | Booking guest | Listing experience and attributed host service | Public after reveal/moderation | Overall/category/text aggregate and evidence |
 | `HOST_TO_GUEST` | Contractual host or explicitly authorized representative | Booking-relevant guest conduct | Restricted host-facing context; public profile only if separately approved | Feedback collection; no automated denial |
@@ -478,7 +482,8 @@ workers from issuing separate reveal epochs.
 ### Recommended window and reveal rule
 
 The recommended launch default is a 14-calendar-day submission window beginning when
-`StayCompleted` commits. The exact duration and cutoff convention remain a Phase 0 decision and are
+`StayCompleted` commits. The exact duration and cutoff convention remain a prerequisite policy
+decision and are
 effective-dated by market. The resolved UTC deadline is stored on the cycle.
 
 Reveal occurs when either:
@@ -554,7 +559,7 @@ It does not reopen the right or delete a counterpart's review.
 A host public response is a separate content aggregate tied to one published guest review and an
 authorized historical/current listing representative. It has its own immutable revisions,
 moderation, edit rule, and response deadline. It cannot change ratings or appear before the parent
-review. Recommended MVP policy allows one concise response and additive moderation correction, not
+review. Target policy allows one concise response and additive moderation correction, not
 an unbounded public thread. Guests use reports or support, not nested arguments.
 
 ### Reminders
@@ -622,7 +627,7 @@ a correction workflow; they do not edit the review.
 
 ### Attachments
 
-Public review attachments are deferred from MVP. If introduced, upload sessions are short-lived and
+Public review attachments are a designed extension boundary. If introduced, upload sessions are short-lived and
 bound to actor, review right, media type, maximum count/size, and expected digest. Objects remain
 quarantined until byte-level type validation, malware scanning, metadata stripping, moderation, and
 safe derivative generation complete.
@@ -942,7 +947,7 @@ aspectPosterior =
 
 Explicit category evidence is not automatically more semantically detailed than text, and model
 confidence is not truth probability. Weights and priors require offline calibration, versioning,
-human review, and fairness evaluation. The MVP may use simple counts and minimum thresholds before
+human review, and fairness evaluation. Production serving may use simple counts and minimum thresholds before
 any weighted score.
 
 ### Strength, weakness, and mixed evidence
@@ -1040,7 +1045,8 @@ estimate a residual against comparable stays after sufficient independent review
 - never become a public “harsh reviewer” label;
 - be disabled independently and rebuilt by version.
 
-Calibration is deferred until demonstrated improvement and fairness. Transparent equal weighting is
+Calibration is a designed extension activated only after demonstrated improvement and fairness.
+Transparent equal weighting is
 the default.
 
 ## Contextual host and guest reputation
@@ -1264,7 +1270,7 @@ foreign references and a small applied-decision projection needed for lifecycle 
 
 - aggregate key/version, review/publication ID, value, inclusion interval, source event;
 - unique contribution identity for audit, delta idempotency, and rebuild comparison;
-- may be generated only for debugging/reconciliation if source queries are sufficient at MVP scale.
+- may be generated only for debugging/reconciliation if source queries are sufficient at measured launch scale.
 
 `listing_quality_profiles` and `host_review_profiles`
 
@@ -2116,9 +2122,12 @@ provider failure, schema failure, or kill switch means abstain and fall back to 
 deterministic templates, no aspect claim, or authorized human review. Review publication and core
 booking/search remain available according to deterministic policy.
 
-## Rollout plan
+## Target-release dependencies and completion gates
 
-### Phase 0 — Product, policy, privacy, and fairness decisions
+Dependencies 0–6 are cumulative release requirements. Contextual reputation beyond the supported
+Vietnam journeys is a designed extension and must preserve evidence and fairness contracts.
+
+### Dependency 0 — Product, policy, privacy, and fairness decisions
 
 Approve reference journeys and architecture decision records (ADRs) for directions, eligible
 outcomes, window/deadline, double-blind reveal, edit/withdrawal/response rules, category schema,
@@ -2132,7 +2141,7 @@ and a reference eligibility/publication matrix have accountable approval.
 Exit criteria: every consequential choice has owner/date/context/alternatives/decision/consequences,
 test vectors, rollout/revisit trigger, and a safe deterministic default.
 
-### Phase 1 — Verified rights and immutable authoring foundation
+### Dependency 1 — Verified rights and immutable authoring foundation
 
 Add forward migrations for policy versions, cycles, rights, review records/revisions, normalized
 categories, idempotency, outbox/inbox, and audit. Consume authoritative `StayCompleted`, authorize
@@ -2146,7 +2155,7 @@ Exit criteria: all eligible reference stays create exactly one right set, unrela
 submissions fail safely, revisions are immutable, retries replay, and legacy exceptions are
 measured/queued.
 
-### Phase 2 — Double-blind publication and basic moderation
+### Dependency 2 — Double-blind publication and governed moderation
 
 Implement cycle state, effective-dated deadline, paired/deadline reveal, neutral reminders through
 D12, exact-revision D15 moderation, bounded quarantine, publication intervals, author withdrawal,
@@ -2159,7 +2168,7 @@ safe manual recovery.
 Exit criteria: no pre-reveal counterpart leakage in security tests, qualified cycles publish once,
 D15 decisions apply to exact digests, stuck cycles reconcile, and removal/restoration is additive.
 
-### Phase 3 — Rebuildable ratings, categories, and public responses
+### Dependency 3 — Rebuildable ratings, categories, and public responses
 
 Add exact public sum/count/distribution projections, category aggregates, stable pagination,
 verified epoch rebuild, listing/host attribution, public host response, translation foundation, and
@@ -2172,7 +2181,7 @@ Exit criteria: sampled and full reconciliation produces zero unexplained drift; 
 is approved; publication/removal/restoration reaches listing/search within SLO; operators can repair
 without SQL.
 
-### Phase 4 — Aspect taxonomy and shadow intelligence
+### Dependency 4 — Aspect taxonomy and shadow verification
 
 Approve taxonomy v1, sensitive-use tiers, multilingual labeled evaluation set, provider/privacy
 contract, extraction schema, evidence thresholds, host correction flow, and kill switch. Add
@@ -2185,7 +2194,7 @@ shadow output.
 Exit criteria: per-slice release thresholds, provenance/reproducibility, cost/capacity, security,
 privacy, and replay gates pass; unsupported slices deterministically abstain.
 
-### Phase 5 — Evidence-qualified host and public intelligence
+### Dependency 5 — Evidence-qualified host and public intelligence
 
 Canary high-confidence aspects in host insights, then approved public summaries and D06 baseline
 features. Require source links, uncertainty language, recent/all-time comparison, mixed-evidence
@@ -2198,7 +2207,7 @@ Exit criteria: production precision/complaint/disparity/drift meets thresholds, 
 currently visible sufficient evidence, and removal/correction invalidates downstream output within
 SLO.
 
-### Phase 6 — Reviewer attention and responsible personalization handoff
+### Dependency 6 — Reviewer attention and responsible personalization handoff
 
 Add purpose-bound reviewer attention evidence, opt-out/correction/deletion, point-in-time feature
 generation, and minimized D06 contract. Begin with rule-based confidence gates and A/B tests against
@@ -2208,7 +2217,7 @@ Exit criteria: D06 can improve completed-stay satisfaction without worse cancell
 review or fairness guardrails; explicit trip intent always wins; opt-out/deletion propagates and
 fallback is reliable.
 
-### Phase 7 — Contextual reputation and measured scale
+### Designed extension — Broader contextual reputation and measured scale
 
 Only after policy/legal/fairness approval, introduce narrow host service rollups and carefully
 bounded host-to-guest context. Add minimum evidence, purpose-specific access, explanation,
@@ -2300,7 +2309,7 @@ chosen behavior, consequences, test vectors, rollout, observability, and revisit
    intentionally unavailable outside launch scope.
 2. Eligible Booking outcomes and evidence for ordinary reviews, including early departure, partial
    consumption, no-show, relocation, replacement booking, refund, and corrected completion.
-3. Review directions in MVP and whether guest feedback targets listing only, host service as well,
+3. Required review directions and whether guest feedback targets listing only, host service as well,
    or separately scored subjects.
 4. Who may represent a host/co-host/operator, how acting-as identity is displayed, and what happens
    when delegation changes before submission.
@@ -2333,7 +2342,7 @@ chosen behavior, consequences, test vectors, rollout, observability, and revisit
 18. Translation build-versus-buy, supported languages, data residency/provider use, display labeling,
     correction, quality threshold, fallback, and cost ceiling.
 19. Helpful-vote eligibility, anonymity, reversal, ordering influence, minimum volume, anti-abuse,
-    privacy, and whether it is deferred from MVP.
+    privacy, and whether it is a designed extension.
 20. Incentive policy; recommended default prohibits sentiment-contingent or selective rewards and
     requires disclosure/provenance for any neutral participation incentive.
 21. Public review ordering and cursor epoch behavior, including newest versus helpful, critical
@@ -2374,6 +2383,6 @@ chosen behavior, consequences, test vectors, rollout, observability, and revisit
     point-in-time datasets, model registry, and deletion propagation.
 39. Measured thresholds that would justify a dedicated service, partitioning, read replicas,
     specialized search/vector infrastructure, or external review/translation/moderation provider.
-40. MVP release gate and staged cohorts. Recommended vertical slice is verified immutable reviews,
+40. Target-release gate and verification cohorts. Required foundation is verified immutable reviews,
     double-blind release, exact-revision moderation, transparent aggregates, and manual operations;
     intelligence and contextual reputation remain off until later gates pass.

@@ -42,6 +42,9 @@ journal or release funds.
 
 ## Status and dependencies
 
+[Vietnam market readiness and internationalization](multi-market-compliance-and-localization.md)
+owns the active legal entity, accounting/settlement currency, provider, and policy context.
+
 This is a target design. There is no Java ledger, settlement, host-payout, statement,
 reconciliation, or financial-close implementation in the repository.
 
@@ -74,10 +77,10 @@ Recommended dependency order:
 6. Implement host entitlement maturity, holds, reserves, statements, and one payout rail.
 7. Reconcile payout instructions, provider transfers, provider balance, and bank cash.
 8. Add governed adjustments, negative-balance recovery, close, and audit exports.
-9. Add multiple currencies, foreign exchange (FX), legal entities, rails, and automation only after
-   the single-entity vertical slice closes cleanly.
+9. Keep additional currencies, foreign exchange (FX), legal entities, and simultaneous rails behind
+   the designed extension boundary; their activation depends on the Vietnam entity closing cleanly.
 
-The recommended minimum viable product (MVP) uses one legal entity, one accounting currency, one
+The Vietnam target release uses one active legal entity, one accounting currency, one
 collection currency equal to the accounting currency, one host-payout currency, and one payout
 provider. The data model must still carry legal-entity, currency, provider-account, policy-version,
 and source dimensions so expansion does not require rewriting history.
@@ -510,7 +513,8 @@ Cr guest funds / contract liabilities      captured amount allocated by owner
 
 At the approved recognition or entitlement event, liabilities may be reclassified into host
 payable, platform revenue, tax payable, partner payable, and other approved destinations. Whether
-that occurs at capture, check-in, checkout, cancellation, or another milestone is a Phase 0 decision.
+that occurs at capture, check-in, checkout, cancellation, or another milestone is a prerequisite
+finance decision.
 
 On payout submission, where policy uses payout-in-transit:
 
@@ -805,7 +809,7 @@ submit a second instruction while the original outcome is unknown.
 ### Partial provider outcomes
 
 If a provider can split or partially settle one instruction, model child transfer operations and
-allocate exact results back to payout items deterministically. The MVP should select a rail that
+allocate exact results back to payout items deterministically. The target selects an approved rail that
 supports one clearly observable transfer outcome. Do not mark the full payout paid from partial
 evidence.
 
@@ -1014,7 +1018,7 @@ evidence, materiality approval, and reversal path.
 
 ### Recommended initial constraint
 
-For MVP:
+For the target release:
 
 ```text
 booking currency = collection currency = ledger transaction currency = payout currency
@@ -2035,9 +2039,12 @@ AI/ML may not:
 Low-confidence or unavailable models fall back to deterministic matching, static priority, and human
 review. Disabling every model must leave ledger, payout, reconciliation, and close correctness intact.
 
-## Rollout plan
+## Target-release dependencies and completion gates
 
-### Phase 0 — Legal, finance, security, and provider decisions
+Dependencies 0–5 are cumulative release requirements. Additional countries, currencies, legal
+entities, and simultaneous payout rails are designed extensions of the market-keyed contracts.
+
+### Dependency 0 — Legal, finance, security, and provider decisions
 
 Choose first legal entity/market/currency, marketplace role, account/recognition model, chart of
 accounts, posting rules, host entitlement/release promise, reserve/hold/recovery policy, provider
@@ -2048,7 +2055,7 @@ golden posting fixtures, threat model, and close checklist.
 Exit: every launch choice has an accountable owner, approved examples, provider evidence contract,
 user disclosure, operational SLA, and revisit trigger.
 
-### Phase 1 — Immutable source allocation and balanced ledger
+### Dependency 1 — Immutable source allocation and balanced ledger
 
 Add forward schemas for booking financial lines, books/accounts/rules, journal/postings, finance
 idempotency, inbox/outbox, audit, and periods. Implement deterministic capture/refund posting in
@@ -2057,7 +2064,7 @@ shadow mode, balance/property checks, and source trace. Do not enable payout.
 Exit: every eligible new verified payment fact yields exactly one reproducible balanced proposal;
 unknown legacy provenance is quantified and routed, not guessed.
 
-### Phase 2 — Posted finance vertical slice and payment reconciliation
+### Dependency 2 — Posted finance flow and payment reconciliation
 
 Enable posting for one legal entity/currency/source set. Reconcile booking allocation, collection
 obligation, verified capture/refund, journal, provider clearing, fees, and bank settlement. Add
@@ -2066,7 +2073,7 @@ restricted finance diagnostics and correction workflow.
 Exit: reference days close with complete source-to-journal coverage, exact control balances, owned
 exceptions, replay safety, and zero unexplained material difference.
 
-### Phase 3 — Host payable, release, and shadow statements
+### Dependency 3 — Host payable, release, and verified statements
 
 Create host payable allocations, release schedule, holds/reserves/recovery structures, eligibility
 decisions, and host balance projections. Generate shadow statements and compare them with approved
@@ -2075,7 +2082,7 @@ manual expectations. Do not submit transfers.
 Exit: host gross-to-net and available/held/reserved balances reproduce for booking, cancellation,
 refund, dispute, and adjustment fixtures; support/finance can explain every line.
 
-### Phase 4 — One payout rail and controlled cohort
+### Dependency 4 — Approved payout rail and controlled verification
 
 Add tokenized destinations, step-up/cooling-off, payout planning/reservation, one provider adapter,
 unknown-outcome recovery, statements, notifications, and provider/bank reconciliation. Enable a small
@@ -2084,7 +2091,7 @@ host cohort with conservative limits and manual oversight.
 Exit: no duplicate item/transfer occurs under retries; eligible payouts meet the promise; failure and
 return restore the right liability; every transfer reconciles to provider and bank evidence.
 
-### Phase 5 — Governed exceptions, recovery, and close
+### Dependency 5 — Governed exceptions, recovery, and close
 
 Add reconciliation cases/SLA, adjustment catalog/maker-checker, negative-balance waterfall, returns,
 write-offs, period close/reopen, aging, audit exports, and tested runbooks.
@@ -2092,7 +2099,7 @@ write-offs, period close/reopen, aging, audit exports, and tested runbooks.
 Exit: finance closes a full production-like period without SQL repair; all material exceptions have
 owner/evidence/resolution; restored backup reconciles before payout resumes.
 
-### Phase 6 — Additional schedules, reserves, rails, and documents
+### Designed extension — Additional schedules, reserves, rails, and documents
 
 Add approved host payout schedules, thresholds, reserve programs, tax withholding/document links,
 new rails/provider accounts, and professional-host reporting one capability at a time. Run shadow,
@@ -2101,7 +2108,7 @@ canary, reconciliation, and rollback gates for each.
 Exit: each new combination has golden postings, provider contracts, host disclosure, measured SLO,
 security review, and independent reconciliation.
 
-### Phase 7 — Multi-currency, multi-entity, and bounded intelligence
+### Designed extension — Additional currencies, entities, and bounded intelligence
 
 Only after legal/accounting design is approved, add FX contracts, currency bridge entries, payout
 conversion, due-to/due-from, functional-reporting exports, and market-specific close. Introduce AI

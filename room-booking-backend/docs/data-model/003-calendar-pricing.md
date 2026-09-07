@@ -1,4 +1,4 @@
-# Phase 003 — Calendar and pricing
+# Migration 003 — Calendar and pricing foundation
 
 ## Goal
 

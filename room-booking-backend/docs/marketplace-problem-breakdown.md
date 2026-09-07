@@ -11,11 +11,14 @@ It answers five questions:
 1. What problem domains must a serious accommodation marketplace solve?
 2. Which system owns each decision and each piece of state?
 3. Which invariants must remain true across domains?
-4. What depends on what, and in what order should capabilities be delivered?
+4. What depends on what, and in what order must implementation proceed toward the single target
+   release?
 5. Which topics already have a detailed design and which still require one?
 
-This is a decomposition and delivery map, not a promise to build every capability immediately. It
-is deliberately broader than the current application. Individual feature documents remain the
+This is the normative decomposition and target-state map for the backend. It defines one complete
+release rather than a sequence of progressively less-incomplete products. Dependency order controls
+implementation and verification only; every capability marked **required** must pass its completion
+gate before the release is considered complete. Individual feature documents remain the
 authoritative detailed designs:
 
 - [Global location and address search](features/location-search.md)
@@ -30,7 +33,8 @@ authoritative detailed designs:
 - [Disputes, damage claims, insurance, and customer support](features/disputes-damage-claims-and-support.md)
 - [Reviews, aspect intelligence, and reputation](features/review-reputation-and-aspect-intelligence.md)
 - [Data, experimentation, and machine-learning platform](features/data-experimentation-and-ml-platform.md)
-- [Current data-model roadmap](data-model/README.md)
+- [Vietnam market readiness and internationalization](features/multi-market-compliance-and-localization.md)
+- [Data-model history and target gaps](data-model/README.md)
 
 When this document and a feature-specific document discuss the same subject, the feature-specific
 document owns the detailed algorithm and contract. This document owns the platform-wide boundary,
@@ -38,7 +42,7 @@ dependency, priority, and integration view.
 
 ## 2. Status and current baseline
 
-This is a target architecture and product roadmap as of 2026-09-06. It is not a description of a
+This is the target architecture and product definition as of 2026-09-07. It is not a description of a
 fully implemented system.
 
 The repository currently has database foundations for:
@@ -61,7 +65,7 @@ changeset merely to make it match this target design.
 
 ## 3. Product model and explicit assumptions
 
-The first product version is a two-sided marketplace:
+The target release is a two-sided marketplace launching in Vietnam:
 
 - a **host** publishes and operates accommodation supply;
 - a **guest** searches for and books a stay;
@@ -70,22 +74,86 @@ The first product version is a two-sided marketplace:
 - external providers may process payments, verify identity, deliver messages, screen risk, calculate
   tax, or supply maps, but do not silently become the platform's source of truth.
 
-Initial technical assumptions are:
+Target technical assumptions are:
 
-- one `listing` is one independently bookable inventory unit;
+- a `property` is the physical and operational accommodation location;
+- an `accommodation_type` is a sellable category at a property;
+- a `physical_unit` is an optional specifically assigned room, apartment, or home;
+- a `listing` is the public presentation of an accommodation type, not inventory authority;
+- unique rentals use sellable quantity one while hotel room types use pooled per-date quantity;
 - stay ranges are half-open: `[check_in, check_out)`;
 - listing-local dates control nights and calendar rules;
 - event times use UTC instants while listings retain an IANA timezone;
 - money uses ISO 4217 currency and integer minor units;
 - a missing availability row means not bookable;
 - server-side rules, not clients or models, make authoritative eligibility and money decisions;
-- the application starts as a modular monolith with clear domain boundaries;
+- the application is a modular monolith with durable domain boundaries, transactional outbox/inbox
+  where cross-domain delivery matters, and extraction-ready contracts without requiring premature
+  distributed deployment;
 - PostgreSQL remains the transactional source of truth until measured scale requires otherwise.
 
-These assumptions are not universal truths. Hotel-style quantity inventory, multi-property
-operators, split stays, packages, long-term leases, auctions, or a merchant-of-record model can
-change important boundaries. Such changes require explicit decisions and migrations; they must not
-be introduced as small exceptions to the one-listing/one-inventory model.
+The target supports unique rentals and hotel-style pooled room types from the same explicit
+inventory abstraction. Split stays, packages, long-term leases, auctions, and alternative merchant
+models remain excluded product categories, not unfinished versions of the target release. Adding
+one requires an explicit product decision, contract review, and forward migration.
+
+### 3.1 Target release definition
+
+The backend release is complete only when all required domain capabilities work together for the
+Vietnam market and both supported supply modes. The release includes:
+
+- host/property onboarding, catalog, media, publication, rate plans, unique-unit and pooled inventory;
+- location search, authoritative trip eligibility, quotes, holds, booking, payment, cancellation,
+  modification, refund, ledger, payout, messaging, stay completion, reviews, disputes, and support
+  domain commands;
+- versioned Vietnam market configuration for locale, currency, time zone, legal/tax decisions,
+  payment and payout providers, policies, disclosures, invoices, and retention;
+- production ML for personalized ranking, review intelligence, bounded host pricing recommendations,
+  and fraud/content moderation, plus support and messaging assistance where evidence permits;
+- immutable history, idempotency, recovery, reconciliation, security, privacy, observability, and
+  automated verification proportional to each domain's risk.
+
+The release activates one market and may use one approved provider per external capability. All
+contracts carry market, currency, locale, time-zone, policy, and provider provenance so a second
+market can be added without changing historical meaning or breaking public contracts. Multi-region
+deployment, simultaneous provider routing, and infrastructure introduced solely for unmeasured
+scale are conditional capabilities, not release requirements.
+
+This repository's target is the backend domain platform. Guest, host, finance, support, risk, and
+admin user-interface design; staffing/training plans; and standalone operational runbook artifacts
+are outside scope. The backend still defines authorized commands, evidence queries, audit records,
+metrics, alerts, recovery semantics, and escalation inputs those consumers require. References to a
+runbook in a feature design are external acceptance dependencies, not UI or runbook deliverables in
+this repository.
+
+#### Capability classification
+
+Every detailed design must classify behavior using these terms:
+
+- **Required target capability** — must be implemented and verified before the release is complete.
+- **Designed extension boundary** — deliberately outside the supported product category, but the
+  target contract must not prevent its later addition.
+- **Measured-scale capability** — activated only after an explicit load, reliability, regulatory, or
+  organizational threshold is met; absence does not make the initial release incomplete.
+
+Labels such as reduced launch scope, basic version, or later delivery must not be used to defer
+correctness, supported journeys, recovery, or a capability declared required by this document.
+
+#### Domain completion matrix
+
+| Domains | Target-release classification |
+| --- | --- |
+| D00–D05 | Required: platform, identity/host eligibility, property/catalog, location, both inventory modes, and channel boundaries |
+| D06–D16 | Required: personalized discovery through booking/money/stay/review/trust/support as complete connected journeys |
+| D17 | Designed extension: loyalty, referrals, and growth programs; any launch promotion still obeys D07/D10 accounting contracts |
+| D18 | Required: host portfolio operations, performance evidence, and bounded pricing recommendations for supported supply |
+| D19–D20 | Required: governed data/experimentation platform and the four production ML families named above |
+| D21–D22 | Required: controlled policy commands and Vietnam market/privacy/security/localization readiness; user-interface design is excluded |
+| D23 | Required for backend correctness and availability; multi-region, sharding, and service extraction are measured-scale capabilities |
+
+The matrix is exhaustive for the target release. A feature document may narrow provider or method
+breadth for Vietnam, but it may not downgrade a required domain invariant, recovery path, or supported
+journey.
 
 ## 4. Platform-wide invariants
 
@@ -266,7 +334,7 @@ contracts, migrations, audit, and events are improvised per feature, cross-domai
 - Retried commands must either return the original result or safely continue it.
 - A request ID is diagnostic metadata, not an idempotency key.
 
-#### MVP boundary
+#### Target-release foundation
 
 Define shared types and conventions, database constraints, error envelopes, security baseline, audit
 metadata, and the outbox pattern before implementing multi-step external workflows.
@@ -327,11 +395,12 @@ who the seller is, where they operate, whether they are eligible, and where sett
 - Sensitive identity documents use strict access, encryption, retention, and deletion policies.
 - Market launch requires an approved legal/tax/payment configuration, not only a country dropdown.
 
-#### MVP versus later
+#### Target-release requirement
 
-MVP may use a single supported country and provider with manual review fallback. Later versions add
-organizations, beneficial owners, automated re-screening, multiple payout rails, and jurisdiction-
-specific registration workflows.
+Vietnam may use one approved verification and payout provider, but individual and organization
+hosts, beneficial-owner evidence where applicable, periodic re-screening, manual review fallback,
+and market-specific eligibility are required. Additional countries and simultaneous provider rails
+reuse the same versioned contracts as designed extensions.
 
 ### D03 — Listing supply, catalog, media, and content quality
 
@@ -419,13 +488,14 @@ reservations from creating double booking.
 - iCal import/export, recurrence, UID handling, time normalization, and cancellation.
 - Channel-manager/webhook integrations and conflict policy.
 - Sync freshness, health, backfill, alerting, and manual conflict resolution.
-- Future quantity inventory for room types and multiple identical units.
+- Pooled quantity inventory for room types and multiple interchangeable units.
 
 #### Authoritative state
 
-For the initial single-unit model, the platform calendar plus active reservation ranges are
-authoritative. Imported events are normalized into explicit blocks with source and provenance. An
-external calendar's latest response is not queried inside a booking transaction.
+For unique rentals and pooled hotel room types, the platform calendar plus active claims and
+per-date capacity are authoritative. Imported events are normalized into explicit blocks with
+source and provenance. An external calendar's latest response is not queried inside a booking
+transaction.
 
 #### Hard rules
 
@@ -439,11 +509,12 @@ external calendar's latest response is not queried inside a booking transaction.
 - Single-unit inventory uses non-overlapping range claims; pooled multi-unit inventory requires
   per-date quantity enforcement and cannot be implemented by weakening the single-unit constraint.
 
-#### MVP versus later
+#### Target-release requirement
 
-MVP supports one unit, manual calendar, per-date price/minimum-night override, transactional hold,
-and overlap protection. Add iCal next; add channel managers and quantity inventory only with a new
-inventory model and conflict runbook.
+The release supports manual calendars, per-date pricing and restrictions, transactional holds,
+overlap protection, iCalendar exchange, channel-manager boundaries, unique rentals, and pooled
+room-type quantity. Provider integrations may be limited to the providers approved for Vietnam, but
+their conflict, freshness, retry, and reconciliation behavior is not deferred.
 
 Detailed design: [Availability, reservation, and booking lifecycle](features/availability-reservation-and-booking.md).
 
@@ -594,7 +665,7 @@ payment, inventory, stay, and refund facts into one ambiguous status.
 - Every transition is authorized, idempotent, auditable, and has documented side effects.
 - Recovery workers can converge interrupted workflows to a valid state.
 
-#### MVP exit criteria
+#### Target-release completion gate
 
 Two concurrent guests cannot reserve the same night; repeated requests do not duplicate a booking
 or charge; expired holds release inventory; confirmed history remains stable after listing changes;
@@ -633,7 +704,7 @@ charges and keeping booking state recoverable.
 - Cumulative refund and capture rules are enforced transactionally.
 - Raw card or bank credentials never enter ordinary application storage or logs.
 
-#### MVP exit criteria
+#### Target-release completion gate
 
 A booking can recover from client disconnect, repeated request, repeated webhook, delayed webhook,
 decline, timeout, and process restart without duplicate financial effect.
@@ -673,11 +744,12 @@ what was actually moved externally, and how to prove balances later.
 - Reconciliation differences are explicit exception records; they are not hidden by overwriting data.
 - Tax content and economic allocations are effective-dated and versioned.
 
-#### MVP versus later
+#### Target-release requirement
 
-Implement deterministic allocation and a balanced ledger before automated host payout. Begin with one
-currency and one payout provider if necessary, but preserve ownership fields and journal semantics.
-Add complex FX, reserves, withholding, and multi-entity accounting after the legal model is decided.
+Deterministic allocation, a balanced ledger, host entitlement, automated payout through the approved
+Vietnam rail, reserves, applicable withholding, reconciliation, statements, and close form one
+completion boundary. Additional currencies and legal entities are designed extensions, but ownership,
+currency, market, and journal semantics must already support them without reinterpretation.
 
 Detailed designs:
 
@@ -828,11 +900,12 @@ retaliation or manipulation.
 - Model-derived summaries link to supporting review evidence and disclose uncertainty.
 - Mention frequency indicates attention, not necessarily positive or negative sentiment.
 
-#### MVP versus later
+#### Target-release requirement
 
-Start with verified reviews, category scores, one-per-direction uniqueness, basic moderation, and
-rebuildable aggregates. Add double-blind publication and aspect extraction before feeding nuanced
-review signals into personalization.
+Verified directional reviews, double-blind publication, versioned moderation, rebuildable
+aggregates, controlled aspect extraction, and evidence-qualified personalization signals are one
+completion boundary. No model-derived review signal may serve before its evidence, privacy,
+moderation, fallback, and rebuild contracts pass verification.
 
 Detailed design:
 [Reviews, aspect intelligence, and reputation](features/review-reputation-and-aspect-intelligence.md).
@@ -1030,7 +1103,10 @@ Detailed design: [Data, experimentation, and machine-learning platform](features
 - Human feedback quality and avoidance of feedback loops.
 - Privacy, deletion, consent, retention, and restricted features.
 
-#### Maturity path
+#### Implementation dependency chain
+
+The following steps are implementation dependencies for the same target release, not separately
+shippable product versions:
 
 1. Instrument events and establish deterministic rules.
 2. Build trustworthy aggregates and offline evaluation.
@@ -1379,33 +1455,39 @@ Each projection records source version/watermark and exposes freshness where it 
 - Causal evaluation for interventions such as promotion and pricing.
 - Fairness and marketplace guardrails beyond a single conversion metric.
 
-## 14. Delivery roadmap
+## 14. Implementation dependency map and completion gates
 
-The sequence below favors a complete, correct booking loop before advanced optimization. Phases are
-product increments, not migration numbers and not microservice boundaries.
+The groups below define a safe build order toward the single target release. They are not product
+increments, launch cohorts, migration numbers, or microservice boundaries. Passing one gate allows
+dependent work to proceed; it does not constitute a releasable reduced product.
 
-### Phase A — Preserve and expose the existing foundations
+### Dependency group A — Supply and policy foundations
 
 #### Scope
 
-- Complete listing CRUD and publication APIs over the existing schema.
+- Approve the Vietnam market/legal/provider baseline and versioned market context.
+- Add forward migrations for property, accommodation type, optional physical unit, public listing,
+  rate plan, and market-keyed configuration before implementing new supply APIs.
+- Complete property/listing CRUD and publication APIs for unique rentals and pooled hotel room types.
 - Media upload workflow and structured amenities.
-- Host-owned authorization and listing validation.
-- Calendar generation, manual block/unblock, nightly price, and stay-rule APIs.
+- Host/organization/co-host authorization and listing validation.
+- Calendar generation, capacity, manual block/unblock, nightly price, and stay-rule APIs for both
+  inventory modes.
 - Rebuildable local development fixtures and API documentation.
 
 #### Exit
 
-A verified host can publish one valid listing and control a 12–18 month sellable calendar. No search,
-booking, or ML shortcut compensates for missing supply correctness.
+A verified individual or organization host can publish a unique rental or pooled room type and
+control a 12–18 month sellable calendar. No search, booking, or ML shortcut compensates for missing
+supply or market correctness.
 
-### Phase B — Deterministic location search and trip eligibility
+### Dependency group B — Location search and trip eligibility
 
 #### Scope
 
 - Import a bounded geographic catalog.
 - Destination autocomplete and spatial retrieval.
-- Published listing, occupancy, amenities, dates, and total-price filter.
+- Published accommodation type, pooled quantity, occupancy, amenities, dates, and total-price filter.
 - Deterministic baseline rank and stable pagination.
 - Search/impression/click instrumentation.
 
@@ -1414,22 +1496,23 @@ booking, or ML shortcut compensates for missing supply correctness.
 Anonymous and signed-in guests can find eligible listings for a trip with a reliable non-personalized
 fallback. Search never claims final availability.
 
-### Phase C — Deterministic quote and inventory hold
+### Dependency group C — Quote and inventory commitment
 
 #### Scope
 
 - Fee/rate-plan/discount rule representation.
 - Versioned quote with line items and expiry.
-- One-country deterministic tax adapter or approved temporary tax scope.
-- Inventory-hold transaction, TTL, release worker, and overlap defense.
+- Versioned Vietnam market tax/disclosure adapter approved for the supported business model.
+- Inventory-hold transaction, TTL, release worker, unique-unit overlap defense, and pooled-quantity
+  capacity defense.
 - Host expected-proceeds preview.
 
 #### Exit
 
-The same server inputs reproduce the same quote; one held night cannot be held by a competing guest;
+The same server inputs reproduce the same quote; unique or pooled capacity cannot be oversold;
 expired holds converge safely; quote totals reconcile exactly.
 
-### Phase D — Booking and one payment provider
+### Dependency group D — Booking and approved payment provider
 
 #### Scope
 
@@ -1440,10 +1523,10 @@ expired holds converge safely; quote totals reconcile exactly.
 
 #### Exit
 
-The platform completes one idempotent search-to-confirmation flow and survives duplicate commands,
-duplicate/delayed webhooks, client disconnect, payment decline, and process restart.
+The platform completes approved instant-book and request-to-book flows for unique and pooled supply
+and survives duplicate commands, delayed webhooks, client disconnect, payment decline, and restart.
 
-### Phase E — Cancellation, refund, and basic support
+### Dependency group E — Cancellation, refund, and support domain
 
 #### Scope
 
@@ -1458,7 +1541,7 @@ duplicate/delayed webhooks, client disconnect, payment decline, and process rest
 Every cancellation explains guest refund, host impact, platform impact, tax impact, and promotion
 reversal; actual refund movement is traceable separately.
 
-### Phase F — Ledger, statements, and host payout
+### Dependency group F — Ledger, statements, and host payout
 
 #### Scope
 
@@ -1473,7 +1556,7 @@ reversal; actual refund movement is traceable separately.
 Captured cash, ledger balance, provider balance, and payout can be reconciled; failed payout preserves
 host liability; journals balance and are never edited.
 
-### Phase G — Stay operations, messaging, and reviews
+### Dependency group G — Stay operations, messaging, and reviews
 
 #### Scope
 
@@ -1488,7 +1571,7 @@ host liability; journals balance and are never edited.
 A booking can be operationally fulfilled, incidents can be handled, and only eligible completed stays
 create trustworthy feedback.
 
-### Phase H — Trust, safety, dispute, and compliance depth
+### Dependency group H — Trust, safety, dispute, and compliance
 
 #### Scope
 
@@ -1502,13 +1585,14 @@ create trustworthy feedback.
 High-risk decisions have evidence, reason, policy/model version, authorized action, SLA, and appeal;
 risk controls integrate with booking and payout without opaque state mutation.
 
-### Phase I — Review intelligence and personalized discovery
+### Dependency group I — Review intelligence and personalized discovery
 
 #### Scope
 
 - Review aspect taxonomy/extraction and listing intelligence profiles.
 - Guest long-term preference, session intent, and trip-context profiles.
-- Baseline feature logging, offline datasets, and learning-to-rank candidate model.
+- Baseline feature logging, point-in-time datasets, shadow/canary evaluation, and production
+  learning-to-rank model with deterministic fallback.
 - Cold start, diversity, fairness, exploration, explanations, and opt-out.
 
 #### Exit
@@ -1516,14 +1600,15 @@ risk controls integrate with booking and payout without opaque state mutation.
 Personalization improves completed-stay satisfaction under controlled experiments, falls back safely,
 and can explain its main non-sensitive reasons.
 
-### Phase J — Market-aware pricing and offer optimization
+### Dependency group J — Market-aware pricing and offer optimization
 
 #### Scope
 
 - Demand forecast and comparable-market features.
 - Booking propensity and causal price-elasticity analysis.
 - Host-constrained candidate price optimization.
-- Promotion uplift and controlled contextual exploration.
+- Production host pricing recommendations; promotion uplift and contextual exploration only when
+  the approved product policy includes them.
 - Model registry, shadow/canary, guardrails, drift, and kill switch.
 
 #### Exit
@@ -1531,49 +1616,52 @@ and can explain its main non-sensitive reasons.
 Automated recommendations respect host net/floor/ceiling, tax, fee, fairness, and marketplace policy;
 incremental value is measured against a valid control, not inferred from raw conversion.
 
-### Phase K — Multi-market and professional supply
+### Dependency group K — Cross-domain target-release acceptance
 
 #### Scope
 
-- Effective-dated legal/tax/payment configuration per country.
-- Localization, invoice/reporting, currency/FX, and multiple payout rails.
-- Organizations, portfolios, co-host roles, PMS/channel manager integrations.
-- Hotel-style room type/quantity inventory as a separate explicit model if required.
+- Verify effective-dated legal/tax/payment configuration keyed by market across every domain.
+- Verify Vietnamese localization, invoice/reporting, VND handling, and approved payment/payout rails.
+- Verify organizations, portfolios, co-host roles, PMS/channel manager boundaries, unique rentals,
+  and pooled room-type inventory through complete journeys.
+- Run recovery, reconciliation, security/privacy, ML fallback, historical replay, and synthetic
+  second-market contract suites.
 
 #### Exit
 
-Each market has an approved readiness checklist and each inventory model preserves its own concurrency
-invariants. New-country rollout does not depend on code-embedded tax rules.
+Vietnam has an approved readiness checklist and each inventory mode preserves its concurrency
+invariants. A synthetic second-market contract test proves expansion does not depend on
+code-embedded country rules or reinterpret existing records.
 
-### Phase L — Scale and service extraction only where justified
+### Conditional scale group L — Service extraction and multi-region infrastructure
 
-#### Scope
+#### Activation evidence
 
 - Measure contention, latency, storage, team ownership, and failure blast radius.
 - Extract search indexing/inference, notifications, media, payment adapters, or data pipelines when
   their profiles justify independent deployment.
 - Introduce partitioning, replicas, regional routing, or CQRS projections where measured.
 
-#### Exit
+#### Completion gate when activated
 
 Each added distributed boundary has an owner, SLO, versioned contract, failure/replay strategy, and
 demonstrated benefit greater than its consistency and operational cost.
 
-## 15. Current implementation target
+## 15. Gap from current repository to target release
 
 The detailed designs for **Availability, Reservation, and Booking Lifecycle**, **Payment
 Orchestration**, **Booking Modification, Cancellation, and Refund Policy**, **Ledger,
 Reconciliation, and Host Payout**, **Messaging, Notifications, and Stay Operations**, **Trust,
 Safety, Fraud, and Content Moderation**, **Disputes, Damage Claims, Insurance, and Customer
-Support**, **Reviews, Aspect Intelligence, and Reputation**, and **Data, Experimentation, and
-Machine-learning Platform** are now available:
+Support**, **Reviews, Aspect Intelligence, and Reputation**, **Data, Experimentation, and
+Machine-learning Platform**, and **Vietnam Market Readiness and Internationalization** are now available:
 
 - [`features/availability-reservation-and-booking.md`](features/availability-reservation-and-booking.md)
   defines complete-stay eligibility, inventory holds/claims, booking transitions, and the
   payment-versus-expiry race;
 - [`features/payment-orchestration.md`](features/payment-orchestration.md) defines provider-independent
   collection obligations, attempts/operations/evidence, authorization/capture/refund, 3DS/SCA,
-  idempotent webhook/query recovery, reconciliation, PCI boundaries, and rollout.
+  idempotent webhook/query recovery, reconciliation, PCI boundaries, and completion gates.
 - [`features/cancellation-modification-and-refund.md`](features/cancellation-modification-and-refund.md)
   defines executable policy/disclosure versions, deterministic preview and entitlement, atomic
   inventory release, booking revisions, modification delta holds, host cancellation/relocation, and
@@ -1584,39 +1672,34 @@ Machine-learning Platform** are now available:
 - [`features/messaging-notifications-and-stay-operations.md`](features/messaging-notifications-and-stay-operations.md)
   defines booking-scoped conversation authority, fact-derived notification intent and delivery,
   controlled instruction/access release, readiness and stay evidence, incident triage, operational
-  remedies, provider recovery, security boundaries, and rollout.
+  remedies, provider recovery, security boundaries, and completion gates.
 - [`features/trust-safety-fraud-and-moderation.md`](features/trust-safety-fraud-and-moderation.md)
   defines cross-domain signals and evidence, versioned policy decisions, scoped challenges and
   restrictions, content moderation, human review and appeal, domain enforcement contracts,
-  adjudicated labels, model governance, privacy/fairness controls, failure recovery, and rollout.
+  adjudicated labels, model governance, privacy/fairness controls, failure recovery, and completion gates.
 - [`features/disputes-damage-claims-and-support.md`](features/disputes-damage-claims-and-support.md)
   defines booking-centric cases and timelines, classification/queues/SLA, evidence custody,
   damage claims, payment disputes, protection/insurance integration, remedy/funding decisions,
-  agent authority, appeals, provider recovery, quality controls, and rollout.
+  agent authority, appeals, provider recovery, quality controls, and completion gates.
 - [`features/review-reputation-and-aspect-intelligence.md`](features/review-reputation-and-aspect-intelligence.md)
   defines verified directional rights, immutable revisions, double-blind reveal, exact-revision
   moderation integration, transparent aggregates, aspect evidence/profiles, contextual reputation,
-  privacy/fairness controls, recovery, and rollout.
+  privacy/fairness controls, recovery, and completion gates.
 - [`features/data-experimentation-and-ml-platform.md`](features/data-experimentation-and-ml-platform.md)
   defines event/schema governance, durable ingestion, identity-safe attribution, semantic metrics,
   deterministic experiments, point-in-time features and labels, model/artifact lifecycle, bounded
-  predictions, domain-owned decisions, privacy/fairness controls, recovery, and rollout.
+  predictions, domain-owned decisions, privacy/fairness controls, recovery, and completion gates.
+- [`features/multi-market-compliance-and-localization.md`](features/multi-market-compliance-and-localization.md)
+  defines the Vietnam market contract, effective policy/provider configuration, VND and locale
+  semantics, historical provenance, activation gates, and non-breaking second-market boundary.
 
-The immediate engineering target remains Phase 0 and Phase 1 of the availability design: record the
-unresolved launch/product decisions, then implement listing/calendar APIs and deterministic
-complete-stay eligibility. Before payment implementation, explicit holds/claims and immutable amount
-authority must be stable. The payment and cancellation designs can proceed through their Phase 0
-provider/legal/security/policy decisions in parallel. The D12–D13 design can proceed through its
-Phase 0 participant, notification, disclosure, access, incident, and stay-outcome decisions in
-parallel. The D15 design can proceed through its Phase 0 threat, authority, policy, privacy,
-reviewer, appeal, and safety-runbook decisions in parallel. The D16 design can proceed through its
-Phase 0 support, legal, finance, claims, provider, evidence, authority, SLA, and appeal decisions in
-parallel. The D14 design can proceed through its Phase 0 review-window, publication, moderation,
-rating, privacy, fairness, reputation, and rollout decisions in parallel. The D19–D20 design can
-proceed through its Phase 0 event, metric, privacy, experiment, feature, label, model-governance,
-and ownership decisions, followed by one durable instrumented journey. The next focused design
-should cover D22 multi-market compliance and localization, with explicit links to D02 host-market
-eligibility, D07 tax/price behavior, D21 policy governance, and the launch-market decisions below.
+Implementation follows the dependency map above while all domain designs converge on the same
+release gate. Existing single-listing inventory and coarse payment/review migrations are historical
+foundations and require forward migrations for property/accommodation type/physical unit, pooled
+quantity, rate plans, market context, durable events, complete money movement, and governed ML.
+Provider, policy, privacy, tax, review, and model decisions may be resolved in parallel, but no
+reduced vertical slice is relabeled as the finished product. The D22 design now covers multi-market
+compliance and localization, linked to D02, D07, D21, and the Vietnam launch decisions.
 
 ## 16. Decisions that must be made explicitly
 
@@ -1638,8 +1721,9 @@ Some architectural questions cannot be answered by implementation detail alone.
 
 ### Inventory model
 
-- Is every listing always one unit?
-- Will professional hosts need room types with quantity by date?
+- How are property, accommodation type, physical unit, listing, and rate plan identifiers migrated
+  from the current listing-centric schema?
+- Which hotel operations require assigning a physical unit before arrival rather than at check-in?
 - Which external calendar/channel source wins during conflict?
 
 ### Pricing and personalization policy
@@ -1670,9 +1754,10 @@ Some architectural questions cannot be answered by implementation detail alone.
 
 ### Market entry
 
-- Which first country, currency, language, payment rail, tax treatment, invoice rules, and support
-  hours define the MVP?
-- Which capabilities are intentionally unavailable outside that scope?
+- Which approved Vietnam legal role, VND payment/payout rails, tax treatment, invoice rules, data
+  controls, languages, and support contracts satisfy the target-release gate?
+- Which capabilities are explicitly unavailable outside Vietnam while preserving the market-keyed
+  contract?
 
 These decisions should be recorded as architecture/product decision records with owner, date,
 assumptions, alternatives, and revisit trigger.
@@ -1750,7 +1835,7 @@ A feature is not complete when only its happy-path endpoint works. At minimum it
 - forward migration, constraints, indexes, retention, and rollback/deployment plan;
 - audit and support visibility;
 - privacy/security/threat review proportional to the data and action;
-- logs, metrics, traces, alerts, dashboard, SLO, and runbook;
+- logs, metrics, traces, alerts, SLOs, recovery commands, and external runbook inputs;
 - test cases for concurrency, retries, boundary conditions, and recovery;
 - product copy and explanation for consequential decisions;
 - analytics/experiment instrumentation without contaminating transactional truth;
@@ -1759,9 +1844,10 @@ A feature is not complete when only its happy-path endpoint works. At minimum it
 For money, inventory, identity, moderation, and safety work, also require reconciliation or review
 queues and an accountable operational owner.
 
-## 20. What not to build prematurely
+## 20. Conditional infrastructure and excluded product categories
 
-- Do not split domains into microservices merely because the logical map is large.
+- Do not split domains into microservices merely because the logical map is large; extraction is a
+  measured-scale capability and not evidence of product completeness.
 - Do not introduce Kafka, sharding, CQRS, event sourcing, a feature store, or vector database without
   measured need and a clear owner.
 - Do not train personalization before impression/outcome instrumentation and a strong baseline exist.
@@ -1774,7 +1860,7 @@ queues and an accountable operational owner.
 - Do not treat provider success responses, caches, indexes, or warehouse tables as transactional
   sources of truth.
 
-## 21. Suggested document backlog
+## 21. Authoritative feature-design index
 
 Completed focused designs:
 
@@ -1790,15 +1876,11 @@ Completed focused designs:
 - [`personalized-discovery.md`](features/personalized-discovery.md)
 - [`dynamic-pricing-and-settlement.md`](features/dynamic-pricing-and-settlement.md)
 
-Remaining focused designs in recommended dependency order:
-
-1. `multi-market-compliance-and-localization.md`
-
-Proceed next with `multi-market-compliance-and-localization.md`, combining the cross-market parts of
-D02, D07, D21, and D22 without duplicating the authoritative pricing, payment, finance, or identity
-designs. Implementation of availability/reservation should still reach its explicit hold/claim
-boundary before the payment vertical slice, while other feature Phase 0 decisions can proceed in
-parallel.
+The focused target designs are complete, including
+[`multi-market-compliance-and-localization.md`](features/multi-market-compliance-and-localization.md),
+which combines the cross-market parts of D02, D07, D21, and D22 without duplicating pricing,
+payment, finance, or identity authority. New design documents are added only for a newly approved
+product category or when an existing authority cannot safely contain a required contract.
 
 Use the [standard feature-design document prompt](templates/feature-design-document-prompt.md) to
 expand any remaining domain into a consistent implementation-oriented document. A future request can

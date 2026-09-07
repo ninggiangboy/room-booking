@@ -52,6 +52,9 @@ order, diversity/policy constraints, explanation, and deterministic fallback.
 
 ## Status and dependencies
 
+[Vietnam market readiness and internationalization](multi-market-compliance-and-localization.md)
+owns market/locale/privacy context and market-specific model validation requirements.
+
 This is a target design, not a description of an implemented API. The current repository contains
 the location-search schema and the transactional foundations for listings, calendars, bookings,
 reviews, and favorites. It does not yet contain the search, behavior-event, feature-pipeline, or
@@ -82,8 +85,8 @@ no history always need a high-quality fallback.
 - Measure completed stays and satisfaction, not clicks alone.
 - Make model inputs, outputs, versions, and experiments auditable.
 - Prevent review manipulation, popularity lock-in, discriminatory targeting, and privacy leaks.
-- Allow the implementation to evolve from SQL and rules to machine-learned ranking without
-  rewriting authoritative booking logic.
+- Keep an explainable SQL/rules fallback alongside the required production machine-learned ranker
+  without rewriting authoritative booking logic.
 
 ## Non-goals
 
@@ -190,8 +193,9 @@ impression events and outcome attribution
 Candidate retrieval and ranking must remain separate. Retrieval maximizes coverage of eligible
 listings with predictable database cost. Ranking spends more computation on a bounded candidate
 set. For a destination with hundreds of listings, PostgreSQL plus application-side scoring is
-sufficient initially. Specialized search indexes, approximate nearest-neighbor retrieval, and a
-dedicated online feature store are later scaling options, not MVP requirements.
+sufficient at measured launch load. Specialized search indexes, approximate nearest-neighbor
+retrieval, and a dedicated online feature store are measured-scale implementations of the same
+required serving contract.
 
 ## Eligibility and candidate retrieval
 
@@ -823,7 +827,7 @@ The exact schema belongs in a future forward migration. Do not modify applied mi
 
 | Record | Purpose |
 | --- | --- |
-| `discovery_events` | Append-only validated behavior and attribution facts for an MVP |
+| `discovery_events` | Append-only validated behavior and attribution facts for the target release |
 | `review_aspect_mentions` | Versioned normalized aspects extracted from published reviews |
 | `listing_aspect_scores` | Rebuildable per-listing/per-aspect aggregates and confidence |
 | `listing_discovery_profiles` | Versioned materialized listing-quality features |
@@ -832,7 +836,7 @@ The exact schema belongs in a future forward migration. Do not modify applied mi
 | `ranking_exposures` | Rank, score/version, experiment, and candidate exposure needed for evaluation |
 
 Large event volumes should eventually move to an analytical event store or warehouse. PostgreSQL
-can remain the source for serving small derived profiles or an MVP event log, but unbounded raw
+can remain the source for serving small derived profiles or a bounded launch event log, but unbounded raw
 clickstream growth must not compete with booking transactions. Derived tables need `computed_at`,
 input watermark, schema/model version, and rebuild procedures.
 
@@ -1082,23 +1086,26 @@ pricing. Optional personalization enrichment has a stricter deadline and degrade
 - Prevent a stale cached result from exposing an archived/suspended listing by applying a final
   lightweight eligibility check or rapid invalidation.
 
-## Rollout plan
+## Target-release dependencies and completion gates
 
-### Phase 0 — Foundations
+All dependencies through machine-learned ranking are required for the target release. Advanced
+retrieval techniques are measured-scale choices and must preserve the same serving contract.
+
+### Dependency 0 — Foundations
 
 1. Complete listing, availability, booking, review, favorite, and geographic-search APIs.
 2. Define event names, ownership, schemas, retention, consent/opt-out, and data-quality dashboards.
 3. Implement deterministic candidate filtering and authoritative total-trip pricing.
 4. Establish anonymous baseline metrics before personalization.
 
-### Phase 1 — Explainable baseline
+### Dependency 1 — Explainable fallback baseline
 
 1. Add smoothed overall/category ratings and reliable listing outcome aggregates.
 2. Implement deterministic normalized ranking plus stable cursor pagination.
 3. Add diversity rules and a small, guarded new-listing exposure pool.
 4. Return approved non-personalized reason codes.
 
-### Phase 2 — Review intelligence
+### Dependency 2 — Review intelligence
 
 1. Approve taxonomy and label a multilingual evaluation dataset.
 2. Add a forward migration for versioned aspect mentions and listing aspect aggregates.
@@ -1106,7 +1113,7 @@ pricing. Optional personalization enrichment has a stricter deadline and degrade
 4. Audit quality, then enable high-confidence aspects in listing summaries and baseline ranking.
 5. Add host-facing strengths/trends only after disclosure thresholds and appeal tooling exist.
 
-### Phase 3 — Rule-based personalization
+### Dependency 3 — Rule-based personalization
 
 1. Build price, room type, amenity, and aspect preference features.
 2. Separate long-term, recent, and current-session signals.
@@ -1114,7 +1121,7 @@ pricing. Optional personalization enrichment has a stricter deadline and degrade
 4. Provide opt-out and broad preference explanations.
 5. A/B test against the anonymous baseline with completed-stay guardrails.
 
-### Phase 4 — Machine-learned ranking
+### Dependency 4 — Production machine-learned ranking
 
 1. Produce point-in-time training examples and correct for position bias.
 2. Train and calibrate an interpretable learning-to-rank model.
@@ -1122,7 +1129,7 @@ pricing. Optional personalization enrichment has a stricter deadline and degrade
 4. Gradually increase experiment traffic after predefined gates pass.
 5. Automate drift monitoring, model registry, rollback, and periodic retraining.
 
-### Phase 5 — Advanced retrieval and intent
+### Measured-scale capability — Advanced retrieval and intent
 
 1. Add semantic free-text intent mapping to approved taxonomy/filter concepts.
 2. Evaluate embedding/two-tower retrieval only when candidate scale requires it.

@@ -44,6 +44,9 @@ Examples of those consuming domains include:
 
 ## Status and dependencies
 
+[Vietnam market readiness and internationalization](multi-market-compliance-and-localization.md)
+owns market/locale/privacy activation context and the rule that models are validated per market.
+
 This is a target design. It does not describe an implemented data warehouse, event bus, experiment
 service, feature store, training pipeline, model registry, or inference service.
 
@@ -51,7 +54,7 @@ The current repository provides only these relevant foundations:
 
 - PostgreSQL, Spring Data JDBC, Liquibase, UTC audit timestamps, UUID support, and optimistic versions
   described in the [platform data model](../data-model/000-platform.md) and
-  [data-model roadmap](../data-model/README.md);
+  [data-model history and target gaps](../data-model/README.md);
 - transactional schemas for identity, listings, calendars, bookings, payments, reviews, favorites,
   and location search;
 - two in-process immutable Java application-event records for authentication email work;
@@ -82,8 +85,9 @@ Recommended dependency order:
 3. Instrument one complete journey using server facts and validated client interactions.
 4. Establish raw, conformed, and semantic analytical layers with reconciliation and deletion.
 5. Publish a deterministic metric catalog and experiment assignment/exposure service.
-6. Build one point-in-time dataset and deterministic or interpretable model behind shadow mode.
-7. Add governed batch or online inference with consumer-owned constraints and fallback.
+6. Prove the shared point-in-time dataset and model-release contract with one model in shadow mode.
+7. Apply that contract to production personalized ranking, review intelligence, bounded pricing
+   recommendation, and fraud/content moderation with consumer-owned constraints and fallback.
 8. Add specialized streaming, online feature infrastructure, or separate deployment units only when
    measured freshness, throughput, reliability, or team-ownership needs justify them.
 
@@ -107,7 +111,8 @@ correct non-ML implementations of search, quote, booking, payment, review, safet
   derivatives.
 - Detect missing, duplicated, late, reordered, malformed, or statistically implausible data before it
   influences product or model decisions.
-- Start with infrastructure proportional to current traffic and make later extraction evidence-led.
+- Use infrastructure proportional to measured traffic while keeping extraction evidence-led; this
+  is the target architecture, not a temporary reduction in model governance or data correctness.
 - Give product, engineering, data, ML, privacy, security, risk, finance, and operations a shared audit
   trail for consequential changes.
 
@@ -116,7 +121,7 @@ correct non-ML implementations of search, quote, booking, payment, review, safet
 - Replacing transactional domain tables with a warehouse, lake, search index, cache, or event log.
 - Implementing event sourcing or Command Query Responsibility Segregation (CQRS).
 - Requiring Kafka, a lakehouse, a real-time feature store, a vector database, Kubernetes, or separate
-  microservices for the first correct vertical slice.
+  microservices when the target throughput, freshness, and ownership requirements do not justify them.
 - Letting an experiment bypass availability, money, tax, contractual disclosure, safety, privacy, or
   host-control rules.
 - Letting a model directly confirm or cancel bookings, calculate tax, post ledger entries, capture or
@@ -232,7 +237,7 @@ outcomes without an auditable rule.
 
 ### Complexity requires measured need
 
-The MVP may use PostgreSQL outbox tables, bounded event ingestion, scheduled exports, SQL
+The target implementation may use PostgreSQL outbox tables, bounded event ingestion, scheduled exports, SQL
 transformations, object storage or a selected analytical warehouse, and simple batch artifacts. New
 distributed systems require measured volume, latency, availability, cost, or ownership evidence plus
 an operator, SLO, recovery design, and exit plan.
@@ -786,7 +791,7 @@ can change host availability and untreated guest outcomes. Cluster, market-level
 designs may be needed. Observational propensity adjustment does not automatically repair a flawed
 experiment.
 
-Contextual bandits and adaptive allocation are later options. They require logged action
+Contextual bandits and adaptive allocation are measured-scale options. They require logged action
 probabilities, exploration support, off-policy evaluation, safety constraints, and a different
 analysis contract; ordinary A/B analysis must not be applied blindly.
 
@@ -1008,7 +1013,7 @@ non-reproducible feature is explicitly marked and restricted from consequential 
 - **Incremental** features update from events using idempotent reducers.
 - **Static/effective-dated** features use versioned configuration or taxonomy.
 
-The MVP can store bounded latest feature projections in PostgreSQL or consumer-owned tables and
+The target can store bounded latest feature projections in PostgreSQL or consumer-owned tables and
 historical values in analytical storage. A dedicated online feature store is justified only when
 multiple models require shared low-latency features and measured parity/freshness problems outweigh
 its operational cost.
@@ -1279,7 +1284,7 @@ dependent on one provider's proprietary dashboard.
 
 No tables below exist today. Implementation uses new forward Liquibase migrations after the
 transactional outbox and privacy model are approved. Logical entities may share physical tables at
-MVP scale but keep the ownership and constraints below.
+the measured launch scale but keep the ownership and constraints below.
 
 ### Event and ingestion records
 
@@ -1978,9 +1983,12 @@ No model or Large Language Model (LLM) may:
 LLM-generated text is a draft or structured candidate unless an explicitly approved low-risk
 workflow says otherwise. The original source and extracted evidence remain available for review.
 
-## Rollout plan
+## Target-release dependencies and completion gates
 
-### Phase 0 — Governance and reference contracts
+The steps below are cumulative controls for releasing production ML safely. Shadow and canary modes
+verify the same target release; they do not defer the required model families to another product version.
+
+### Dependency 0 — Governance and reference contracts
 
 Approve owners, data classes, purpose/consent/retention, event envelope, schema compatibility, time
 semantics, metric template, experiment policy, feature/label/model templates, access roles, approval
@@ -1994,7 +2002,7 @@ Exit criteria:
 - Privacy/security review approves the initial event fields and subject-right workflow.
 - Golden envelope, assignment, metric, point-in-time feature, and fallback examples pass review.
 
-### Phase 1 — Durable facts and one journey
+### Dependency 1 — Durable facts and complete journey instrumentation
 
 Add forward migrations for common outbox/inbox, event registry, bounded behavior acceptance, and audit.
 Instrument one complete search/impression/click/quote/booking/confirmation/completion journey using
@@ -2008,7 +2016,7 @@ Exit criteria:
 - Reconciliation detects missing/duplicate events and backfill has explicit provenance.
 - Transactional latency remains within domain budgets during analytics backlog.
 
-### Phase 2 — Conformed data and governed metrics
+### Dependency 2 — Conformed data and governed metrics
 
 Build raw/conformed/semantic layers, shared historical dimensions, lineage, quality gates, retention,
 deletion propagation, and an initial metric catalog. Publish discovery funnel, completed-stay,
@@ -2022,7 +2030,7 @@ Exit criteria:
 - Deletion/opt-out reaches the initial analytical layers with proof.
 - Dashboards distinguish operational, product, and audited financial authority.
 
-### Phase 3 — Deterministic experimentation
+### Dependency 3 — Deterministic experimentation
 
 Implement experiment registry/epochs, stable assignment, actual exposure, namespace exclusion,
 guardrails, sample-ratio checks, frozen analysis datasets, lifecycle controls, and A/A validation.
@@ -2036,7 +2044,7 @@ Exit criteria:
 - Guardrail breach and emergency stop drills restore control without evidence loss.
 - Analysis reports state cutoff, method, uncertainty, practical significance, and limitations.
 
-### Phase 4 — Feature and training foundations
+### Dependency 4 — Feature and training foundations
 
 Add feature/label registries, point-in-time materialization, training manifests, temporal/entity-aware
 splits, offline/online parity tests, model registry, artifact integrity, and model cards. Build one
@@ -2049,7 +2057,7 @@ Exit criteria:
 - Feature access, consent, deletion, freshness, and missingness behave as registered.
 - Candidate beats or meaningfully complements the deterministic baseline under approved metrics.
 
-### Phase 5 — Shadow and batch decision support
+### Dependency 5 — Shadow and batch decision support
 
 Run the first model in shadow, then optionally publish non-authoritative batch predictions for host or
 operator insight. Join predictions, actual consumer decisions, fallbacks, and mature outcomes.
@@ -2061,7 +2069,7 @@ Exit criteria:
 - Operators can inspect lineage and use kill switch/rollback.
 - No user or domain state depends on the shadow path.
 
-### Phase 6 — Constrained canary and controlled experiment
+### Dependency 6 — Constrained canary and controlled experiment
 
 Enable a small canary for one bounded consumer behind deterministic constraints, stable experiment
 assignment, monitoring, and rollback. Ramp only through pre-approved gates. Suitable early examples
@@ -2074,7 +2082,7 @@ Exit criteria:
 - Outcome/fairness slices and long-term risks have accountable review.
 - The consumer persists policy, prediction, experiment, action, and explanation references.
 
-### Phase 7 — Selective real-time and advanced learning
+### Dependency 7 — Production serving and advanced learning
 
 Add streaming updates, a dedicated online feature store, specialized serving, champion/challenger,
 long-term holdouts, uplift models, or contextual bandits only for measured use cases. Expand markets
@@ -2145,7 +2153,7 @@ decision, consequences, rollout, and revisit trigger.
    broker or separate data platform?
 4. Which event schema representation and backward/forward compatibility rules are mandatory?
 5. What aggregate ordering/gap policy applies to each first producer?
-6. Which initial journey and event versions form the Phase 1 reference contract?
+6. Which complete journey and event versions form the first durable reference contract?
 7. What client impression/viewability semantics apply to search, listing detail, map, price,
    notification, and host recommendation surfaces?
 8. Which first-party anonymous/session identifiers may be collected, linked on authentication, and
@@ -2184,7 +2192,7 @@ decision, consequences, rollout, and revisit trigger.
 26. What label maturity, correction, appeal, censoring, selective-label, and human-adjudication policy
     applies to each first model family?
 27. Where will historical features, training datasets, artifacts, and latest online projections live
-    in the MVP, and what are their retention/cost limits?
+    for the target release, and what are their retention/cost limits?
 28. What model registry, artifact format, checksum/signing, dependency capture, and reproducibility
     standard is required?
 29. Who may validate, approve, promote, rollback, or retire each risk tier of model?
@@ -2213,7 +2221,7 @@ decision, consequences, rollout, and revisit trigger.
 42. Which cross-domain decision log fields are mandatory so support, risk, finance, product, and model
     owners can reproduce one consequential outcome?
 
-Recommended MVP: one governed event envelope, PostgreSQL transactional outbox/inbox, a bounded
+Target-release default: one governed event envelope, PostgreSQL transactional outbox/inbox, a bounded
 client collector, one approved analytical store and SQL transformation path, a small semantic metric
 catalog, deterministic experiment assignment/exposure, and deterministic product baselines. Add one
 interpretable model only after point-in-time features, mature labels, shadow evaluation, consumer

@@ -1,9 +1,12 @@
-# Room Booking data-model roadmap
+# Room Booking data-model history and target-state gaps
 
-The database is delivered in small, ordered phases. Each phase can be deployed only after the previous phase has reached its exit criteria.
+The numbered SQL files are historical, ordered Liquibase changesets, not product phases and not a
+progressive definition of the finished backend. They describe what exists today. The authoritative
+target release is defined by the master map and feature designs; differences require new forward-only
+migrations rather than edits to applied changesets.
 
-For the product-wide problem map, domain boundaries, dependencies, and recommended delivery order
-beyond these initial schema phases, see
+For the product-wide problem map, domain boundaries, implementation dependencies, and cumulative
+completion gates beyond these historical changesets, see
 [`../marketplace-problem-breakdown.md`](../marketplace-problem-breakdown.md).
 
 The target availability evaluation, inventory-hold, concurrency, booking lifecycle, modification,
@@ -47,7 +50,11 @@ experimentation, point-in-time feature/label, model registry, prediction, privac
 is documented in
 [`../features/data-experimentation-and-ml-platform.md`](../features/data-experimentation-and-ml-platform.md).
 
-| Phase | Scope | Migration | Result |
+The target Vietnam market context, policy/provider registry, VND/locale semantics, immutable
+configuration provenance, and second-market compatibility boundary are documented in
+[`../features/multi-market-compliance-and-localization.md`](../features/multi-market-compliance-and-localization.md).
+
+| Migration | Historical scope | File | Existing result |
 | --- | --- | --- | --- |
 | 000 | PostgreSQL foundation | `000-platform.sql` | UUID, case-insensitive email and range constraints are available |
 | 001 | Identity | `001-identity.sql` | Users can register and become hosts |
@@ -59,7 +66,9 @@ is documented in
 
 ## Shared conventions
 
-- A `listing` is one independently bookable space. Its inventory is one.
+- Target vocabulary separates `property`, `accommodation_type`, optional `physical_unit`, public
+  `listing`, and `rate_plan`. Existing listing-centric tables are historical foundations.
+- Unique rentals use accommodation-type capacity one; hotel room types use pooled per-date quantity.
 - Stay ranges are half-open: `[check_in, check_out)`. A checkout date can be another booking's check-in date.
 - Stay dates use PostgreSQL `date`; events use `timestamptz`; each listing stores its IANA timezone.
 - Money uses `bigint` minor units and ISO 4217 currency codes. Floating-point types are forbidden for money.
@@ -71,24 +80,31 @@ is documented in
 
 ## Transaction boundaries
 
-Use independent Spring Data JDBC aggregate roots for `User`, `Listing`, `AvailabilityDay`, `Booking`, `PaymentAttempt`, and `Review`. Do not model all calendar days as children of `Listing`; saving a large JDBC aggregate can cause unnecessary child-row replacement.
+Use independent Spring Data JDBC aggregate roots for identity, property/catalog, accommodation type,
+inventory day/claim, booking, payment, ledger, review, and model-decision ownership. Do not model all
+calendar days or physical units as children of one listing aggregate; saving a large JDBC aggregate
+can cause unnecessary replacement and contention.
 
-The critical booking transaction is:
+The critical booking transaction for either inventory mode is:
 
-1. Load and lock every requested `availability_days` row with `SELECT ... FOR UPDATE`.
-2. Validate that all nights exist, are available, and satisfy stay rules.
+1. Load and lock every requested accommodation-type inventory date in stable order.
+2. Validate that all nights exist, have sufficient sellable quantity, and satisfy stay rules.
 3. Recalculate the price on the server.
-4. Insert `bookings` and its immutable `booking_nights` snapshots.
+4. Insert the booking, immutable nightly/offer snapshots, and quantity claim; physical-unit assignment
+   may remain null until the configured hotel assignment point.
 5. Commit, then initiate the external payment.
 
-The PostgreSQL exclusion constraint remains the final protection against concurrent overlapping bookings.
+Unique rentals retain an exclusion constraint; pooled types use locked per-date counters plus
+database checks preventing sold/held quantity from exceeding capacity.
 
 ## Deployment rule
 
 Liquibase runs files through `db.changelog-master.yaml`. Never edit an applied changeset; add a new forward migration. Test both an empty-database migration and an upgrade from the latest production snapshot before release.
 
-## Future phases
+## Forward migrations required for the target release
 
+- Property, accommodation type, physical unit, public listing, rate plan, and both inventory modes.
+- Market-keyed configuration and immutable Vietnam policy/provider/tax/invoice provenance.
 - Messaging, notifications, check-in, access, and stay operations, following the target design above.
 - Trust, safety, fraud prevention, content moderation, risk review, and appeals, following the target
   design above.
@@ -100,6 +116,9 @@ Liquibase runs files through `db.changelog-master.yaml`. Never edit an applied c
 - Review cycles, double-blind publication, exact-revision moderation, rebuildable rating/aspect
   projections, and contextual reputation, following the target review design above.
 - Shared durable events, governed analytical products and metrics, deterministic experiments,
-  point-in-time ML data, model lifecycle, and bounded prediction serving, following the target
-  data/ML design above.
-- Hotel-style quantity inventory. That requires `properties -> room_types -> inventory_by_date` and must not reuse the single-inventory listing assumption silently.
+  point-in-time ML data, model lifecycle, bounded prediction serving, and model-artifact lineage,
+  following the target data/ML design above.
+
+These are cumulative target gaps, not optional product phases. Their migration order follows foreign
+keys, backfill safety, and compatibility requirements; the release is incomplete until every
+required domain design has a verified target-state representation.

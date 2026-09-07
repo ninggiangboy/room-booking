@@ -45,6 +45,9 @@ truth, offer application, and the decision to reject or fall back from a predict
 
 ## Status and dependencies
 
+[Vietnam market readiness and internationalization](multi-market-compliance-and-localization.md)
+owns market activation and approved legal/tax/provider context; pricing snapshots its exact version.
+
 This is a target design, not a description of an implemented Java API. The current repository
 already provides useful transactional foundations:
 
@@ -88,7 +91,8 @@ allowed to optimize prices or promotions.
 - Support partial refunds, cancellation penalties, chargebacks, reserves, adjustments, and payout
   reversals without rewriting history.
 - Make all external money operations idempotent and reconcilable.
-- Evolve from rule-based pricing to constrained statistical and machine-learned optimization.
+- Serve deterministic rule-based pricing as the fallback and constrained machine-learned pricing
+  recommendations as a required target capability.
 - Personalize ranking, rate-plan presentation, and eligible offers without hidden willingness-to-pay
   price discrimination.
 - Explain guest totals and host payouts in stable, localized line items.
@@ -1036,7 +1040,7 @@ returned to the guest.
 
 A quote has a short, explicit expiration based on inventory volatility, price inputs, promotion
 budget, tax-content rules, and payment risk. Expiration is not a guarantee that inventory is held.
-If inventory holding is later supported, it is a separate reservation with its own timeout.
+Inventory holding is required and remains a separate reservation with its own timeout.
 
 The client must display material price changes after re-quote and obtain renewed acceptance. It must
 not silently submit a different amount.
@@ -1967,9 +1971,12 @@ ledger balance.
 - Feature/model drift and stale-feature behavior.
 - Shadow decisions reproduce exactly from stored versions.
 
-## Rollout plan
+## Target-release dependencies and completion gates
 
-### Phase 0 — Legal, finance, and contract decisions
+Dependencies 0–6 are cumulative target-release requirements. Personalized offers are a designed
+extension boundary; their absence does not defer deterministic pricing or bounded ML recommendations.
+
+### Dependency 0 — Legal, finance, and contract decisions
 
 1. Define agency/MoR/deemed-supplier operating model per launch country.
 2. Approve chart of accounts, revenue, contribution, recognition, and reconciliation definitions.
@@ -1977,7 +1984,7 @@ ledger balance.
 4. Select tax-content ownership/provider and invoice/reporting obligations.
 5. Define guest price display, quote-expiry, and promotion disclosure policy.
 
-### Phase 1 — Deterministic price and quote foundation
+### Dependency 1 — Deterministic price and quote foundation
 
 1. Implement price/fee/rate-plan rule versions and precedence.
 2. Implement host base/floor/ceiling/manual override.
@@ -1985,7 +1992,7 @@ ledger balance.
 4. Compute mandatory total-trip price for search.
 5. Accept quote into an immutable booking financial snapshot.
 
-### Phase 2 — Allocation, ledger, and reconciliation
+### Dependency 2 — Allocation, ledger, and reconciliation
 
 1. Define booking line ownership and promotion funding.
 2. Implement balanced posting rules for capture and refund.
@@ -1993,7 +2000,7 @@ ledger balance.
 4. Reconcile provider payments, fees, and bank settlement.
 5. Build restricted finance diagnostics and repair workflow.
 
-### Phase 3 — Host payout
+### Dependency 3 — Host payout
 
 1. Create host payable and release policy.
 2. Implement payout statements, batching, provider integration, and returns.
@@ -2001,7 +2008,7 @@ ledger balance.
 4. Reconcile payout provider and bank movements.
 5. Expose host gross-to-net previews and actual statements.
 
-### Phase 4 — Governed tax expansion
+### Dependency 4 — Governed Vietnam tax and market configuration
 
 1. Launch one approved jurisdiction with golden fixtures.
 2. Add host tax profile, registration, withholding, invoice, and credit-note flows.
@@ -2009,21 +2016,21 @@ ledger balance.
 4. Add seller reporting and tax-ledger reconciliation where required.
 5. Expand country by country; do not create a universal fallback rate.
 
-### Phase 5 — Rule-based market-aware pricing
+### Dependency 5 — Rule-based market-aware pricing
 
 1. Materialize weekday, seasonal, lead-time, and occupancy adjustments.
 2. Add host pricing strategies and net-target settlement projection.
 3. Add recommendation explanations, volatility limits, and manual controls.
 4. Run in shadow mode before host opt-in or activation.
 
-### Phase 6 — Predictive public pricing
+### Dependency 6 — Predictive pricing recommendations
 
 1. Train demand, pace, booking-propensity, cancellation, and risk baselines.
 2. Evaluate bounded candidate prices through the real quote engine.
 3. Run controlled experiments with host and market guardrails.
 4. Optimize realized multi-party value and retain deterministic fallback.
 
-### Phase 7 — Personalized discovery and offers
+### Designed extension — Personalized offers
 
 1. Build contextual guest price/quality preference for ranking.
 2. Personalize rate-plan presentation without hidden public-price uplift.

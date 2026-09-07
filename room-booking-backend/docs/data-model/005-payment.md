@@ -1,4 +1,4 @@
-# Phase 005 — Payment
+# Migration 005 — Payment foundation
 
 ## Goal
 
@@ -13,7 +13,9 @@ Track external payment attempts and refunds without coupling provider state to t
 ## Service rules
 
 - Create a unique idempotency key before calling a payment provider.
-- A booking can have several failed attempts but should have at most one successful captured total unless the product later supports installments.
+- Migration `005` permits several failed attempts but at most one successful captured total. The
+  target payment design requires a forward migration for any approved deposit, installment, or
+  balance-collection schedule.
 - Insert the provider event ID into `payment_webhook_events` before processing. A unique conflict means it has already been received.
 - Webhook processing must lock the payment row before changing its state and record `PROCESSED` only after the local transaction succeeds.
 - Mark the booking `CONFIRMED` only after a verified successful provider event.

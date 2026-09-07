@@ -1,3 +1,10 @@
+# Tài liệu học: kiến trúc hệ thống tiến hóa
+
+> **Non-normative:** Đây là giáo trình tham khảo để học các khái niệm kiến trúc theo trình tự tăng
+> dần. Nó không phải target architecture, product roadmap, implementation plan hay Definition of
+> Done của Room Booking. Các quyết định sản phẩm phải lấy từ
+> [`../marketplace-problem-breakdown.md`](../marketplace-problem-breakdown.md) và các feature design.
+
 Bạn có thể dạy theo kiểu **“evolutionary architecture”**: không bắt đầu bằng microservices/Kafka/Kubernetes, mà bắt đầu từ một ứng dụng rất đơn giản, sau đó mỗi phase xuất hiện một vấn đề thực tế → kiến trúc tiến hóa để giải quyết vấn đề đó.
 
 Đây là cách dạy rất hợp với backend developer vì học viên hiểu được **“tại sao cần cái này”**, thay vì thuộc lòng pattern.

@@ -41,6 +41,9 @@ explanation, appeal, and the admissibility of adjudicated outcomes as labels.
 
 ## Status and dependencies
 
+[Vietnam market readiness and internationalization](multi-market-compliance-and-localization.md)
+owns market activation, approved identity/privacy/provider context, and policy provenance.
+
 This is a target design. The repository does not currently implement a risk-decision service,
 cross-domain signal registry, risk review queue, content-moderation pipeline, account/listing/action
 restriction model, appeal workflow, device intelligence, graph analysis, fraud-label store, or
@@ -97,7 +100,7 @@ Recommended dependency order:
 7. Add relationship graphs and cross-market automation only when measured loss/abuse and review
    capacity justify their operational and privacy cost.
 
-The minimum viable product (MVP) should protect account recovery, listing publication, checkout,
+The target release protects account recovery, listing publication, checkout,
 payment, payout-destination change, and safety reporting with deterministic controls and human
 review. It should not attempt a universal reputation score or autonomous fraud model.
 
@@ -1478,9 +1481,12 @@ Disabling every model and LLM must leave authentication protections, determinist
 authoritative domain rules, essential moderation/quarantine, challenge/review routing, appeal, and
 urgent safety intake operational.
 
-## Rollout plan
+## Target-release dependencies and completion gates
 
-### Phase 0 — Governance, threat model, and reference cases
+Dependencies 0–6 are cumulative release requirements. Relationship intelligence may scale behind
+the same governed decision contract once evidence volume justifies graph infrastructure.
+
+### Dependency 0 — Governance, threat model, and reference cases
 
 Approve launch market/legal role, threat taxonomy, protected-action registry/tiers, intervention and
 reason catalog, privacy/data inventory, evidence/retention, reviewer roles/limits, appeal/disclosure,
@@ -1489,9 +1495,9 @@ baseline metrics.
 
 Exit: accountable product, risk, safety, legal/privacy, security, identity, listing, booking,
 payments, finance, operations, support, and data owners approve the decision/enforcement contract and
-MVP threat coverage.
+target threat coverage.
 
-### Phase 1 — Decision, audit, and restriction foundation
+### Dependency 1 — Decision, audit, and restriction foundation
 
 Add forward migrations for policy versions, immutable risk decisions, rule hits, scoped restrictions,
 outbox/inbox, enforcement acknowledgments, and privileged audit. Implement registered action
@@ -1500,7 +1506,7 @@ evaluation with deterministic fallback and current account-status compatibility.
 Exit: reference decisions replay from stored inputs; retry produces one result; active restrictions
 are enforced at authoritative boundaries; expiry/revocation/recovery and audit work without SQL.
 
-### Phase 2 — Account security and high-risk change protection
+### Dependency 2 — Account security and high-risk change protection
 
 Protect login/recovery/contact change, role/capability change, payout-destination change, and critical
 admin actions with deterministic velocity, session/security-change versions, step-up challenges,
@@ -1509,7 +1515,7 @@ cooldowns, and scoped restriction/session-revocation requests.
 Exit: credential attack and payout-diversion scenarios are detected/contained; legitimate recovery,
 alternate challenge, expiry, and false-positive restoration meet SLOs.
 
-### Phase 3 — Listing, booking, payment, and payout vertical slice
+### Dependency 3 — Listing, booking, payment, and payout protection
 
 Add listing publish/material-edit evaluation, checkout risk decision within inventory TTL, payment
 action controls, payout-release eligibility input, provider observation inbox, bounded review queue,
@@ -1519,7 +1525,7 @@ launch provider/market.
 Exit: fake-listing, suspicious checkout, card-testing, payment-timeout, self-booking, and payout-hold
 reference cases preserve inventory/money authorities and recover under duplicate/late events.
 
-### Phase 4 — Content moderation and user reporting
+### Dependency 4 — Content moderation and user reporting
 
 Add stable content revisions, secure attachment quarantine/scan, listing/message/review moderation,
 contact/link masking, report intake, urgent safety routing, reviewer language/skill queues, additive
@@ -1528,7 +1534,7 @@ removal/restoration, and reporter privacy.
 Exit: prohibited-content reference cases route correctly; exact revisions and evidence are
 reproducible; edits, provider outage, brigading, appeal, and safety escalation meet policy/SLO.
 
-### Phase 5 — Appeals, labels, and operational quality
+### Dependency 5 — Appeals, labels, and operational quality
 
 Add independent appeals, maker-checker, reviewer conflict/quality sampling, adjudicated label
 taxonomy, domain/support outcome ingestion, fairness and false-positive dashboards, policy replay/
@@ -1537,7 +1543,7 @@ simulation, and comprehensive runbooks.
 Exit: every high-impact action has an accessible permitted explanation/appeal, reviewer actions are
 bounded/audited, labels distinguish allegation from confirmation, and policy deltas are measurable.
 
-### Phase 6 — Governed ML assistance
+### Dependency 6 — Governed production ML
 
 Build point-in-time datasets and start models/classifiers in offline and shadow modes. Progress to
 reviewer assistance and bounded canary automation only after calibration, multilingual/adversarial/
@@ -1546,7 +1552,7 @@ fairness evaluation, workload capacity, drift monitoring, and kill-switch rehear
 Exit: models improve an approved loss/harm/friction objective over deterministic baseline without
 violating latency, fairness, appeal, privacy, or domain-authority guardrails; disabling them is safe.
 
-### Phase 7 — Relationship intelligence and multi-market depth
+### Measured-scale capability — Relationship intelligence and additional markets
 
 Add bounded entity-link analysis, coordinated-abuse investigations, more providers/rails/languages,
 market-specific policy packs, and automation based on measured need. Consider graph infrastructure or
@@ -1617,8 +1623,8 @@ privacy cost.
   slice/adversarial tests, fallback, owner, expiry, monitoring, and kill switch.
 - [ ] Disabling optional vendors, models, and LLMs leaves the deterministic safety floor and
   authoritative domain behavior operational.
-- [ ] MVP scope and phase exit criteria are measurable; graph infrastructure and broad automation are
-  deferred until evidence justifies them.
+- [ ] Target scope and cumulative completion gates are measurable; graph infrastructure is activated
+  only when relationship volume and measured decision quality justify it.
 
 ## Decisions required before implementation
 
@@ -1675,7 +1681,7 @@ date, context, alternatives, decision, consequences, rollout, metrics, expiry or
 24. Label taxonomy and maturation/adjudication: chargeback/decline/dispute, ATO, damage, cancellation,
     content, fake listing/review, appeal reversal, reviewer disagreement, and training eligibility.
 25. Initial deterministic rules and thresholds, loss/harm/friction objectives, manual-review capacity,
-    reference scenarios, baseline period, and phase exit gates.
+    reference scenarios, baseline period, and cumulative completion gates.
 26. Model/provider build-versus-buy choices, target/horizon, training data, multilingual coverage,
     explainability, calibration, adversarial/fairness gates, latency/cost, retention, and kill switch.
 27. Relationship/graph analysis necessity, link types/confidence/expiry, benign-sharing safeguards,

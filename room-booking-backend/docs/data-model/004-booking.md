@@ -1,4 +1,4 @@
-# Phase 004 — Booking
+# Migration 004 — Booking foundation
 
 ## Goal
 

@@ -1,8 +1,9 @@
-# Phase 002 — Listing catalog
+# Migration 002 — Listing-catalog foundation
 
 ## Goal
 
-Allow a host to manage one independently bookable accommodation, its images, and searchable amenities.
+Record the historical listing-centric catalog foundation, images, and searchable amenities. The
+target property/accommodation-type/physical-unit model requires forward migration.
 
 ## Tables
 
@@ -17,7 +18,8 @@ Allow a host to manage one independently bookable accommodation, its images, and
 - Validate ISO currency/country codes and an IANA timezone in the application.
 - A listing may move from `DRAFT` to `PUBLISHED` only when required content, address, price and a cover image exist.
 - Store both `storage_key` and delivery URL so a CDN/provider can change later.
-- Coordinates are sufficient for MVP. Introduce PostGIS in a new migration when radius or map-boundary search is needed.
+- Migration `002` stored numeric coordinates as an early foundation. Migration `010` now provides
+  PostGIS-backed radius and map-boundary search; target code must use that spatial authority.
 - Future exact-address/instruction release, co-host operational permissions, readiness tasks,
   maintenance, access integration, and stay incidents follow
   [`../features/messaging-notifications-and-stay-operations.md`](../features/messaging-notifications-and-stay-operations.md).

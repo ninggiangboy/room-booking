@@ -17,7 +17,10 @@ The repository is the backend of a room-booking platform. The Java application c
 - administrator-controlled suspension/reactivation and terminal self-service soft deletion;
 - consistent JSON errors.
 
-The database also contains schemas for listings, availability, bookings, payments, reviews, and favorites. Those areas are a roadmap at this stage: their Liquibase migrations exist, but their Java controllers and services do not. Do not assume that a table automatically means an API feature is implemented.
+The database also contains historical schema foundations for listings, availability, bookings,
+payments, reviews, and favorites. Their Java controllers and services are not implemented, and the
+target property/hotel, market, finance, operations, and ML models require forward migrations. Do not
+assume that a table automatically means a target capability is complete.
 
 ## 2. Prerequisites
 
@@ -623,7 +626,7 @@ Swagger UI documents the following common error codes at the operations where th
 
 The existing numbered SQL files are historical, ordered changesets:
 
-| Phase | Main result |
+| Migration | Historical result |
 | --- | --- |
 | `000` | PostgreSQL extensions for UUIDs, case-insensitive text, and range constraints |
 | `001` | Users, user roles, and host profiles |
@@ -649,7 +652,8 @@ Important data conventions are documented in `docs/data-model/README.md`: money 
 6. `EmailVerificationService`, `PasswordResetService`, and `AuthEmailNotifier` to see reusable token utilities, transactions, and post-commit events.
 7. `UserFinder` to see shared user lookup and active-account behavior extracted from workflows.
 8. `ApiExceptionHandler` and the exception package to understand failures.
-9. The Liquibase master file and `docs/data-model/README.md` to understand the broader roadmap.
+9. The Liquibase master file and `docs/data-model/README.md` to distinguish migration history from
+   target-state gaps.
 
 Use the IDE's “Go to declaration” action whenever an annotation, method, or type is unfamiliar.
 
