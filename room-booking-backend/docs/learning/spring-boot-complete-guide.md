@@ -10,12 +10,25 @@ Nên học mỗi chương theo bốn bước: đọc mental model, mở file đ�
 
 Project hiện dùng Java 25, Spring Boot 4.1.1, Spring MVC, Spring Security, Spring Data JDBC, PostgreSQL và Liquibase. Project **không dùng JPA/Hibernate**. Chương 8 vẫn dạy JPA/Hibernate và chỉ rõ điểm khác với Spring Data JDBC để tránh trộn hai mô hình.
 
-```text
-Client
-  -> Servlet/Security Filter Chain
-  -> DispatcherServlet -> Interceptor -> Controller
-  -> Service proxy (transaction/security/cache/async)
-  -> Service -> Repository -> JDBC hoặc JPA/Hibernate -> PostgreSQL
+```mermaid
+flowchart LR
+    Client([Client]) --> Filters[Servlet và Security filters]
+    Filters --> Dispatcher[DispatcherServlet]
+    Dispatcher --> Interceptor[HandlerInterceptor]
+    Interceptor --> Controller
+    Controller --> Proxy[Service proxy]
+    Proxy --> Service
+    Service --> Repository
+    Repository --> Persistence{Persistence stack}
+    Persistence -->|Project hiện tại| JDBC[Spring Data JDBC]
+    Persistence -->|Nhánh ORM| JPA[Spring Data JPA và Hibernate]
+    JDBC --> PostgreSQL[(PostgreSQL)]
+    JPA --> PostgreSQL
+
+    Container[IoC ApplicationContext] -. tạo và nối bean .-> Filters
+    Container -. quản lý .-> Controller
+    Container -. tạo proxy .-> Proxy
+    Container -. quản lý .-> Repository
 ```
 
 IoC container tạo và nối toàn bộ graph trên. Spring Boot đọc configuration, chọn auto-configuration, dựng context và embedded server.
@@ -53,6 +66,17 @@ Ba kiểu injection:
 
 Project dùng Lombok `@RequiredArgsConstructor` để sinh constructor cho field `final`. Lombok chỉ sinh Java code lúc compile; Spring vẫn thực hiện constructor injection. Nếu có nhiều bean cùng interface, giải quyết bằng type rõ hơn, `@Primary` hoặc `@Qualifier`.
 
+```mermaid
+flowchart LR
+    Context[ApplicationContext] -->|khởi tạo| Controller[AuthController]
+    Context -->|khởi tạo| Service[AuthenticationService]
+    Context -->|tạo implementation| UserRepo[UserRepository]
+    Context -->|đăng ký Bean| Encoder[PasswordEncoder]
+    Service -->|constructor injection| UserRepo
+    Service -->|constructor injection| Encoder
+    Controller -->|constructor injection| Service
+```
+
 ### Spring Bean và `ApplicationContext`
 
 Bean là object do Spring IoC container tạo, cấu hình và quản lý. Object được tạo bằng `new` trong business code không tự động là bean, vì vậy injection, lifecycle và proxy không tự áp dụng.
@@ -61,17 +85,21 @@ Bean là object do Spring IoC container tạo, cấu hình và quản lý. Objec
 
 ### Bean lifecycle
 
-```text
-đọc BeanDefinition
-  -> gọi constructor
-  -> inject dependency/property
-  -> Aware callbacks
-  -> BeanPostProcessor trước initialization
-  -> @PostConstruct / InitializingBean / initMethod
-  -> BeanPostProcessor sau initialization (có thể tạo proxy)
-  -> bean sẵn sàng
-  -> context đóng
-  -> @PreDestroy / DisposableBean / destroyMethod
+```mermaid
+flowchart TD
+    Definition[Đọc BeanDefinition] --> Constructor[Gọi constructor]
+    Constructor --> Inject[Inject dependencies và properties]
+    Inject --> Aware[Aware callbacks]
+    Aware --> Before[BeanPostProcessor trước initialization]
+    Before --> Init[PostConstruct / InitializingBean / initMethod]
+    Init --> After[BeanPostProcessor sau initialization]
+    After --> Decision{Cần AOP advice?}
+    Decision -->|Có| Proxy[Trả proxy bao quanh target]
+    Decision -->|Không| Ready[Trả bean gốc]
+    Proxy --> InUse[Bean sẵn sàng phục vụ]
+    Ready --> InUse
+    InUse --> Close[ApplicationContext đóng]
+    Close --> Destroy[PreDestroy / DisposableBean / destroyMethod]
 ```
 
 `BeanPostProcessor` giải thích nhiều phần “ma thuật”: một bean reference cuối cùng có thể là proxy bao quanh target. [TimeConfig.java](../../src/main/java/dev/ngb/backend/config/TimeConfig.java) dùng `@PostConstruct` để fail startup nếu JVM không ở UTC. Tránh network call lâu trong constructor. Spring không tự gọi destruction callback cho prototype bean.
@@ -127,15 +155,33 @@ Annotation gộp vai trò class cấu hình, bật auto-configuration và compon
 
 Startup flow:
 
-```text
-main
-  -> chuẩn bị Environment và property sources/profiles
-  -> suy ra application type, tạo ApplicationContext
-  -> load configuration, component scan, auto-configuration
-  -> chạy factory/post-processors
-  -> tạo singleton, inject, lifecycle, proxy
-  -> refresh context, start embedded server
-  -> runners và application-ready event
+```mermaid
+flowchart TD
+    Main[main] --> Env[Chuẩn bị Environment]
+    Env --> Config[Đọc property sources và profiles]
+    Config --> Type[Suy ra application type]
+    Type --> Context[Tạo ApplicationContext]
+    Context --> Load[Component scan và auto-configuration]
+    Load --> FactoryPP[BeanFactory post-processors]
+    FactoryPP --> Beans[Tạo singleton và inject dependencies]
+    Beans --> Lifecycle[Lifecycle callbacks và AOP proxies]
+    Lifecycle --> Refresh[Refresh context]
+    Refresh --> Server[Start embedded server]
+    Server --> Runners[ApplicationRunner / CommandLineRunner]
+    Runners --> Ready[ApplicationReadyEvent]
+```
+
+Auto-configuration tự đánh giá điều kiện và nhường chỗ cho cấu hình của ứng dụng:
+
+```mermaid
+flowchart TD
+    Candidate[Auto-configuration candidate] --> Classpath{Class cần thiết có trên classpath?}
+    Classpath -->|Không| Skip1[Không áp dụng]
+    Classpath -->|Có| Property{Property condition thỏa?}
+    Property -->|Không| Skip2[Không áp dụng]
+    Property -->|Có| Existing{Ứng dụng đã khai báo bean tương ứng?}
+    Existing -->|Có| BackOff[Auto-configuration back off]
+    Existing -->|Không| Register[Đăng ký bean mặc định]
 ```
 
 Liquibase, datasource hoặc singleton fail lúc refresh thì app chưa ready. Đặt UTC trước `run` là có chủ ý vì connection/bean có thể được tạo trong startup.
@@ -156,13 +202,33 @@ Executable JAR chứa application và embedded servlet server, chạy độc l�
 
 Spring MVC dùng Front Controller:
 
-```text
-HTTP request -> servlet filters -> DispatcherServlet
-  -> HandlerMapping tìm controller method
-  -> HandlerAdapter + argument resolvers
-  -> JSON binding + validation -> controller
-  -> return-value handler + HttpMessageConverter
-  -> JSON response
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant F as Servlet Filters
+    participant D as DispatcherServlet
+    participant M as HandlerMapping
+    participant A as HandlerAdapter
+    participant V as JSON + Validation
+    participant CT as Controller
+    participant S as Service
+    C->>F: HTTP request
+    F->>D: doFilter
+    D->>M: Tìm handler
+    M-->>D: Controller method
+    D->>A: Invoke handler
+    A->>V: Resolve arguments và bind body
+    alt Validation thất bại
+        V-->>D: MethodArgumentNotValidException
+        D-->>C: 400 API error
+    else Hợp lệ
+        V->>CT: DTO đã validate
+        CT->>S: Gọi use case
+        S-->>CT: Response DTO
+        CT-->>D: Return value
+        D-->>C: HTTP JSON response
+    end
 ```
 
 Exception trong controller đi qua `HandlerExceptionResolver`/`@ExceptionHandler`. Lỗi Security xảy ra trước `DispatcherServlet` cần `AuthenticationEntryPoint` hoặc `AccessDeniedHandler`, không tự đi vào MVC advice.
@@ -202,11 +268,23 @@ REST tốt dùng URI danh từ, GET không đổi state, PUT/DELETE có semantic
 
 ## 4. Kiến trúc ứng dụng
 
-```text
-Controller: HTTP contract, binding, boundary validation, status
-  -> Service: use case, business invariant, transaction boundary
-    -> Repository: persistence query/contract
-      -> Database: constraint, index, atomicity, durability
+```mermaid
+flowchart TD
+    Client([Client]) --> Controller
+    subgraph Application[Spring Boot application]
+        Controller[Controller<br/>HTTP contract, binding, status]
+        Service[Service<br/>use case, invariant, transaction]
+        Repository[Repository<br/>persistence contract và query]
+        Mapper[Mapper<br/>DTO ↔ domain/persistence model]
+        Config[Config<br/>infrastructure và policy]
+        Exception[Exception advice<br/>error contract]
+        Controller --> Service --> Repository
+        Controller <--> Mapper
+        Config -. tạo bean .-> Controller
+        Config -. tạo bean .-> Repository
+        Exception -. xử lý lỗi .-> Controller
+    end
+    Repository --> Database[(Database<br/>constraints, indexes, ACID)]
 ```
 
 - DTO là contract request/response, không nên đồng nhất với entity.
@@ -267,6 +345,19 @@ Environment variable thường map dấu chấm thành underscore và uppercase,
 
 Quy tắc mental model: nguồn precedence cao override thấp; command-line/test/system/environment có thể đè file; file ngoài JAR đè file trong JAR; profile-specific đè file chung ở cùng location. Thứ tự đầy đủ có nhiều trường hợp đặc biệt, nên debug bằng tài liệu đúng version và Actuator `env` đã bảo vệ.
 
+```mermaid
+flowchart BT
+    Default[Default properties<br/>ưu tiên thấp] --> Packaged[application.properties trong JAR]
+    Packaged --> PackagedProfile[application-profile.properties trong JAR]
+    PackagedProfile --> External[application.properties ngoài JAR]
+    External --> ExternalProfile[application-profile.properties ngoài JAR]
+    ExternalProfile --> Env[Environment variables]
+    Env --> System[System properties]
+    System --> CLI[Command-line arguments<br/>ưu tiên cao trong mental model]
+```
+
+Sơ đồ là mental model rút gọn cho các nguồn phổ biến, không thay thế bảng precedence đầy đủ của phiên bản Spring Boot đang chạy.
+
 ### Profiles
 
 [application-local.properties](../../src/main/resources/application-local.properties) cung cấp PostgreSQL, Mailpit và development JWT secret. Chạy:
@@ -300,6 +391,19 @@ Phân lớp rule:
 - boundary/local: required, length, syntax → Bean Validation;
 - business: password mới khác cũ, checkout sau checkin → service hoặc class-level validator;
 - concurrent/global: email unique, availability → database constraint/lock + service error mapping.
+
+```mermaid
+flowchart TD
+    Request[HTTP JSON request] --> Binding{JSON binding thành công?}
+    Binding -->|Không| Malformed[400 malformed request]
+    Binding -->|Có| BeanValidation{Bean Validation hợp lệ?}
+    BeanValidation -->|Không| FieldErrors[400 field errors]
+    BeanValidation -->|Có| Business{Business invariant hợp lệ?}
+    Business -->|Không| DomainError[Domain exception]
+    Business -->|Có| Database{Database constraint và concurrency check}
+    Database -->|Conflict| Conflict[409 conflict]
+    Database -->|Thành công| Success[2xx response]
+```
 
 Custom validator cho khoảng ngày:
 
@@ -343,6 +447,21 @@ Project có `DomainException` và các base type cho bad request, unauthorized, 
 - malformed JSON/missing parameter/Bean Validation → 400 có cấu trúc;
 - unexpected exception → log stack trace server-side, trả message an toàn 500.
 
+```mermaid
+flowchart TD
+    Failure{Lỗi phát sinh ở đâu?}
+    Failure -->|Security filter| SecurityHandlers[AuthenticationEntryPoint<br/>AccessDeniedHandler]
+    Failure -->|MVC binding, controller, service| Resolver[HandlerExceptionResolver]
+    SecurityHandlers --> S401[401 hoặc 403 JSON]
+    Resolver --> Kind{Loại exception}
+    Kind -->|DomainException| Mapping[Map base exception sang HTTP status]
+    Kind -->|Validation hoặc binding| V400[400 validation error]
+    Kind -->|Unexpected| Log[Log stack trace server-side]
+    Mapping --> Stable[Stable ApiErrorResponse]
+    V400 --> Stable
+    Log --> E500[500 safe response]
+```
+
 Schema thật:
 
 ```json
@@ -368,26 +487,28 @@ Client branch theo `status`/`code`, không exact message. Không trả SQL, stac
 
 ### 8.1 Bản đồ các tầng bên dưới
 
-```text
-Nhánh SQL/JDBC của project
+```mermaid
+flowchart TB
+    App[Application services]
 
-Room-booking service/repository
-  -> Spring Data JDBC repository / JdbcAggregateTemplate
-  -> Spring JDBC: JdbcTemplate, JdbcClient, exception translation
-  -> DataSource + HikariCP connection pool
-  -> PostgreSQL JDBC driver
-  -> PostgreSQL wire protocol
-  -> PostgreSQL
+    subgraph JDBCBranch[Nhánh SQL/JDBC của project]
+        DataJDBC[Spring Data JDBC repository<br/>JdbcAggregateTemplate]
+        SpringJDBC[Spring JDBC<br/>JdbcTemplate và JdbcClient]
+    end
 
-Nhánh ORM/JPA phổ biến
+    subgraph JPABranch[Nhánh ORM/JPA phổ biến]
+        DataJPA[Spring Data JPA repository]
+        JPA[JPA API<br/>EntityManager và persistence context]
+        Hibernate[Hibernate ORM<br/>JPA provider]
+    end
 
-Application
-  -> Spring Data JPA repository
-  -> JPA API: EntityManager, annotations, persistence context
-  -> JPA provider: Hibernate ORM
-  -> DataSource + HikariCP
-  -> JDBC driver
-  -> Database
+    Pool[DataSource và HikariCP]
+    Driver[PostgreSQL JDBC driver]
+    DB[(PostgreSQL)]
+
+    App --> DataJDBC --> SpringJDBC --> Pool
+    App --> DataJPA --> JPA --> Hibernate --> Pool
+    Pool --> Driver --> DB
 ```
 
 Ý nghĩa từng tên:
@@ -448,13 +569,39 @@ Spring Data JDBC lấy các khái niệm repository, aggregate và aggregate roo
 
 Ví dụ aggregate hợp lý:
 
-```text
-Booking (aggregate root)
-  |- BookingGuestSnapshot (value object)
-  `- BookingLine/BookedNight (owned children)
+```mermaid
+classDiagram
+    class Booking {
+        <<Aggregate Root>>
+        UUID id
+        UUID listingId
+        UUID guestId
+        confirm()
+        cancel()
+    }
+    class BookingGuestSnapshot {
+        <<Value Object>>
+        String displayName
+        String contactEmail
+    }
+    class BookedNight {
+        <<Owned Entity>>
+        LocalDate stayDate
+        long priceMinor
+    }
+    class Listing {
+        <<Separate Aggregate Root>>
+        UUID id
+    }
+    class User {
+        <<Separate Aggregate Root>>
+        UUID id
+    }
 
-Booking -> listingId  (reference sang Listing aggregate)
-Booking -> guestId    (reference sang User aggregate)
+    Booking *-- BookingGuestSnapshot : owns
+    Booking *-- "1..*" BookedNight : owns
+    Booking --> Listing : listingId only
+    Booking --> User : guestId only
 ```
 
 Nếu `Booking` chứa trực tiếp `User`, `Listing`, `Payment`, `Review` và mọi collection liên quan, Spring Data JDBC có thể hiểu tất cả là cùng aggregate. Save/delete sẽ có ownership semantics quá rộng. Giữ aggregate nhỏ, theo transaction invariant, và load projection riêng cho màn hình cần join nhiều aggregate.
@@ -527,6 +674,20 @@ Spring tạo implementation lúc startup. Generic thứ nhất là aggregate roo
 
 `save` không chỉ có nghĩa “UPDATE”. Spring phải quyết định entity new hay existing để INSERT/UPDATE. Detection thường xét `@Version` rồi `@Id`; có thể tùy biến bằng `Persistable`. Project cấp UUID cho `User` trước save nhưng `version` là nullable: version null biểu đạt lần insert đầu, sau đó version tham gia optimistic locking. Đừng tùy tiện gán ID/version mà không hiểu `isNew`, nếu không Spring có thể UPDATE một row chưa tồn tại hoặc INSERT row đã có.
 
+```mermaid
+flowchart TD
+    Save[repository.save aggregate] --> Custom{Aggregate implements Persistable?}
+    Custom -->|Có| IsNew[Đọc isNew]
+    Custom -->|Không| Version{Có Version property?}
+    Version -->|Có, null hoặc initial| Insert[INSERT aggregate]
+    Version -->|Có, existing value| Update[UPDATE với version predicate]
+    Version -->|Không| Id{ID biểu thị entity mới?}
+    Id -->|Có| Insert
+    Id -->|Không| Update
+    IsNew -->|true| Insert
+    IsNew -->|false| Update
+```
+
 `JdbcAggregateTemplate` là API thấp hơn repository nhưng vẫn hiểu aggregate mapping. Nó hữu ích khi cần `insert`/`update` rõ ràng, criteria query hoặc persistence operation không khớp repository interface. Xuống `JdbcClient`/`JdbcTemplate` khi cần SQL/projection/batch kiểm soát hoàn toàn.
 
 ### 8.7 Derived query, SQL `@Query` và modifying query
@@ -590,6 +751,36 @@ public void changePassword(UUID userId, String encodedPassword) {
 
 Bỏ `save(user)` thì thay đổi Java object không tự thành SQL. Mỗi repository call thực thi persistence operation ngay trong transaction tương ứng; không có managed/detached entity hay automatic flush dirty state như Hibernate.
 
+```mermaid
+sequenceDiagram
+    participant App as Service method
+    participant JDBC as Spring Data JDBC
+    participant JPA as Hibernate persistence context
+    participant DB as Database
+
+    rect rgb(235, 248, 255)
+        Note over App,DB: Spring Data JDBC
+        App->>JDBC: findById
+        JDBC->>DB: SELECT
+        DB-->>App: Plain Java object
+        App->>App: mutate object
+        Note over App: Chưa có SQL UPDATE
+        App->>JDBC: save(object)
+        JDBC->>DB: UPDATE ngay
+    end
+
+    rect rgb(255, 245, 235)
+        Note over App,DB: JPA và Hibernate
+        App->>JPA: find entity
+        JPA->>DB: SELECT
+        DB-->>JPA: Managed entity
+        JPA-->>App: Managed reference
+        App->>App: mutate entity
+        JPA->>JPA: Dirty checking khi flush
+        JPA->>DB: UPDATE lúc flush hoặc commit
+    end
+```
+
 Khi save aggregate có owned child collections, Spring Data JDBC không có snapshot/dirty tracking chi tiết như Hibernate. Update aggregate có thể xóa rồi tạo lại child rows để phản ánh state hiện tại. Hệ quả:
 
 - aggregate lớn làm nhiều SQL/write amplification;
@@ -627,18 +818,34 @@ WHERE id = :id
 
 Nếu affected rows bằng 0, một transaction khác đã sửa/xóa row; Spring ném optimistic-lock exception. [AuthToken.java](../../src/main/java/dev/ngb/backend/model/AuthToken.java) dùng version để hai consumer không cùng consume token thành công âm thầm. Retry phải reload state và chạy lại toàn business decision với giới hạn.
 
+```mermaid
+sequenceDiagram
+    participant A as Transaction A
+    participant B as Transaction B
+    participant DB as auth_tokens row
+    A->>DB: SELECT token, version = 3
+    B->>DB: SELECT token, version = 3
+    A->>DB: UPDATE consumed_at, version = 4<br/>WHERE version = 3
+    DB-->>A: 1 row updated
+    B->>DB: UPDATE consumed_at, version = 4<br/>WHERE version = 3
+    DB-->>B: 0 rows updated
+    B-->>B: OptimisticLockingFailureException
+```
+
 Direct SQL update chỉ được version-safe nếu query tự thêm predicate và increment version. Trộn repository save với SQL bỏ qua version mà không có quy ước sẽ phá optimistic-lock invariant.
 
 ### 8.11 Transaction với Spring Data JDBC
 
 Một repository call riêng có transaction semantics của repository/framework, nhưng use case nhiều calls phải đặt boundary ở service:
 
-```text
-AuthenticationService.registerUser (@Transactional)
-  -> INSERT users
-  -> INSERT user_roles
-  -> INSERT auth_tokens
-  -> commit tất cả hoặc rollback tất cả
+```mermaid
+flowchart LR
+    Begin[BEGIN] --> User[INSERT users]
+    User --> Role[INSERT user_roles]
+    Role --> Token[INSERT auth_tokens]
+    Token --> Outcome{Mọi operation thành công?}
+    Outcome -->|Có| Commit[COMMIT tất cả]
+    Outcome -->|Không| Rollback[ROLLBACK tất cả]
 ```
 
 Spring transaction manager bind một JDBC connection từ `DataSource` vào thread. Repositories, `JdbcTemplate` và `JdbcClient` trong cùng thread/transaction dùng connection đó thông qua Spring infrastructure. Không có persistence context không có nghĩa “không có transaction”; ACID vẫn do database + JDBC transaction cung cấp.
@@ -659,8 +866,12 @@ JPA không tự chạy. Hibernate là provider đọc metadata JPA, tạo Sessio
 
 Spring Data JPA tiếp tục giảm boilerplate bằng `JpaRepository`, derived queries, `@Query`, specification, projection và paging. Stack vẫn là:
 
-```text
-JpaRepository -> EntityManager (JPA contract) -> Hibernate -> JDBC -> database
+```mermaid
+flowchart LR
+    Repository[JpaRepository] --> EntityManager[EntityManager<br/>JPA contract]
+    EntityManager --> Hibernate[Hibernate<br/>JPA provider]
+    Hibernate --> JDBC[JDBC]
+    JDBC --> DB[(Database)]
 ```
 
 ### 8.13 JPA entity, `JpaRepository`, JPQL và native SQL
@@ -709,11 +920,17 @@ So sánh cú pháp: `@Query` của Spring Data JDBC mặc định đã là SQL; 
 
 ### 8.14 Persistence context, entity lifecycle và dirty checking của Hibernate
 
-```text
-Transient --persist--> Managed --flush/commit--> database
-Managed --detach/clear/close--> Detached
-Managed --remove--> Removed
-Detached --merge--> Managed copy
+```mermaid
+stateDiagram-v2
+    [*] --> Transient: new
+    Transient --> Managed: persist
+    Managed --> Database: flush SQL
+    Database --> Managed: transaction vẫn mở
+    Managed --> Detached: detach / clear / context close
+    Detached --> Managed: merge trả managed copy
+    Managed --> Removed: remove
+    Removed --> [*]: commit DELETE
+    Managed --> [*]: context close
 ```
 
 Persistence context bảo đảm identity: load cùng entity ID trong cùng context thường nhận cùng Java object. Hibernate snapshot/track managed entity. Khi property đổi, dirty checking sinh UPDATE lúc flush:
@@ -742,6 +959,22 @@ Owning side điều khiển foreign key/join update; `mappedBy` là inverse side
 Lazy association dùng Hibernate proxy/persistent collection và chỉ load khi truy cập trong active context. Truy cập sau context đóng có thể gây `LazyInitializationException`. Eager yêu cầu association được load nhưng không cam kết chỉ một SQL.
 
 Query 100 bookings rồi truy cập `booking.getListing()` có thể tạo 1 query bookings + 100 query listings: N+1. Giải pháp: JPQL fetch join, entity graph, DTO projection, batch fetching và test/metrics query count. Đổi mọi mapping sang EAGER thường chỉ chuyển lỗi sang over-fetch hoặc vẫn có nhiều SQL.
+
+```mermaid
+sequenceDiagram
+    participant S as Service
+    participant H as Hibernate
+    participant DB as Database
+    S->>H: find 100 bookings
+    H->>DB: SELECT bookings
+    DB-->>H: 100 rows
+    loop Mỗi booking khi truy cập listing lazy
+        S->>H: booking.getListing
+        H->>DB: SELECT listing WHERE id = ?
+        DB-->>H: 1 listing
+    end
+    Note over H,DB: Tổng cộng 1 + 100 queries
+```
 
 Fetch join collection cùng pagination có thể duplicate root hoặc paginate sai/in-memory. Thường page root IDs trước rồi fetch graph, hoặc dùng DTO projection được thiết kế cho page.
 
@@ -815,10 +1048,28 @@ Khi persistence sai, kiểm tra theo thứ tự: transaction có thật sự m�
 
 Transaction gom nhiều database operation thành một unit: commit tất cả hoặc rollback. Boundary hợp lý thường là service use case. `HostOnboardingService` cần tạo profile và grant role atomically; `AuthenticationService.registerUser` cần user, role và token nhất quán.
 
-```text
-caller -> transactional proxy -> begin/join
-       -> target method -> commit khi thành công
-                        -> rollback theo rule khi lỗi
+```mermaid
+sequenceDiagram
+    participant C as Caller
+    participant P as Transactional proxy
+    participant TM as TransactionManager
+    participant S as Service target
+    participant DB as Database
+    C->>P: serviceMethod()
+    P->>TM: begin hoặc join transaction
+    TM->>DB: bind connection
+    P->>S: invoke target
+    alt Thành công
+        S-->>P: result
+        P->>TM: commit
+        TM->>DB: COMMIT
+        P-->>C: result
+    else Exception khớp rollback rule
+        S-->>P: throw exception
+        P->>TM: rollback
+        TM->>DB: ROLLBACK
+        P-->>C: rethrow
+    end
 ```
 
 Không giữ transaction mở khi gọi HTTP/SMTP lâu vì connection/lock bị giữ và remote side effect không rollback cùng DB. Project xử lý email bằng `@TransactionalEventListener(AFTER_COMMIT)`: không gửi cho transaction rollback, nhưng SMTP fail sau commit vẫn làm token tồn tại; production cần outbox/retry nếu notification không được phép mất.
@@ -836,6 +1087,22 @@ Không giữ transaction mở khi gọi HTTP/SMTP lâu vì connection/lock bị 
 | `NESTED` | savepoint nếu manager hỗ trợ |
 
 `REQUIRES_NEW` có thể cần connection khác và làm cạn pool; chỉ dùng khi semantics thật sự độc lập.
+
+```mermaid
+sequenceDiagram
+    participant A as Outer service
+    participant TM as TransactionManager
+    participant B as Inner service
+    A->>TM: REQUIRED bắt đầu T1
+    A->>B: Gọi method REQUIRES_NEW
+    TM->>TM: Suspend T1
+    TM->>TM: Bắt đầu T2
+    B-->>TM: Hoàn tất inner work
+    TM->>TM: Commit hoặc rollback T2 độc lập
+    TM->>TM: Resume T1
+    A-->>TM: Hoàn tất outer work
+    TM->>TM: Commit hoặc rollback T1
+```
 
 ### Isolation, read-only và rollback
 
@@ -857,6 +1124,17 @@ public void importBookings(Path file) throws BookingImportException {
 ### Self-invocation
 
 Method `outer()` gọi `this.inner()` trực tiếp trên target không qua proxy, nên annotation `@Transactional` trên `inner()` không được intercept. Cách rõ nhất là tách `inner` sang bean có trách nhiệm riêng và inject bean đó. Self-inject hoặc lấy proxy từ context làm code khó hiểu.
+
+```mermaid
+flowchart LR
+    Caller[Bean khác] -->|external call| Proxy[Spring AOP proxy]
+    Proxy -->|transaction advice| Outer[target.outer]
+    Outer -->|this.inner trực tiếp| Inner[target.inner có Transactional]
+    Inner -. không quay lại proxy .-> Bypass[Không tạo transaction mới]
+
+    OuterService[OuterService] -->|inject và gọi| InnerProxy[InnerService proxy]
+    InnerProxy -->|transaction advice| InnerTarget[InnerService.inner]
+```
 
 **Tự kiểm tra:** Gửi email trong DB transaction nguy hiểm gì? `readOnly` có cấm UPDATE chắc chắn? Vì sao self-invocation bỏ qua advice?
 
@@ -901,6 +1179,18 @@ Các feature proxy:
 - `@Cacheable`: lookup cache, có thể bỏ qua target;
 - `@PreAuthorize`: evaluate quyền trước target.
 
+```mermaid
+flowchart LR
+    Caller --> Security[Method-security advice]
+    Security --> Cache[Cache advice]
+    Cache --> Transaction[Transaction advice]
+    Transaction --> Timing[Custom timing advice]
+    Timing --> Target[Service target]
+    Target --> Timing --> Transaction --> Cache --> Security --> Caller
+```
+
+Thứ tự trong sơ đồ chỉ minh họa một cấu hình; thứ tự advice thực tế phải được cấu hình và kiểm chứng theo semantics mong muốn.
+
 **Tự kiểm tra:** Vì sao final method khó với CGLIB? `@Transactional` trên private method có hiệu lực không? `@Around` quên `proceed()` gây gì?
 
 ---
@@ -921,6 +1211,31 @@ Authentication trả lời “ai đang gọi?”, authorization trả lời “n
 - JWT filter chạy trước username/password filter.
 
 [JwtAuthenticationFilter.java](../../src/main/java/dev/ngb/backend/filter/JwtAuthenticationFilter.java) đọc Bearer token, verify claims, tạo `UsernamePasswordAuthenticationToken`, đổi roles thành authorities có `ROLE_` prefix rồi đặt vào context. Invalid token để request anonymous; authorization sau đó gọi [RestAuthenticationEntryPoint.java](../../src/main/java/dev/ngb/backend/config/RestAuthenticationEntryPoint.java) trả JSON 401.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant J as JwtAuthenticationFilter
+    participant SC as SecurityContextHolder
+    participant AZ as AuthorizationFilter
+    participant CT as Controller
+    C->>J: Authorization Bearer token
+    alt Token hợp lệ
+        J->>J: Verify signature, expiry, claims
+        J->>SC: Set Authentication và authorities
+        J->>AZ: Continue chain
+        alt Route được phép
+            AZ->>CT: Dispatch authenticated request
+            CT-->>C: 2xx response
+        else Thiếu authority
+            AZ-->>C: 403 AccessDeniedHandler
+        end
+    else Thiếu hoặc token không hợp lệ
+        J->>AZ: Continue như anonymous
+        AZ-->>C: 401 AuthenticationEntryPoint
+    end
+```
 
 ### User, Role, Authority và method security
 
@@ -955,15 +1270,30 @@ CSRF lợi dụng credential browser tự gửi như cookie session. Bearer toke
 
 ## 12. Filter, Interceptor và AOP
 
-```text
-HTTP request
- -> Servlet Filter / Spring Security FilterChainProxy
- -> DispatcherServlet
- -> HandlerInterceptor.preHandle
- -> Controller
- -> proxied Service / AOP
- -> Interceptor completion
- -> Filter response path
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant F as Servlet Filter
+    participant S as Security Filter Chain
+    participant D as DispatcherServlet
+    participant I as HandlerInterceptor
+    participant CT as Controller
+    participant A as AOP proxy
+    participant SV as Service
+    C->>F: Request
+    F->>S: doFilter
+    S->>D: Authenticated request
+    D->>I: preHandle
+    I->>CT: Invoke handler
+    CT->>A: Service call
+    A->>SV: Advised invocation
+    SV-->>A: Result
+    A-->>CT: Result
+    CT-->>I: Model hoặc body
+    I-->>D: postHandle và afterCompletion
+    D-->>S: Response
+    S-->>F: Response
+    F-->>C: Response
 ```
 
 | Công cụ | Nhìn thấy | Use case |
@@ -1013,6 +1343,15 @@ Production giới hạn length/charset của ID client gửi để tránh log in
 - Slice test chỉ load phần framework: MVC hoặc persistence.
 - Integration test nối nhiều layer và infrastructure thật.
 - End-to-end gọi deployment qua network.
+
+```mermaid
+flowchart TB
+    E2E[End-to-end<br/>ít, chậm, độ tin cậy hệ thống cao]
+    Integration[Integration và Testcontainers<br/>wiring, transaction, PostgreSQL]
+    Slice[Slice tests<br/>WebMvcTest, JDBC/JPA slice]
+    Unit[Unit tests<br/>nhiều, nhanh, business rule hẹp]
+    E2E --> Integration --> Slice --> Unit
+```
 
 `@SpringBootTest` load full context, dùng cho wiring/cross-layer chứ không mặc định mọi test. `@WebMvcTest` load MVC slice và dùng MockMvc; mock service, cấu hình security test có chủ ý. `@DataJpaTest` là JPA slice và không đúng với project JDBC hiện tại; dùng JDBC slice phù hợp version hoặc integration test datasource thật.
 
@@ -1066,6 +1405,21 @@ Không log một exception ở mọi layer; chọn boundary có đủ context v�
 
 MDC là thread-local context. Filter thêm correlation ID và xóa trong `finally`; nếu không, thread pool tái sử dụng thread khiến metadata request cũ rò sang request mới. `@Async`, reactive và messaging cần propagate context có chủ ý. Correlation ID nối log; trace ID nối distributed spans. Không dùng userId/bookingId làm metrics tag cardinality cao.
 
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant F as CorrelationIdFilter
+    participant M as MDC
+    participant L as Controller và Service logs
+    C->>F: Request có hoặc không có X-Correlation-ID
+    F->>F: Validate hoặc generate ID
+    F->>M: put correlationId
+    F->>L: Continue request
+    L-->>F: Response hoặc exception
+    F->>M: remove trong finally
+    F-->>C: Response kèm X-Correlation-ID
+```
+
 **Tự kiểm tra:** Vì sao không log JWT? MDC rò giữa request thế nào? Khi nào WARN hơn ERROR?
 
 ---
@@ -1088,10 +1442,19 @@ Prometheus scrape metrics; Grafana query/dashboard/alert. Dashboard nên có req
 
 Distributed tracing nối spans qua HTTP, DB và message; context phải propagate qua headers/message metadata. Sampling kiểm soát chi phí; không đưa PII/secret vào span attributes.
 
-```text
-Metrics: có vấn đề không?
-Traces: request hỏng/chậm ở hop nào?
-Logs: sự kiện và stack trace cụ thể là gì?
+```mermaid
+flowchart TD
+    Incident[Sự cố người dùng] --> Metrics[Metrics<br/>Có vấn đề không?]
+    Metrics --> Trace[Distributed traces<br/>Request hỏng hoặc chậm ở hop nào?]
+    Trace --> Logs[Structured logs<br/>Chi tiết sự kiện và stack trace]
+    App[Spring Boot application] --> Micrometer[Micrometer Observation]
+    Micrometer --> Prometheus[Prometheus]
+    Prometheus --> Grafana[Grafana dashboard và alerts]
+    Micrometer --> TraceBackend[Tracing backend]
+    App --> LogBackend[Central log backend]
+    Grafana -. điều tra .-> Metrics
+    TraceBackend -. điều tra .-> Trace
+    LogBackend -. điều tra .-> Logs
 ```
 
 **Tự kiểm tra:** Vì sao DB down không nên luôn làm liveness fail? Metrics cardinality cao gây gì? Endpoint Actuator nào cần bảo vệ?
@@ -1102,10 +1465,29 @@ Logs: sự kiện và stack trace cụ thể là gì?
 
 Cache-aside:
 
-```text
-read -> hit: return
-     -> miss: DB -> cache với TTL -> return
-write -> commit DB -> invalidate/update cache
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Service
+    participant R as Redis cache
+    participant DB as Database
+    C->>S: get userProfile(id)
+    S->>R: GET key
+    alt Cache hit
+        R-->>S: Cached DTO
+        S-->>C: Response
+    else Cache miss
+        R-->>S: null
+        S->>DB: SELECT source of truth
+        DB-->>S: Current data
+        S->>R: SET key với TTL và jitter
+        S-->>C: Response
+    end
+    C->>S: update profile
+    S->>DB: UPDATE trong transaction
+    DB-->>S: COMMIT
+    S->>R: EVICT sau commit
+    S-->>C: Success
 ```
 
 Cache là bản sao có thể stale, không phải source of truth. Trước khi cache phải xác định key, TTL, invalidation, consistency, failure behavior và memory bound.
@@ -1163,6 +1545,24 @@ public CompletableFuture<Void> sendBookingConfirmation(UUID bookingId) {
 
 Async không durable: process chết trước task thì mất việc. Nghiệp vụ bắt buộc dùng outbox + broker/job store. Transaction, MDC và SecurityContext không tự truyền qua mọi executor. `CompletableFuture` mang lỗi về caller; `void` cần `AsyncUncaughtExceptionHandler`. Self-invocation không kích hoạt async proxy.
 
+```mermaid
+sequenceDiagram
+    participant C as Caller thread
+    participant P as Async proxy
+    participant Q as Executor queue
+    participant W as Worker thread
+    C->>P: asyncMethod()
+    P->>Q: Submit task
+    P-->>C: Return Future ngay
+    Q->>W: Worker nhận task
+    W->>W: Restore context nếu đã cấu hình
+    alt Thành công
+        W-->>C: Complete Future
+    else Exception
+        W-->>C: Complete Future exceptionally
+    end
+```
+
 Scheduling:
 
 ```java
@@ -1173,6 +1573,19 @@ public void expireStaleReservations() {
 ```
 
 Spring cron thường có sáu field gồm giây; chỉ định zone. Trên ba pod, job có thể chạy ba lần, nên cần idempotency, distributed lock hoặc DB claim. Xử lý batch giới hạn, checkpoint, metrics; không load toàn bảng. Theo dõi active threads, queue, rejection, latency; graceful shutdown ngừng nhận task rồi drain trong timeout.
+
+```mermaid
+flowchart TD
+    Tick[Cron tick 00:05 UTC] --> P1[Pod 1 scheduler]
+    Tick --> P2[Pod 2 scheduler]
+    Tick --> P3[Pod 3 scheduler]
+    P1 --> Claim{Atomic DB claim hoặc distributed lock}
+    P2 --> Claim
+    P3 --> Claim
+    Claim -->|Một pod thắng| Work[Process bounded batch]
+    Claim -->|Pod còn lại| Skip[Không xử lý trùng]
+    Work --> Checkpoint[Persist checkpoint và metrics]
+```
 
 **Tự kiểm tra:** `@Async` có chống mất task khi crash? Cron trên nhiều pod xảy ra gì? Queue không giới hạn nguy hiểm ra sao?
 
@@ -1192,14 +1605,57 @@ Producer serialize/send; consumer deserialize/process rồi ack/commit offset. N
 - offset là vị trí đọc; commit sau xử lý giảm mất message nhưng vẫn duplicate;
 - partition count giới hạn parallelism hữu ích của group.
 
+```mermaid
+flowchart LR
+    Producer[Booking service producer] -->|key = bookingId| Topic[booking-events topic]
+    Topic --> P0[Partition 0]
+    Topic --> P1[Partition 1]
+    Topic --> P2[Partition 2]
+
+    subgraph Group[Consumer group notification-service]
+        C1[Consumer instance 1]
+        C2[Consumer instance 2]
+    end
+
+    P0 --> C1
+    P1 --> C1
+    P2 --> C2
+    C1 --> Inbox[(processed_messages)]
+    C2 --> Inbox
+    Inbox --> SideEffect[Idempotent email hoặc notification]
+```
+
 Retry chỉ cho lỗi tạm thời; dùng exponential backoff + jitter + max attempts. Permanent validation/schema/business error đi **Dead Letter Queue (DLQ)** sớm. Retry topic có thể phá ordering. DLQ cần alert, owner, retention, inspect/redrive tool và duplicate protection.
 
 Idempotency strategies: bảng `processed_messages` có unique `(consumer,message_id)` cùng transaction với business write; natural unique constraint; upsert/state transition; API idempotency key; producer outbox.
 
-```text
-DB transaction: update booking + insert outbox row
- -> publisher claim/publish/mark sent
- -> consumer deduplicate + apply business write
+```mermaid
+sequenceDiagram
+    participant S as BookingService
+    participant DB as PostgreSQL
+    participant P as Outbox publisher
+    participant K as Kafka
+    participant C as Consumer
+    participant I as Inbox / processed_messages
+    S->>DB: BEGIN
+    S->>DB: UPDATE booking
+    S->>DB: INSERT outbox event
+    S->>DB: COMMIT atomically
+    loop Poll hoặc CDC
+        P->>DB: Claim unsent outbox row
+        P->>K: Publish event
+        K-->>P: Broker acknowledgement
+        P->>DB: Mark outbox row sent
+    end
+    K->>C: Deliver event, có thể lặp lại
+    C->>I: INSERT messageId với unique key
+    alt Message mới
+        C->>C: Apply business side effect
+        C-->>K: Commit offset hoặc acknowledge
+    else Message đã xử lý
+        I-->>C: Unique conflict
+        C-->>K: Acknowledge không lặp side effect
+    end
 ```
 
 Outbox tránh dual-write “DB commit nhưng broker publish fail”. Exactly-once end-to-end qua DB, broker, email/payment không đến từ một flag; cần idempotency và reconciliation từng boundary.
@@ -1235,6 +1691,21 @@ Optimistic locking dùng version; UPDATE có `WHERE id=? AND version=?`, zero ro
 
 Pessimistic lock dùng `SELECT ... FOR UPDATE`, như `UserRepository.findByIdForUpdate`. Lock giữ đến transaction end, có blocking/deadlock; giữ critical section ngắn, lock order nhất quán, timeout/monitor. Java `synchronized` không bảo vệ nhiều pod.
 
+```mermaid
+sequenceDiagram
+    participant A as Transaction A
+    participant DB as PostgreSQL row lock
+    participant B as Transaction B
+    A->>DB: SELECT user FOR UPDATE
+    DB-->>A: Row và lock được giữ
+    B->>DB: SELECT cùng user FOR UPDATE
+    Note over B,DB: B bị block
+    A->>DB: UPDATE rồi COMMIT
+    DB-->>B: Lock được cấp sau khi A kết thúc
+    B->>DB: Kiểm tra state mới, UPDATE hoặc bỏ qua
+    B->>DB: COMMIT
+```
+
 ### Liquibase/Flyway và migration
 
 Project dùng Liquibase formatted SQL, master changelog theo thứ tự. Migration đã chạy ở shared environment phải immutable; thêm forward changeset. Không dùng ORM auto-DDL tự sửa production.
@@ -1247,6 +1718,19 @@ Rolling deployment dùng expand–migrate–contract khi đổi schema:
 4. app đọc mới;
 5. thêm constraint/index;
 6. release sau mới xóa cũ.
+
+```mermaid
+timeline
+    title Expand–migrate–contract qua nhiều release
+    Release N : Thêm column mới nullable
+              : App cũ vẫn đọc/ghi column cũ
+    Release N+1 : App mới dual-write cũ và mới
+                : Backfill dữ liệu theo batch
+    Release N+2 : Chuyển toàn bộ read sang column mới
+                : Thêm constraint và index cần thiết
+    Release N+3 : Xác nhận không còn consumer cũ
+                : Xóa column cũ bằng forward migration
+```
 
 Test migration từ zero và upgrade data thật; đánh giá lock duration, backup/restore. Booking availability cần database invariant/atomic update/lock/exclusion constraint, không chỉ “SELECT thấy trống rồi INSERT”, vì hai transaction có thể cùng thấy trống.
 
@@ -1281,18 +1765,46 @@ Inject DB/JWT/mail config từ platform config/secret manager, validate lúc sta
 - HPA theo metrics phù hợp;
 - PodDisruptionBudget cho maintenance.
 
+```mermaid
+flowchart TB
+    Internet([Client traffic]) --> Ingress[Ingress / Load Balancer]
+    Ingress --> Service[Kubernetes Service]
+    Service --> Pod1[Room-booking Pod 1]
+    Service --> Pod2[Room-booking Pod 2]
+    Service --> Pod3[Room-booking Pod 3]
+    Deploy[Deployment] -. quản lý replicas .-> Pod1
+    Deploy -. quản lý replicas .-> Pod2
+    Deploy -. quản lý replicas .-> Pod3
+    Config[ConfigMap và Secret] -. inject config .-> Pod1
+    Config -. inject config .-> Pod2
+    Config -. inject config .-> Pod3
+    Pod1 --> DB[(PostgreSQL)]
+    Pod2 --> DB
+    Pod3 --> DB
+    Prometheus[Prometheus] -. scrape Actuator .-> Pod1
+    Prometheus -. scrape Actuator .-> Pod2
+    Prometheus -. scrape Actuator .-> Pod3
+    HPA[HorizontalPodAutoscaler] -. scale Deployment .-> Deploy
+```
+
 Tổng DB connections = pool mỗi pod × số pod; autoscale app không tính DB sẽ quá tải DB.
 
 ### Graceful shutdown
 
-```text
-SIGTERM
- -> instance not-ready/ngừng traffic mới
- -> hoàn tất request trong timeout
- -> scheduler/consumer ngừng lấy việc
- -> executor drain có giới hạn
- -> đóng context/datasource/server
- -> exit
+```mermaid
+sequenceDiagram
+    participant K as Kubernetes
+    participant P as Spring Boot pod
+    participant LB as Service / Load Balancer
+    participant W as HTTP, scheduler, consumers
+    participant R as Resources
+    K->>P: SIGTERM
+    P->>P: Chuyển readiness thành not ready
+    P->>LB: Không nhận traffic mới
+    P->>W: Ngừng lấy task/message mới
+    W-->>P: Hoàn tất request và drain executor
+    P->>R: Đóng ApplicationContext, pool, server
+    P-->>K: Exit trước termination grace deadline
 ```
 
 Platform termination grace phải dài hơn app shutdown + load-balancer delay. Client vẫn cần idempotency vì server có thể commit nhưng response bị mất.
@@ -1324,6 +1836,44 @@ Production checklist:
 8. Unique race tạo `DataIntegrityViolationException`, được đổi thành domain conflict; proxy rollback; advice trả 409.
 9. Thành công thì proxy commit, controller trả 201, Jackson serialize `AuthResponse`.
 10. Với verification/reset flow, email listener chạy `AFTER_COMMIT`; cơ chế hiện tại chưa durable trước process crash, nên outbox là bước tiến hóa production.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant SF as Security filters
+    participant MVC as DispatcherServlet + validation
+    participant AC as AuthController
+    participant TP as Transaction proxy
+    participant AS as AuthenticationService
+    participant UR as UserRepository
+    participant RR as UserRoleRepository
+    participant DB as PostgreSQL
+    C->>SF: POST /api/v1/auth/register
+    SF->>MVC: Public route tiếp tục
+    MVC->>MVC: Bind JSON và validate RegisterRequest
+    MVC->>AC: registerUser(request)
+    AC->>TP: authenticationService.registerUser
+    TP->>DB: BEGIN
+    TP->>AS: Invoke target
+    AS->>UR: existsByEmail
+    UR->>DB: SELECT existence
+    DB-->>UR: false
+    AS->>UR: save user
+    UR->>DB: INSERT users
+    AS->>RR: grant GUEST role
+    RR->>DB: INSERT user_roles
+    AS-->>TP: AuthResponse
+    alt Mọi write thành công
+        TP->>DB: COMMIT
+        TP-->>AC: AuthResponse
+        AC-->>MVC: 201 body
+        MVC-->>C: JSON response
+    else Constraint hoặc infrastructure failure
+        TP->>DB: ROLLBACK
+        MVC-->>C: ApiErrorResponse
+    end
+```
 
 | Cơ chế | Vai trò trong request |
 |---|---|
@@ -1380,6 +1930,20 @@ Mục tiêu: mô tả invocation path thay vì coi annotation tự chạy.
 6. Containerize và test graceful shutdown khi request đang chạy.
 
 Mục tiêu: chứng minh service observable, recoverable và chịu lỗi.
+
+```mermaid
+flowchart LR
+    G1[Giai đoạn 1<br/>Core, Boot, MVC] --> G2[Giai đoạn 2<br/>Persistence và Transaction]
+    G2 --> G3[Giai đoạn 3<br/>Security và Proxy]
+    G3 --> G4[Giai đoạn 4<br/>Production]
+    G4 --> Senior[Senior track]
+
+    G1 --> O1[Bean graph<br/>Request lifecycle<br/>Validation]
+    G2 --> O2[SQL<br/>Locking<br/>Rollback]
+    G3 --> O3[JWT chain<br/>Method security<br/>Self-invocation]
+    G4 --> O4[Metrics<br/>Redis<br/>Outbox<br/>Deployment]
+    Senior --> O5[Invariants<br/>Failure modes<br/>Recovery<br/>Trade-offs]
+```
 
 ### Trọng tâm Senior
 
