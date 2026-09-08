@@ -14,7 +14,6 @@ import dev.ngb.backend.repository.UserRoleRepository;
 import dev.ngb.backend.service.user.UserFinder;
 import dev.ngb.backend.util.StringUtils;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,7 +50,7 @@ public class HostOnboardingService {
         HostProfile profile = hostProfileRepository.findById(userId).orElseGet(() ->
                 hostProfileRepository.save(HostProfile.builder()
                         .userId(userId)
-                        .bio(normalizeOptional(request.bio()))
+                        .bio(StringUtils.normalizeOptional(request.bio()))
                         .identityStatus(IdentityStatus.UNVERIFIED)
                         .build()));
 
@@ -60,10 +59,5 @@ public class HostOnboardingService {
         return new HostOnboardingResponse(
                 UserResponse.from(user, roles),
                 HostProfileResponse.from(profile));
-    }
-
-    private static @Nullable String normalizeOptional(@Nullable String value) {
-        String normalized = StringUtils.normalize(value);
-        return normalized == null || normalized.isEmpty() ? null : normalized;
     }
 }

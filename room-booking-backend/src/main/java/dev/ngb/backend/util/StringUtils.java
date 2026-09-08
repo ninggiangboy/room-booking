@@ -36,6 +36,20 @@ public final class StringUtils {
     }
 
     /**
+     * Normalizes optional text, collapsing absent and whitespace-only values to {@code null}.
+     *
+     * <p>Optional columns store {@code null} rather than an empty string so that "not provided"
+     * has a single representation in the database.</p>
+     *
+     * @param value input text, possibly {@code null}
+     * @return stripped text, or {@code null} when the input is {@code null} or blank
+     */
+    public static @Nullable String normalizeOptional(@Nullable String value) {
+        String normalized = normalize(value);
+        return normalized == null || normalized.isEmpty() ? null : normalized;
+    }
+
+    /**
      * Removes leading and trailing Unicode whitespace from required text.
      *
      * @param value non-null input text
