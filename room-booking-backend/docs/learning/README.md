@@ -8,4 +8,7 @@ Use the [marketplace target map](../marketplace-problem-breakdown.md), the docum
 [`../features/`](../features/), and the [data-model history and target gaps](../data-model/README.md)
 for normative project decisions.
 
+- [Spring Boot from fundamentals to production](spring-boot-complete-guide.md) — Vietnamese
+  curriculum covering IoC, MVC, validation, persistence, transactions, security, testing,
+  observability, messaging, and deployment with examples from this project.
 - [System-design evolution curriculum](system-design-evolution.md)
