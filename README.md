@@ -85,6 +85,7 @@ docker compose -f compose.local.yaml down
 | `POST` | `/api/v1/auth/password/reset` | Public | Reset a password with a one-time token |
 | `GET` | `/api/v1/users/email-exists?email=...` | Public | Check whether an email is registered |
 | `GET` | `/api/v1/users/me` | Bearer token | Get the current user |
+| `PATCH` | `/api/v1/users/me` | Bearer token | Partially update the current user's profile |
 | `PUT` | `/api/v1/users/me/password` | Bearer token | Change the current user's password |
 | `POST` | `/api/v1/users/me/host-profile` | Bearer token | Create a host profile and grant the `HOST` role |
 | `DELETE` | `/api/v1/users/me` | Bearer token | Soft-delete the current account and revoke opaque tokens |

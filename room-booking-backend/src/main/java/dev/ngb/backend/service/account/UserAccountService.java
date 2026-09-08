@@ -3,11 +3,14 @@ package dev.ngb.backend.service.account;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import dev.ngb.backend.dto.UserResponse;
 import dev.ngb.backend.dto.ChangePasswordRequest;
+import dev.ngb.backend.dto.UpdateProfileRequest;
 import dev.ngb.backend.exception.InvalidCredentialsException;
+import dev.ngb.backend.exception.PhoneNumberAlreadyUsedException;
 import dev.ngb.backend.exception.UserNotFoundException;
 import dev.ngb.backend.exception.base.ValidationException;
 import dev.ngb.backend.model.User;
@@ -20,6 +23,7 @@ import dev.ngb.backend.service.user.UserFinder;
 import dev.ngb.backend.service.validation.PasswordPolicy;
 import dev.ngb.backend.util.StringUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -71,6 +75,50 @@ public class UserAccountService {
     }
 
     /**
+     * Applies a partial update to the authenticated user's public profile.
+     *
+     * <p>Absent ({@code null}) components leave the stored value untouched, so clients may send
+     * only the fields they change. A blank {@code avatarUrl} or {@code phoneNumber} clears the
+     * nullable column, while a blank {@code displayName} is rejected because every account must
+     * keep a public name.</p>
+     *
+     * @param userId authenticated account identifier
+     * @param request partial profile values
+     * @return refreshed user projection including roles
+     * @throws UserNotFoundException when the identifier no longer exists
+     * @throws dev.ngb.backend.exception.UserAccountDisabledException when the account is inactive
+     * @throws ValidationException when a supplied display name is blank
+     * @throws PhoneNumberAlreadyUsedException when another account already owns the phone number
+     */
+    @Transactional
+    public UserResponse updateProfile(UUID userId, UpdateProfileRequest request) {
+        User user = userFinder.findActiveById(userId);
+
+        if (request.displayName() != null) {
+            user.setDisplayName(requireDisplayName(request.displayName()));
+        }
+        if (request.avatarUrl() != null) {
+            user.setAvatarUrl(StringUtils.normalizeOptional(request.avatarUrl()));
+        }
+        String phoneNumber = StringUtils.normalizeOptional(request.phoneNumber());
+        if (request.phoneNumber() != null
+                && !Objects.equals(phoneNumber, user.getPhoneNumber())) {
+            // A replacement number is unverified, so the previous verification no longer applies.
+            user.setPhoneNumber(phoneNumber);
+            user.setPhoneVerifiedAt(null);
+        }
+
+        try {
+            user = userRepository.save(user);
+        } catch (DataIntegrityViolationException exception) {
+            // The unique constraint on phone_number is the only conflict this update can raise.
+            throw new PhoneNumberAlreadyUsedException(
+                    Objects.toString(phoneNumber, ""), exception);
+        }
+        return UserResponse.from(user, userRoleRepository.findRolesByUserId(userId));
+    }
+
+    /**
      * Verifies the old password and persists a newly encoded, different password.
      *
      * @param userId authenticated account identifier
@@ -98,6 +146,14 @@ public class UserAccountService {
     public void deleteOwnAccount(UUID userId) {
         User user = userFinder.findActiveByIdForUpdate(userId);
         applyStatus(user, UserStatus.DELETED);
+    }
+
+    private static String requireDisplayName(String displayName) {
+        String normalized = StringUtils.normalizeRequired(displayName);
+        if (normalized.isEmpty()) {
+            throw new ValidationException("displayName", "displayName must not be blank");
+        }
+        return normalized;
     }
 
     private void validatePasswordChange(

@@ -896,6 +896,7 @@ payloads keep their contracts; new behavior is additive.
 | `POST /api/v1/auth/email-verification/confirm` | Public | Channel verification instant and event |
 | `GET /api/v1/users/me` | Bearer | Effective capability summary for the current scope |
 | `GET /api/v1/users/email-exists` | Public | Decision required: keep with hard limits, protect, or remove |
+| `PATCH /api/v1/users/me` | Bearer | Partial profile update; a replaced phone number re-enters verification |
 | `PUT /api/v1/users/me/password` | Bearer | Reauthentication, revocation matrix, audit |
 | `POST /api/v1/users/me/host-profile` | Bearer | Capability grant with compliance provenance |
 | `DELETE /api/v1/users/me` | Bearer | Deletion request, obligation check, erasure schedule |

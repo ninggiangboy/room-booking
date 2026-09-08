@@ -4,6 +4,7 @@ import dev.ngb.backend.dto.ChangePasswordRequest;
 import dev.ngb.backend.dto.EmailExistsResponse;
 import dev.ngb.backend.dto.HostOnboardingRequest;
 import dev.ngb.backend.dto.HostOnboardingResponse;
+import dev.ngb.backend.dto.UpdateProfileRequest;
 import dev.ngb.backend.dto.UserResponse;
 import dev.ngb.backend.service.host.HostOnboardingService;
 import dev.ngb.backend.service.account.UserAccountService;
@@ -20,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -62,6 +64,33 @@ public class UserController {
     })
     public UserResponse me(@AuthenticationPrincipal UUID userId) {
         return userAccountService.getUser(userId);
+    }
+
+    /**
+     * Applies a partial update to the authenticated user's public profile.
+     *
+     * <p>Omitted or {@code null} fields keep their stored value, so clients send only what
+     * changed.</p>
+     *
+     * @param userId UUID injected from the authenticated principal
+     * @param request Bean-validated partial profile values
+     * @return refreshed account details
+     */
+    @PatchMapping("/me")
+    @Operation(summary = "Update the current profile", description = "Applies a partial update to the display name, avatar URL, and phone number. Omitted fields are left unchanged; a blank avatar URL or phone number clears the stored value.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Updated user", content = @Content(schema = @Schema(implementation = UserResponse.class))),
+            @ApiResponse(responseCode = "400", ref = "#/components/responses/ValidationError"),
+            @ApiResponse(responseCode = "401", ref = "#/components/responses/Unauthorized"),
+            @ApiResponse(responseCode = "403", ref = "#/components/responses/AccountDisabled"),
+            @ApiResponse(responseCode = "404", ref = "#/components/responses/UserNotFound"),
+            @ApiResponse(responseCode = "409", description = "Phone number already belongs to another account (PHONE_NUMBER_ALREADY_USED)", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "500", ref = "#/components/responses/InternalServerError")
+    })
+    public UserResponse updateProfile(
+            @AuthenticationPrincipal UUID userId,
+            @Valid @RequestBody UpdateProfileRequest request) {
+        return userAccountService.updateProfile(userId, request);
     }
 
     /**

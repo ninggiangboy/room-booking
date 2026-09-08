@@ -485,6 +485,22 @@ curl http://localhost:8080/api/v1/users/me \
   --header 'Authorization: Bearer PASTE_ACCESS_TOKEN_HERE'
 ```
 
+### Update the current profile
+
+Send only the fields that change. Omitted fields keep their stored value, and a blank `avatarUrl` or `phoneNumber` clears it:
+
+```bash
+curl --request PATCH http://localhost:8080/api/v1/users/me \
+  --header 'Authorization: Bearer PASTE_ACCESS_TOKEN_HERE' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "displayName": "Beginner Host",
+    "phoneNumber": "+84 90 123 4567"
+  }'
+```
+
+The response is the same projection as `GET /api/v1/users/me`. Replacing the phone number clears its verification instant, and a number already owned by another account returns `409 Conflict` with code `PHONE_NUMBER_ALREADY_USED`.
+
 ### Rotate the refresh token
 
 ```bash
