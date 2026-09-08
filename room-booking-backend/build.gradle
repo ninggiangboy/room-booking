@@ -55,4 +55,7 @@ dependencies {
 tasks.named('test') {
     // Let Gradle discover and run tests through the modern JUnit Platform.
     useJUnitPlatform()
+    // A Spring test context bootstraps directly instead of through main, so the UTC runtime the
+    // application requires has to be set on the forked test JVM too, or its startup guard fails.
+    systemProperty 'user.timezone', 'UTC'
 }

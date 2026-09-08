@@ -12,6 +12,9 @@ Materialize each listing's sellable calendar so availability lookup, locking and
 
 - Generate calendar rows for a rolling 12–18 month window.
 - A missing row is not bookable; never interpret it as implicitly available.
+- `stay_date` is a civil date in the owning listing's IANA timezone, so any query that reads it must
+  join `listings` for that zone and must not use `CURRENT_DATE`. See
+  [`../features/date-time-and-time-zone-handling.md`](../features/date-time-and-time-zone-handling.md).
 - `AVAILABLE` means the host permits sale. Active bookings are checked separately and are not copied into this status.
 - Update multiple dates in one transaction and use `version` for competing host/calendar-sync writes.
 - Future seasonal or dynamic pricing rules should be compiled into this table. A booking snapshots the resulting nightly values.

@@ -25,6 +25,10 @@ PENDING_PAYMENT -> CONFIRMED -> COMPLETED
 - `PENDING_PAYMENT` must have `payment_expires_at`; an expiration worker moves stale rows to `EXPIRED`.
 - Both `PENDING_PAYMENT` and `CONFIRMED` block overlaps through a GiST exclusion constraint.
 - Snapshot listing name, address, cover image, check-in/out rules and cancellation policy at booking time.
+- Snapshot the listing IANA timezone with them, and resolve contractual instants once against that
+  snapshot rather than recomputing them from current listing configuration. `check_in`/`check_out` are
+  civil dates in that zone; `payment_expires_at` and every other deadline are UTC instants. See
+  [`../features/date-time-and-time-zone-handling.md`](../features/date-time-and-time-zone-handling.md).
 - Validate that `booking_nights` exactly covers `[check_in, check_out)` and reconciles to booking totals inside the service transaction.
 - The target state decomposition, explicit hold/claim model, idempotency, payment-expiry races,
   modifications, and multi-unit evolution follow

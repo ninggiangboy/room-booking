@@ -11,21 +11,22 @@ import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
-import java.time.Instant;
+import java.time.Clock;
 import java.util.Map;
 
 /**
  * Writes the JSON response used when an authenticated user lacks permission.
  *
  * <p>{@code @Component} registers the handler, and Lombok generates constructor injection for the
- * JSON mapper. Implementing {@link AccessDeniedHandler} distinguishes authorization failure
- * ({@code 403}) from missing authentication ({@code 401}).</p>
+ * JSON mapper and the shared clock. Implementing {@link AccessDeniedHandler} distinguishes
+ * authorization failure ({@code 403}) from missing authentication ({@code 401}).</p>
  */
 @Component
 @RequiredArgsConstructor
 public class RestAccessDeniedHandler implements AccessDeniedHandler {
 
     private final ObjectMapper objectMapper;
+    private final Clock clock;
 
     /**
      * Produces the API error shape instead of Spring Security's default response.
@@ -43,7 +44,7 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         objectMapper.writeValue(response.getOutputStream(), new ApiErrorResponse(
-                Instant.now(),
+                clock.instant(),
                 HttpServletResponse.SC_FORBIDDEN,
                 "FORBIDDEN",
                 "you do not have permission to access this resource",

@@ -11,21 +11,23 @@ import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
-import java.time.Instant;
+import java.time.Clock;
 import java.util.Map;
 
 /**
  * Writes the JSON response used when a request has not been authenticated.
  *
  * <p>{@code @Component} registers this security adapter, while Lombok generates constructor
- * injection for Jackson's {@link ObjectMapper}. Implementing {@link AuthenticationEntryPoint}
- * lets Spring Security delegate missing/invalid authentication failures here.</p>
+ * injection for Jackson's {@link ObjectMapper} and the shared clock. Implementing
+ * {@link AuthenticationEntryPoint} lets Spring Security delegate missing/invalid authentication
+ * failures here.</p>
  */
 @Component
 @RequiredArgsConstructor
 public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     private final ObjectMapper objectMapper;
+    private final Clock clock;
 
     /**
      * Produces the API error shape instead of Spring Security's default HTML response.
@@ -43,7 +45,7 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         objectMapper.writeValue(response.getOutputStream(), new ApiErrorResponse(
-                Instant.now(),
+                clock.instant(),
                 HttpServletResponse.SC_UNAUTHORIZED,
                 "UNAUTHORIZED",
                 "authentication is required",

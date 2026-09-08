@@ -95,6 +95,8 @@ Important properties are:
 | Property | Meaning |
 | --- | --- |
 | `spring.datasource.*` | PostgreSQL connection details |
+| `spring.datasource.hikari.connection-init-sql` | Pins every database session to UTC so server-side date expressions never depend on the host |
+| `spring.jackson.time-zone` | Serialization time zone; must stay UTC |
 | `spring.mail.*` | SMTP connection details |
 | `spring.liquibase.change-log` | Root file for database migrations |
 | `app.email-verification.url` | Frontend URL placed in verification email |
@@ -110,6 +112,8 @@ Important properties are:
 
 The local profile contains development-only credentials. Never reuse them in a deployed environment. Supply secrets through environment-specific configuration and never commit production credentials.
 
+The application also requires a UTC runtime. `main` pins the JVM default time zone before Spring starts, `TimeConfig` refuses to start otherwise, and the Gradle `test` task sets `user.timezone=UTC` because tests bootstrap Spring directly. Deployments should additionally set `TZ=UTC`. This is not cosmetic: Spring Data JDBC converts `LocalDate`/`LocalTime`/`LocalDateTime` through the default zone, and the PostgreSQL driver reports it as the session time zone. See `docs/features/date-time-and-time-zone-handling.md`.
+
 ## 5. Project structure
 
 ```text
@@ -122,6 +126,7 @@ src/main/java/dev/ngb/backend
 ├── model/           Spring Data JDBC entities and enums
 ├── repository/      Database access interfaces
 ├── service/         Business workflows, validation, tokens, accounts, and email
+├── time/            Clock-driven calendar primitives and IANA time-zone validation
 └── util/            Shared stateless helpers such as string normalization
 
 src/main/resources
@@ -639,8 +644,9 @@ The existing numbered SQL files are historical, ordered changesets:
 | `008` | Generalized authentication tokens, including refresh tokens |
 | `009` | Password-reset token type added to the authentication-token constraint |
 | `010` | Global geographic catalog, localized aliases, and PostGIS map/radius indexes |
+| `011` | Removed `DEFAULT now()` from application-owned audit timestamps so the shared clock is the only writer |
 
-Important data conventions are documented in `docs/data-model/README.md`: money uses integer minor units, stay ranges are half-open, timestamps use timezone-aware values, and deletion is normally represented by status rather than removing historical rows.
+Important data conventions are documented in `docs/data-model/README.md`: money uses integer minor units, stay ranges are half-open, timestamps use timezone-aware values, and deletion is normally represented by status rather than removing historical rows. Date and time-zone semantics are owned by `docs/features/date-time-and-time-zone-handling.md`.
 
 ## 12. Recommended reading order
 

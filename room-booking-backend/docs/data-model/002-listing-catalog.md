@@ -15,7 +15,10 @@ target property/accommodation-type/physical-unit model requires forward migratio
 ## Service rules
 
 - Only active users with the `HOST` role may publish.
-- Validate ISO currency/country codes and an IANA timezone in the application.
+- Validate ISO currency/country codes and an IANA timezone in the application; `IanaTimeZone` and the
+  `@IanaZoneId` constraint implement the timezone rule, and `check_in_from`/`check_in_until`/
+  `check_out_until` are civil times in that zone. See
+  [Date, time, and time-zone handling](../features/date-time-and-time-zone-handling.md).
 - A listing may move from `DRAFT` to `PUBLISHED` only when required content, address, price and a cover image exist.
 - Store both `storage_key` and delivery URL so a CDN/provider can change later.
 - Migration `002` stored numeric coordinates as an early foundation. Migration `010` now provides
