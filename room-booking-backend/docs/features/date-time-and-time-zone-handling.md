@@ -35,7 +35,6 @@ Implemented today:
 | Capability | Where |
 | --- | --- |
 | Coordinated Universal Time (UTC) Java Virtual Machine (JVM) default zone, pinned before Spring starts | `RoomBookingBackendApplication` |
-| Startup guard that refuses a non-UTC default zone | `TimeConfig#requireUtcDefaultZone` |
 | Shared UTC `Clock` truncated to database resolution | `TimeConfig#clock` |
 | UTC database session zone on every pooled connection | `spring.datasource.hikari.connection-init-sql` |
 | UTC test runtime | `build.gradle` test task `user.timezone` |
@@ -123,7 +122,7 @@ explicitly rather than re-read.
 
 ### The UTC runtime is load-bearing
 
-The JVM default zone is pinned to UTC, and startup fails when it is not. This is not tidiness. Two
+The JVM default zone is pinned to UTC in `main`, before Spring begins. This is not tidiness. Two
 mechanisms silently inherit the process default zone:
 
 - Spring Data JDBC converts `LocalDate`, `LocalTime`, and `LocalDateTime` to `java.sql.Timestamp`
@@ -133,9 +132,8 @@ mechanisms silently inherit the process default zone:
   against.
 
 Under UTC both become deterministic and gap-free. Under any other zone they become a property of the
-host the process happens to run on. The repository has no automated test, so the startup guard is the
-only thing enforcing this: it must not be weakened without replacing it with a test that asserts how
-Spring Data JDBC maps a civil value.
+host the process happens to run on. `main` establishes this invariant for the application process;
+the Gradle test task establishes it separately because test contexts do not call `main`.
 
 ### A contractual instant is snapshotted, never recalculated
 
@@ -259,12 +257,11 @@ Four settings together make the runtime deterministic, and each has a distinct j
 | Setting | Purpose |
 | --- | --- |
 | `TimeZone.setDefault("UTC")` in `main` | pins the zone before any Spring, driver, or converter code observes it |
-| `TimeConfig#requireUtcDefaultZone` | fails startup, including every Spring test context, if the invariant is broken |
 | `spring.datasource.hikari.connection-init-sql=SET TIME ZONE 'UTC'` | pins the database session independently of driver negotiation, role defaults, and poolers |
-| `user.timezone=UTC` on the test JVM | tests bootstrap Spring directly rather than through `main` |
+| `user.timezone=UTC` on the test JVM | pins the test runtime because tests bootstrap Spring directly rather than through `main` |
 
-Container images and process supervisors must also set `TZ=UTC`. If a deployment cannot, the startup
-guard stops the process rather than letting it write zone-dependent data.
+Container images and process supervisors do not need to set `TZ=UTC`: the application pins its own
+JVM default before Spring, driver, or converter code can observe the host default.
 
 ## Shared calendar primitives
 
@@ -281,11 +278,12 @@ guard stops the process rather than letting it write zone-dependent data.
 | `resolveArrival(date, time, zone)` | instant for an arrival, preferring the earlier offset |
 | `resolveDeparture(date, time, zone)` | instant for a departure, preferring the later offset |
 
-`IanaTimeZone` validates zone text. `isValid` accepts an identifier known to the zone database, which
-rejects offsets such as `+07:00` and abbreviations such as `ICT`. `isValidCivilZone` additionally
-rejects the offset-only groups `Etc/` and `SystemV/`, because a property stored as `Etc/GMT+7` would
-silently stop tracking local time if its region ever adopted a daylight-saving rule. `@IanaZoneId`
-applies the same rule at the API boundary.
+`IanaTimeZone` validates zone text. `isValid` accepts an identifier known to the runtime zone
+database, which rejects offsets such as `+07:00` and abbreviations such as `ICT`.
+`isValidCivilZone` additionally accepts only canonical IANA identifiers from `zone.tab`; this
+rejects fixed-offset groups such as `Etc/` and `SystemV/` and compatibility aliases such as
+`US/Eastern`, `Canada/Eastern`, and `Asia/Calcutta`. `@IanaZoneId` applies the same rule at the API
+boundary.
 
 Prohibited in application code, because each one takes a zone implicitly:
 
@@ -559,7 +557,7 @@ the rule and the zone applied, and never reveal another guest's booking or a pri
 - A metric counts availability queries whose coarse bound and exact per-listing predicate disagree.
   That difference is the population of listings sitting across a date boundary, and it should track
   the number of distinct zones served.
-- Alert when the process default zone is not UTC — startup should already have failed — and when the
+- Alert when the process default zone differs from UTC after application startup, and when the
   zone-database version differs across running instances, which means two instances can resolve the
   same future local time differently.
 - Reconcile scheduled work by asserting that no confirmed booking has a `stay_ends_at` in the past
@@ -569,7 +567,7 @@ the rule and the zone applied, and never reveal another guest's booking or a pri
 
 | Condition | Effect if unhandled | Required behaviour |
 | --- | --- | --- |
-| Host or container default zone is not UTC | civil values stored against the wrong instant | startup fails with an actionable message |
+| Host or container default zone is not UTC | civil values stored against the wrong instant | application pins the JVM default to UTC before Spring starts |
 | Database role or pooler forces a session zone | server-side date expressions drift | connection init pins UTC; startup logs both zones |
 | Listing zone text is invalid or offset-only | conversions throw or silently lose future rules | rejected at the API boundary and on import |
 | Host configures a check-in time inside a gap | stored time shifts by an hour | resolved by policy, provenance recorded, metric incremented |
@@ -596,8 +594,8 @@ Deterministic, no database required:
   documented directions.
 - Offsets, abbreviations, wrong case, unknown names, and every non-`Region/City` alias are rejected
   as a property zone, and no zone the database offers passes as civil without a separator.
-- The clock reads UTC and ticks at database resolution; the startup guard accepts UTC aliases and
-  rejects a real zone.
+- The clock reads UTC and ticks at database resolution; application startup pins the JVM default
+  zone to UTC before Spring observes it.
 - How Spring Data JDBC maps a civil value: an instant round-trips, a stay date anchors at UTC
   midnight, every date of a year round-trips, house-rule times including `02:30` round-trip, and a
   non-UTC default zone shifts a stored stay date. This is the case that documents why the UTC
@@ -669,10 +667,10 @@ which zone governs a market's payout cutoff.
 
 ### Dependency 1 — Runtime and primitives
 
-Complete. The UTC runtime, startup guard, shared clock, zone validation, calendar primitives, and
+Complete. The UTC runtime, shared clock, zone validation, calendar primitives, and
 their tests are implemented, and application-owned timestamps have no database default.
 
-Gate: `./gradlew build javadoc` passes, and startup fails on a non-UTC default zone.
+Gate: `./gradlew build javadoc` passes, and the application and test JVM both use UTC.
 
 ### Dependency 2 — Zone-aware identity and notification input
 
@@ -733,7 +731,7 @@ adds a staleness window of its own and must not be adopted pre-emptively.
 
 ### Recovery and operations
 
-- Startup fails on a non-UTC default zone and logs the database session zone.
+- Application startup pins a non-UTC host default to UTC and logs the database session zone.
 - An insert that omits an application-owned timestamp fails rather than using a database default.
 - A backfill of lifecycle instants is reproducible and reports adjusted and ambiguous resolutions.
 - Zone-database version skew across instances raises an alert.

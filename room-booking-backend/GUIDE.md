@@ -112,7 +112,11 @@ Important properties are:
 
 The local profile contains development-only credentials. Never reuse them in a deployed environment. Supply secrets through environment-specific configuration and never commit production credentials.
 
-The application also requires a UTC runtime. `main` pins the JVM default time zone before Spring starts, `TimeConfig` refuses to start otherwise, and the Gradle `test` task sets `user.timezone=UTC` because tests bootstrap Spring directly. Deployments should additionally set `TZ=UTC`. This is not cosmetic: Spring Data JDBC converts `LocalDate`/`LocalTime`/`LocalDateTime` through the default zone, and the PostgreSQL driver reports it as the session time zone. See `docs/features/date-time-and-time-zone-handling.md`.
+The application pins its JVM default time zone to UTC in `main`, before Spring starts. The Gradle
+`test` task sets `user.timezone=UTC` because test contexts bootstrap directly rather than through
+`main`. This is not cosmetic: Spring Data JDBC converts `LocalDate`/`LocalTime`/`LocalDateTime`
+through the default zone, and the PostgreSQL driver reports it as the session time zone. See
+`docs/features/date-time-and-time-zone-handling.md`.
 
 ## 5. Project structure
 

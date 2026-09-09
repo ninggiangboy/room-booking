@@ -1,7 +1,13 @@
 package dev.ngb.backend.time;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.jspecify.annotations.Nullable;
 
@@ -15,17 +21,11 @@ import org.jspecify.annotations.Nullable;
  */
 public final class IanaTimeZone {
 
-    /**
-     * Identifier groups that encode a fixed offset instead of a civil region.
-     *
-     * <p>{@code Etc/GMT+7} and the legacy {@code SystemV} names resolve successfully but carry no
-     * daylight-saving rules, so a property stored that way would silently stop tracking local time
-     * if its region ever adopted one.</p>
-     */
-    private static final Set<String> OFFSET_ONLY_PREFIXES = Set.of("Etc/", "SystemV/");
+    /** Classpath resource containing the canonical IANA zone identifiers. */
+    private static final String CANONICAL_ZONE_IDS_RESOURCE = "/time/canonical-zone-ids.txt";
 
-    /** Separator that distinguishes a {@code Region/City} identifier from a legacy alias. */
-    private static final char REGION_SEPARATOR = '/';
+    /** Canonical TZDB identifiers suitable for persisting as property civil zones. */
+    private static final Set<String> CANONICAL_CIVIL_ZONE_IDS = loadCanonicalCivilZoneIds();
 
     private IanaTimeZone() {
     }
@@ -68,12 +68,12 @@ public final class IanaTimeZone {
     }
 
     /**
-     * Returns the zone for a property or listing, rejecting offset-only identifiers.
+     * Returns the zone for a property or listing, rejecting aliases and offset-only identifiers.
      *
      * @param zoneId candidate identifier
      * @param name field or configuration name used in the failure message
      * @return the resolved civil zone
-     * @throws IllegalArgumentException when the identifier is unknown or encodes a fixed offset
+     * @throws IllegalArgumentException when the identifier is unknown, an alias, or a fixed offset
      */
     public static ZoneId parseCivilZone(@Nullable String zoneId, String name) {
         ZoneId zone = parse(zoneId, name);
@@ -88,24 +88,38 @@ public final class IanaTimeZone {
     /**
      * Reports whether a known identifier names a civil region rather than an offset or alias.
      *
-     * <p>The check is structural rather than a list of known-bad names. A property zone must be a
-     * {@code Region/City} identifier, which rejects every single-segment alias the zone database
-     * still carries for compatibility: fixed offsets such as {@code UTC}, {@code GMT},
-     * {@code Zulu}, and {@code Universal} identify no region at all, and aggregates such as
-     * {@code CET} or {@code Japan} carry rules that are not owned by any jurisdiction the platform
-     * can track. The two offset-only groups that do contain a separator are excluded explicitly.</p>
-     *
-     * <p>{@link java.time.zone.ZoneRules#isFixedOffset()} is deliberately not used for this test.
-     * It reports {@code true} for a region whose historical transitions are absent, so a runtime
-     * shipping a reduced zone database could start rejecting legitimate properties.</p>
+     * <p>The TZDB exposes backward-compatible aliases alongside canonical identifiers, and a slash
+     * is not enough to distinguish them: both {@code America/New_York} and {@code US/Eastern} have
+     * one. The application therefore accepts only identifiers from IANA {@code zone.tab}, packaged
+     * as {@value #CANONICAL_ZONE_IDS_RESOURCE}. This rejects fixed offsets, abbreviations, and all
+     * compatibility aliases without relying on the runtime's zone-rule implementation.</p>
      *
      * @param zoneId identifier already known to the zone database
      * @return {@code true} when the identifier is a civil {@code Region/City} zone
      */
     private static boolean isCivilRegion(@Nullable String zoneId) {
-        if (zoneId == null || zoneId.indexOf(REGION_SEPARATOR) < 0) {
-            return false;
+        return zoneId != null && CANONICAL_CIVIL_ZONE_IDS.contains(zoneId);
+    }
+
+    /**
+     * Loads the canonical identifiers packaged from IANA {@code zone.tab}.
+     *
+     * @return immutable canonical identifier set
+     * @throws ExceptionInInitializerError when the required resource cannot be read
+     */
+    private static Set<String> loadCanonicalCivilZoneIds() {
+        InputStream resource = IanaTimeZone.class.getResourceAsStream(CANONICAL_ZONE_IDS_RESOURCE);
+        if (resource == null) {
+            throw new ExceptionInInitializerError(
+                    "Missing canonical IANA zone list: " + CANONICAL_ZONE_IDS_RESOURCE);
         }
-        return OFFSET_ONLY_PREFIXES.stream().noneMatch(zoneId::startsWith);
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(resource, StandardCharsets.UTF_8))) {
+            return reader.lines()
+                    .filter(line -> !line.isBlank() && !line.startsWith("#"))
+                    .collect(Collectors.toUnmodifiableSet());
+        } catch (IOException exception) {
+            throw new ExceptionInInitializerError(exception);
+        }
     }
 }

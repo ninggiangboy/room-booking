@@ -129,7 +129,8 @@ Important settings include:
 
 The local credentials and JWT secret are for development only. Inject environment-specific secrets in deployed environments and never commit production credentials.
 
-The application requires a UTC runtime and refuses to start without one. Set `TZ=UTC` for deployed processes; see [Date, time, and time-zone handling](room-booking-backend/docs/features/date-time-and-time-zone-handling.md).
+The application pins its JVM default time zone to UTC before Spring starts, independent of the host
+or container setting; see [Date, time, and time-zone handling](room-booking-backend/docs/features/date-time-and-time-zone-handling.md).
 
 ## Project structure
 

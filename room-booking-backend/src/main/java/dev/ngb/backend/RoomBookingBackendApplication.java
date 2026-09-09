@@ -23,9 +23,7 @@ public class RoomBookingBackendApplication {
      * {@link java.sql.Timestamp} using {@link java.time.ZoneId#systemDefault()}, and the PostgreSQL
      * driver reports the same default zone as the database session time zone. Leaving it to the
      * host would make persistence and every {@code CURRENT_DATE}-style expression depend on where
-     * the process happens to run. {@link dev.ngb.backend.config.TimeConfig} refuses to start when
-     * the invariant does not hold; see
-     * {@code docs/features/date-time-and-time-zone-handling.md}.</p>
+     * the process happens to run; see {@code docs/features/date-time-and-time-zone-handling.md}.</p>
      *
      * @param args Spring Boot command-line arguments
      */
