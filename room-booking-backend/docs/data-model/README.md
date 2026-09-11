@@ -72,6 +72,8 @@ configuration provenance, and second-market compatibility boundary are documente
 | 004 | Booking | `004-booking.sql` | Guests can reserve stays without double booking |
 | 005 | Payment | `005-payment.sql` | Payment attempts and refunds are auditable and idempotent |
 | 006 | Trust and engagement | `006-trust-engagement.sql` | Completed stays can be reviewed and listings saved |
+| 012 | Shared platform primitives | `012-platform-primitives.sql` | Commands are retry-safe, facts publish once, audit is append-only |
+| 013 | Market configuration | `013-market-configuration.sql` | Every decision can name the market, entity, and policy version that governed it |
 
 ## Shared conventions
 
