@@ -147,12 +147,12 @@ public class ApiExceptionHandler {
     private static HttpStatus statusFor(DomainException exception) {
         // HTTP semantics are defined by the abstract domain exception type, not each concrete error.
         return switch (exception) {
-            case BadRequestException ignored -> HttpStatus.BAD_REQUEST;
-            case UnauthorizedException ignored -> HttpStatus.UNAUTHORIZED;
-            case NotFoundException ignored -> HttpStatus.NOT_FOUND;
-            case ForbiddenException ignored -> HttpStatus.FORBIDDEN;
-            case ConflictException ignored -> HttpStatus.CONFLICT;
-            case TooManyRequestsException ignored -> HttpStatus.TOO_MANY_REQUESTS;
+            case BadRequestException _ -> HttpStatus.BAD_REQUEST;
+            case UnauthorizedException _ -> HttpStatus.UNAUTHORIZED;
+            case NotFoundException _ -> HttpStatus.NOT_FOUND;
+            case ForbiddenException _ -> HttpStatus.FORBIDDEN;
+            case ConflictException _ -> HttpStatus.CONFLICT;
+            case TooManyRequestsException _ -> HttpStatus.TOO_MANY_REQUESTS;
             default -> HttpStatus.BAD_REQUEST;
         };
     }

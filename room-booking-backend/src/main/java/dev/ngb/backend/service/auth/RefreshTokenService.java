@@ -8,6 +8,7 @@ import java.util.UUID;
 import dev.ngb.backend.exception.InvalidRefreshTokenException;
 import dev.ngb.backend.model.AuthToken;
 import dev.ngb.backend.model.AuthTokenType;
+import dev.ngb.backend.model.TokenConsumptionReason;
 import dev.ngb.backend.model.User;
 import dev.ngb.backend.repository.AuthTokenRepository;
 import dev.ngb.backend.util.DurationUtils;
@@ -62,7 +63,7 @@ public class RefreshTokenService {
     UUID consume(String rawToken) {
         // Marking the token consumed implements rotation and prevents replay.
         AuthToken token = findUsable(rawToken);
-        token.setConsumedAt(clock.instant());
+        token.consume(clock.instant(), TokenConsumptionReason.ROTATED);
         authTokenRepository.save(token);
         return token.getUserId();
     }
@@ -77,7 +78,7 @@ public class RefreshTokenService {
                         HashUtils.sha256Hex(rawToken), AuthTokenType.REFRESH_TOKEN)
                 .filter(token -> token.getConsumedAt() == null)
                 .ifPresent(token -> {
-                    token.setConsumedAt(clock.instant());
+                    token.consume(clock.instant(), TokenConsumptionReason.LOGOUT);
                     authTokenRepository.save(token);
                 });
     }

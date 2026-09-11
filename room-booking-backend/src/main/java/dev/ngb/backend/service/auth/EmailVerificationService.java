@@ -16,6 +16,7 @@ import dev.ngb.backend.exception.UserAccountDisabledException;
 import dev.ngb.backend.exception.UserNotFoundException;
 import dev.ngb.backend.model.AuthToken;
 import dev.ngb.backend.model.AuthTokenType;
+import dev.ngb.backend.model.TokenConsumptionReason;
 import dev.ngb.backend.model.User;
 import dev.ngb.backend.repository.AuthTokenRepository;
 import dev.ngb.backend.repository.UserRepository;
@@ -85,7 +86,7 @@ public class EmailVerificationService {
         authTokenRepository.findAllByUserIdAndTypeAndConsumedAtIsNull(
                         user.getId(), AuthTokenType.EMAIL_VERIFICATION)
                 .forEach(token -> {
-            token.setConsumedAt(now);
+            token.consume(now, TokenConsumptionReason.ROTATED);
             authTokenRepository.save(token);
         });
 
@@ -147,7 +148,7 @@ public class EmailVerificationService {
         }
 
         // Consuming before returning the user ID makes the token one-time within this transaction.
-        token.setConsumedAt(now);
+        token.consume(now, TokenConsumptionReason.USED);
         authTokenRepository.save(token);
         return token.getUserId();
     }

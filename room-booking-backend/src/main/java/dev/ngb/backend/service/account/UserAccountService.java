@@ -10,8 +10,9 @@ import dev.ngb.backend.dto.ChangePasswordRequest;
 import dev.ngb.backend.exception.InvalidCredentialsException;
 import dev.ngb.backend.exception.UserNotFoundException;
 import dev.ngb.backend.exception.base.ValidationException;
-import dev.ngb.backend.model.User;
 import dev.ngb.backend.model.AuthToken;
+import dev.ngb.backend.model.TokenConsumptionReason;
+import dev.ngb.backend.model.User;
 import dev.ngb.backend.model.UserStatus;
 import dev.ngb.backend.repository.AuthTokenRepository;
 import dev.ngb.backend.repository.UserRepository;
@@ -128,7 +129,7 @@ public class UserAccountService {
 
     private void revokeOutstandingTokens(UUID userId, Instant now) {
         List<AuthToken> tokens = authTokenRepository.findAllByUserIdAndConsumedAtIsNull(userId);
-        tokens.forEach(token -> token.setConsumedAt(now));
+        tokens.forEach(token -> token.consume(now, TokenConsumptionReason.REVOKED));
         authTokenRepository.saveAll(tokens);
     }
 

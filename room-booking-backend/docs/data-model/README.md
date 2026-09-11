@@ -74,6 +74,7 @@ configuration provenance, and second-market compatibility boundary are documente
 | 006 | Trust and engagement | `006-trust-engagement.sql` | Completed stays can be reviewed and listings saved |
 | 012 | Shared platform primitives | `012-platform-primitives.sql` | Commands are retry-safe, facts publish once, audit is append-only |
 | 013 | Market configuration | `013-market-configuration.sql` | Every decision can name the market, entity, and policy version that governed it |
+| 014 | Identity target model | `014-identity-target-model.sql` | Authority is scoped to resources, sessions own token lineage, contacts are verified |
 
 ## Shared conventions
 

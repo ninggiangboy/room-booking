@@ -11,6 +11,7 @@ import dev.ngb.backend.exception.InvalidPasswordResetTokenException;
 import dev.ngb.backend.exception.base.ValidationException;
 import dev.ngb.backend.model.AuthToken;
 import dev.ngb.backend.model.AuthTokenType;
+import dev.ngb.backend.model.TokenConsumptionReason;
 import dev.ngb.backend.model.User;
 import dev.ngb.backend.repository.AuthTokenRepository;
 import dev.ngb.backend.repository.UserRepository;
@@ -124,7 +125,7 @@ public class PasswordResetService {
                     "newPassword", "new password must be different from current password");
         }
 
-        resetToken.setConsumedAt(now);
+        resetToken.consume(now, TokenConsumptionReason.USED);
         authTokenRepository.save(resetToken);
 
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
@@ -136,7 +137,7 @@ public class PasswordResetService {
         authTokenRepository.findAllByUserIdAndTypeAndConsumedAtIsNull(
                         user.getId(), AuthTokenType.REFRESH_TOKEN)
                 .forEach(token -> {
-                    token.setConsumedAt(now);
+                    token.consume(now, TokenConsumptionReason.REVOKED);
                     authTokenRepository.save(token);
                 });
     }
@@ -146,7 +147,7 @@ public class PasswordResetService {
         authTokenRepository.findAllByUserIdAndTypeAndConsumedAtIsNull(
                         user.getId(), AuthTokenType.PASSWORD_RESET)
                 .forEach(token -> {
-                    token.setConsumedAt(now);
+                    token.consume(now, TokenConsumptionReason.ROTATED);
                     authTokenRepository.save(token);
                 });
 

@@ -74,7 +74,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     userId, null, authorities);
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
-        } catch (JwtException | IllegalArgumentException ignored) {
+        } catch (JwtException | IllegalArgumentException _) {
             // Invalid access tokens remain anonymous and are handled by Spring Security.
         }
     }
