@@ -80,10 +80,13 @@ configuration provenance, and second-market compatibility boundary are documente
 - Unique rentals use accommodation-type capacity one; hotel room types use pooled per-date quantity.
 - Stay ranges are half-open: `[check_in, check_out)`. A checkout date can be another booking's check-in date.
 - Stay dates use PostgreSQL `date`; events use `timestamptz`; each listing stores its IANA timezone.
+  [Date, time, and time-zone handling](../features/date-time-and-time-zone-handling.md) owns these rules.
 - Money uses `bigint` minor units and ISO 4217 currency codes. Floating-point types are forbidden for money.
 - UUIDs are generated in PostgreSQL by default, while callers may still supply their own UUID.
 - Status values are strings with check constraints. They are easier to evolve than PostgreSQL enum types.
-- `created_at` is database-generated; application services update `updated_at` and optimistic-lock `version`.
+- For tables the application writes, `created_at` and `updated_at` come from the shared UTC application
+  clock through Spring Data JDBC auditing, and migration `011` removed their `DEFAULT now()` so a second
+  database clock cannot silently supply them. Application services also maintain optimistic-lock `version`.
 - Business rows are retained for history. Account/listing deletion is represented by status, not a hard delete.
 - JSONB is limited to immutable historical snapshots; filterable business data stays relational.
 

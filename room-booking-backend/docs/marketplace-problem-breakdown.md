@@ -345,7 +345,11 @@ contracts, migrations, audit, and events are improvised per feature, cross-domai
 Define shared types and conventions, database constraints, error envelopes, security baseline, audit
 metadata, and the outbox pattern before implementing multi-step external workflows.
 
-Detailed design: [Platform foundation](features/platform-foundation.md).
+Detailed designs:
+
+- [Platform foundation](features/platform-foundation.md).
+- [Date, time, and time-zone handling](features/date-time-and-time-zone-handling.md), which owns
+  the calendar primitives every other domain reuses.
 
 ### D01 — Identity, accounts, and access
 

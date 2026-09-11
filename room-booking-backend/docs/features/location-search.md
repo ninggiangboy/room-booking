@@ -421,6 +421,29 @@ The evolution from this deterministic baseline to review-informed and guest-pers
 defined in [`personalized-discovery.md`](personalized-discovery.md). Geographic retrieval remains a
 candidate-generation stage; personalization cannot override inventory or explicit search filters.
 
+### Availability boundaries across time zones
+
+A single search ranks listings in many time zones, so the requested stay dates and "today" mean
+different things per candidate. This is a correctness rule, not a presentation detail, and it is
+defined in full by [Date, time, and time-zone handling](date-time-and-time-zone-handling.md). Three
+rules bind this document:
+
+- Requested dates are civil dates in each candidate listing's Internet Assigned Numbers Authority
+  (IANA) zone. They are accepted as `YYYY-MM-DD`, are never converted using the caller's zone, and
+  are never derived from a timestamp.
+- Availability filtering uses the bound-then-refine shape: a coarse, index-friendly civil-date bound
+  computed by the application, plus the exact per-listing predicate
+  `stay_date >= (CAST(:decisionInstant AS timestamptz) AT TIME ZONE l.timezone)::date`. Both
+  predicates come from the command's single decision instant. `CURRENT_DATE`, `now()`, and any single
+  application-computed `today` are prohibited: the first two depend on the session zone or the
+  database clock, and the third is wrong for every listing outside one zone, because at one instant a
+  night can be over for a Tokyo listing while still sellable in Los Angeles.
+- A requested date already past for one listing removes that listing from the results. It is a
+  request error only when the date precedes the earliest civil date in force anywhere, which is the
+  only point at which no listing on Earth can satisfy it. A cached result whose availability depends
+  on a civil date must key on that date per listing, or expire before the nearest listing-local
+  midnight.
+
 ## Address capture
 
 The listing workflow should be provider-neutral:

@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-The application lives in `room-booking-backend/` and uses Java 25 with Spring Boot. Production code is under `src/main/java/dev/ngb/backend`, organized by responsibility: `controller`, shared request/response types in `dto`, `service`, `repository`, `model`, `config`, `event`, and `exception`. Runtime configuration and Liquibase migrations live in `src/main/resources`; add database changes to `db/changelog/changes/` and register them in `db.changelog-master.yaml`. API and data-model decisions are documented in `docs/`. Put tests in `src/test/java`, mirroring the production package layout. Treat `build/`, `.gradle/`, and IDE metadata as generated files.
+The application lives in `room-booking-backend/` and uses Java 25 with Spring Boot. Production code is under `src/main/java/dev/ngb/backend`, organized by responsibility: `controller`, shared request/response types in `dto`, `service`, `repository`, `model`, `config`, `event`, `time`, and `exception`. Runtime configuration and Liquibase migrations live in `src/main/resources`; add database changes to `db/changelog/changes/` and register them in `db.changelog-master.yaml`. API and data-model decisions are documented in `docs/`. Put tests in `src/test/java`, mirroring the production package layout. Treat `build/`, `.gradle/`, and IDE metadata as generated files.
 
 ## Build, Test, and Development Commands
 
@@ -34,4 +34,4 @@ Git history is not included in this checkout. Use concise, imperative commit sub
 
 ## Security & Configuration
 
-Never commit production credentials or JWT secrets. Override local defaults with environment variables or profile-specific configuration. Preserve the documented rules for token hashing, money in minor units, timestamp handling, and server-side booking validation.
+Never commit production credentials or JWT secrets. Override local defaults with environment variables or profile-specific configuration. Preserve the documented rules for token hashing, money in minor units, timestamp handling, and server-side booking validation. Date, time, and time-zone rules — including the UTC runtime, the shared `Clock`, and the prohibition on `LocalDate.now()`, `Instant.now()`, and `CURRENT_DATE` — are defined in `docs/features/date-time-and-time-zone-handling.md`.

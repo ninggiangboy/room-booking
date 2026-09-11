@@ -124,8 +124,13 @@ Important settings include:
 - `app.password-reset.*` for reset links and token lifetime
 - `security.jwt.*` for token signing and expiration
 - `springdoc.*` for OpenAPI and Swagger UI paths
+- `spring.jackson.time-zone` and `spring.datasource.hikari.connection-init-sql`, which keep the
+  application and every database session on UTC
 
 The local credentials and JWT secret are for development only. Inject environment-specific secrets in deployed environments and never commit production credentials.
+
+The application pins its JVM default time zone to UTC before Spring starts, independent of the host
+or container setting; see [Date, time, and time-zone handling](room-booking-backend/docs/features/date-time-and-time-zone-handling.md).
 
 ## Project structure
 
@@ -140,6 +145,7 @@ room-booking-backend/
 │   ├── model/        # Spring Data JDBC entities
 │   ├── repository/   # Persistence interfaces
 │   ├── service/      # Business logic
+│   ├── time/         # Calendar primitives and IANA time-zone validation
 │   └── util/         # Shared normalization, duration, hashing, and token helpers
 ├── src/main/resources/
 │   └── db/changelog/ # Liquibase migrations
@@ -163,6 +169,7 @@ cd room-booking-backend
 - [Standard feature-design document prompt](room-booking-backend/docs/templates/feature-design-document-prompt.md)
 - [Data model](room-booking-backend/docs/data-model/README.md)
 - [Platform foundation design](room-booking-backend/docs/features/platform-foundation.md)
+- [Date, time, and time-zone handling design](room-booking-backend/docs/features/date-time-and-time-zone-handling.md)
 - [Identity, accounts, and access design](room-booking-backend/docs/features/identity-accounts-and-access.md)
 - [Global location-search design](room-booking-backend/docs/features/location-search.md)
 - [Personalized search and discovery design](room-booking-backend/docs/features/personalized-discovery.md)

@@ -150,6 +150,10 @@ template calculates the outcome.
 
 ### The effective instant is explicit and monotonic
 
+Conversion of a snapshotted local check-in into an instant, including daylight-saving gap and
+overlap policy, is defined by
+[Date, time, and time-zone handling](date-time-and-time-zone-handling.md).
+
 Policy deadlines are evaluated at a server-recorded Coordinated Universal Time (UTC) instant. Rules
 expressed relative to local check-in resolve against the booking's snapshotted Internet Assigned
 Numbers Authority (IANA) time zone and official local check-in time. The client may communicate user

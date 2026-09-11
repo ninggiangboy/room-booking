@@ -407,6 +407,11 @@ security and retention policy.
 
 ## Time, date, and time-zone semantics
 
+[Date, time, and time-zone handling](date-time-and-time-zone-handling.md) is the authoritative
+reference for this section: it owns the runtime invariants, the shared calendar primitives, the
+multi-zone query shape, and the failure cases they prevent. What follows is the summary every
+other domain must satisfy.
+
 ### Canonical representations
 
 | Meaning | Java | PostgreSQL | API/event |

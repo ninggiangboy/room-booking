@@ -10,6 +10,7 @@ import dev.ngb.backend.exception.base.TooManyRequestsException;
 import dev.ngb.backend.exception.base.UnauthorizedException;
 import dev.ngb.backend.exception.base.ValidationException;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -21,7 +22,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.Instant;
+import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,11 +33,15 @@ import java.util.stream.Collectors;
  *
  * <p>{@code @RestControllerAdvice} applies these handlers to every REST controller and serializes
  * returned bodies as JSON. Each {@code @ExceptionHandler} declares the exception types handled by
- * one method.</p>
+ * one method. Lombok generates constructor injection for the shared clock so an error timestamp
+ * comes from the same source of time as every domain decision.</p>
  */
 @RestControllerAdvice
+@RequiredArgsConstructor
 @Slf4j
 public class ApiExceptionHandler {
+
+    private final Clock clock;
 
     /**
      * Maps a known business failure to an appropriate HTTP status and response body.
@@ -57,7 +62,7 @@ public class ApiExceptionHandler {
                     rateLimitException.getRetryAfterSeconds().toString());
         }
         return response.body(new ApiErrorResponse(
-                Instant.now(),
+                clock.instant(),
                 status.value(),
                 exception.getCode(),
                 exception.getMessage(),
@@ -80,7 +85,7 @@ public class ApiExceptionHandler {
             Exception exception, HttpServletRequest request) {
         HttpStatus status = HttpStatus.BAD_REQUEST;
         return ResponseEntity.status(status).body(new ApiErrorResponse(
-                Instant.now(),
+                clock.instant(),
                 status.value(),
                 ValidationException.CODE,
                 "request body or parameters are invalid",
@@ -105,7 +110,7 @@ public class ApiExceptionHandler {
                         LinkedHashMap::new,
                         Collectors.mapping(ApiExceptionHandler::validationMessage, Collectors.toList())));
         return ResponseEntity.status(status).body(new ApiErrorResponse(
-                Instant.now(),
+                clock.instant(),
                 status.value(),
                 ValidationException.CODE,
                 "validation failed",
@@ -131,7 +136,7 @@ public class ApiExceptionHandler {
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
         log.error("Unexpected error while handling {}", request.getRequestURI(), exception);
         return ResponseEntity.status(status).body(new ApiErrorResponse(
-                Instant.now(),
+                clock.instant(),
                 status.value(),
                 "INTERNAL_SERVER_ERROR",
                 "an unexpected error occurred",

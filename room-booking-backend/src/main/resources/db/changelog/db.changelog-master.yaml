@@ -34,3 +34,6 @@ databaseChangeLog:
   - include:
       file: changes/010-location-search.sql
       relativeToChangelogFile: true
+  - include:
+      file: changes/011-application-owned-timestamps.sql
+      relativeToChangelogFile: true

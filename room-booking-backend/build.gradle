@@ -55,4 +55,7 @@ dependencies {
 tasks.named('test') {
     // Let Gradle discover and run tests through the modern JUnit Platform.
     useJUnitPlatform()
+    // A Spring test context bootstraps directly instead of through main; pin its default zone so
+    // JDBC conversion tests exercise the same UTC runtime as the application process.
+    systemProperty 'user.timezone', 'UTC'
 }

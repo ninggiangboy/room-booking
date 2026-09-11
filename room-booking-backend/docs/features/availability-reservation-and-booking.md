@@ -304,6 +304,10 @@ and `QUOTE_CHANGED`. Do not reveal whether another guest or a private safety blo
 
 ## Time zones and daylight saving
 
+Implementation semantics, shared primitives, and the multi-zone query shape are owned by
+[Date, time, and time-zone handling](date-time-and-time-zone-handling.md). The rules below are the
+inventory-specific policy this domain adds.
+
 Use the listing IANA zone, not a fixed offset. IANA publishes the time-zone and daylight-saving data:
 <https://data.iana.org/time-zones/tz-link.html>.
 
