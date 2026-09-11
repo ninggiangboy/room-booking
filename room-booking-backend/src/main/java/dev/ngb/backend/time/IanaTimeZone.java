@@ -27,6 +27,16 @@ public final class IanaTimeZone {
     /** Canonical TZDB identifiers suitable for persisting as property civil zones. */
     private static final Set<String> CANONICAL_CIVIL_ZONE_IDS = loadCanonicalCivilZoneIds();
 
+    /**
+     * Snapshot of the runtime's known zone identifiers, taken once at class initialization.
+     *
+     * <p>{@link ZoneId#getAvailableZoneIds()} is not cached by the JDK: every call copies the
+     * provider's full identifier set into a new {@code HashSet}. This sits on the Bean Validation
+     * hot path through {@link #isValid(String)}, so the identifiers are copied once here instead.
+     * The zone database only changes with a JDK/tzdata update, which restarts the process anyway.</p>
+     */
+    private static final Set<String> AVAILABLE_ZONE_IDS = Set.copyOf(ZoneId.getAvailableZoneIds());
+
     private IanaTimeZone() {
     }
 
@@ -37,7 +47,7 @@ public final class IanaTimeZone {
      * @return {@code true} when the identifier is present in the runtime's zone database
      */
     public static boolean isValid(@Nullable String zoneId) {
-        return zoneId != null && ZoneId.getAvailableZoneIds().contains(zoneId);
+        return zoneId != null && AVAILABLE_ZONE_IDS.contains(zoneId);
     }
 
     /**
@@ -64,6 +74,8 @@ public final class IanaTimeZone {
                     name + " must be a known IANA time-zone identifier such as 'Asia/Ho_Chi_Minh'"
                             + " but was '" + zoneId + "'");
         }
+        // isValid already confirmed zoneId is a catalog member (never a bare offset such as
+        // "+07:00", which ZoneId.of would otherwise accept), so this cannot throw.
         return ZoneId.of(zoneId);
     }
 

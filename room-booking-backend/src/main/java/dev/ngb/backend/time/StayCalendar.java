@@ -9,6 +9,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
 
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,10 @@ import org.springframework.stereotype.Component;
  * zone, from {@code CURRENT_DATE}, or from a caller's device silently shifts inventory by a day for
  * every listing in a different zone.</p>
  *
+ * <p>Only {@link #now()} and {@link #today(ZoneId)} read the injected clock, so only those two need
+ * the bean; every other conversion here takes its instant as an explicit parameter and is a static,
+ * pure function that a caller which already holds a decision instant can use without injection.</p>
+ *
  * <p>Reference: {@code docs/features/date-time-and-time-zone-handling.md}.</p>
  */
 @Component
@@ -30,17 +35,34 @@ import org.springframework.stereotype.Component;
 public class StayCalendar {
 
     /**
-     * Furthest offset behind Coordinated Universal Time (UTC) in the zone database.
+     * Every offset any zone in the runtime's database currently observes.
+     *
+     * <p>Computed once at class initialization instead of hardcoded, because the extremes have
+     * moved before: Samoa jumped from UTC-11 to UTC+13 in 2011, redefining both bounds overnight.
+     * A hardcoded constant would silently drift out of date on the next such tzdata change, quietly
+     * discarding a night that some listing can still sell instead of failing loudly.</p>
+     */
+    private static final List<ZoneOffset> CURRENT_ZONE_OFFSETS = ZoneId.getAvailableZoneIds().stream()
+            .map(id -> ZoneId.of(id).getRules().getOffset(Instant.now()))
+            .toList();
+
+    /**
+     * Furthest offset behind Coordinated Universal Time (UTC) any zone currently observes.
      *
      * <p>A listing in this offset holds the smallest civil date in force anywhere, which makes it
      * the safe lower bound when one query spans listings in many zones.</p>
      */
-    public static final ZoneOffset MIN_CIVIL_OFFSET = ZoneOffset.ofHours(-12);
+    public static final ZoneOffset MIN_CIVIL_OFFSET = CURRENT_ZONE_OFFSETS.stream()
+            .min(Comparator.comparingInt(ZoneOffset::getTotalSeconds))
+            .orElseThrow();
 
     /**
-     * Furthest offset ahead of UTC in the zone database, which holds the largest civil date in force.
+     * Furthest offset ahead of UTC any zone currently observes, which holds the largest civil date
+     * in force.
      */
-    public static final ZoneOffset MAX_CIVIL_OFFSET = ZoneOffset.ofHours(14);
+    public static final ZoneOffset MAX_CIVIL_OFFSET = CURRENT_ZONE_OFFSETS.stream()
+            .max(Comparator.comparingInt(ZoneOffset::getTotalSeconds))
+            .orElseThrow();
 
     private final Clock clock;
 
@@ -70,7 +92,7 @@ public class StayCalendar {
      * @param at decision instant
      * @return civil date in force in that zone at that instant
      */
-    public LocalDate today(ZoneId zone, Instant at) {
+    public static LocalDate today(ZoneId zone, Instant at) {
         return LocalDate.ofInstant(at, zone);
     }
 
@@ -89,7 +111,7 @@ public class StayCalendar {
      * @param at decision instant
      * @return earliest civil date any zone is currently observing
      */
-    public LocalDate earliestCivilDateAnywhere(Instant at) {
+    public static LocalDate earliestCivilDateAnywhere(Instant at) {
         return at.atOffset(MIN_CIVIL_OFFSET).toLocalDate();
     }
 
@@ -104,7 +126,7 @@ public class StayCalendar {
      * @param at decision instant
      * @return latest civil date any zone is currently observing
      */
-    public LocalDate latestCivilDateAnywhere(Instant at) {
+    public static LocalDate latestCivilDateAnywhere(Instant at) {
         return at.atOffset(MAX_CIVIL_OFFSET).toLocalDate();
     }
 
@@ -116,7 +138,7 @@ public class StayCalendar {
      * @param at decision instant
      * @return {@code true} when the night is before today in that zone
      */
-    public boolean isStayDatePast(LocalDate stayDate, ZoneId zone, Instant at) {
+    public static boolean isStayDatePast(LocalDate stayDate, ZoneId zone, Instant at) {
         return stayDate.isBefore(today(zone, at));
     }
 
@@ -151,7 +173,7 @@ public class StayCalendar {
      * @param zone listing zone
      * @return conversion provenance including the resulting instant
      */
-    public ResolvedLocalTime resolveArrival(LocalDate date, LocalTime localTime, ZoneId zone) {
+    public static ResolvedLocalTime resolveArrival(LocalDate date, LocalTime localTime, ZoneId zone) {
         return resolve(date, localTime, zone, true);
     }
 
@@ -166,7 +188,7 @@ public class StayCalendar {
      * @param zone listing zone
      * @return conversion provenance including the resulting instant
      */
-    public ResolvedLocalTime resolveDeparture(LocalDate date, LocalTime localTime, ZoneId zone) {
+    public static ResolvedLocalTime resolveDeparture(LocalDate date, LocalTime localTime, ZoneId zone) {
         return resolve(date, localTime, zone, false);
     }
 
@@ -177,7 +199,13 @@ public class StayCalendar {
 
         // An empty list means a spring-forward gap; two entries mean a fall-back overlap.
         ZonedDateTime resolved = switch (validOffsets.size()) {
-            case 0, 1 -> ZonedDateTime.of(requested, zone);
+            // The gap has no valid offset to reinterpret the local time under, so land on the
+            // transition instant itself: the first instant after the gap closes. ZonedDateTime.of
+            // would instead add the gap's full length to the local time, which shifts the result
+            // further than the documented policy allows.
+            case 0 -> ZonedDateTime.ofInstant(
+                    zone.getRules().getTransition(requested).getInstant(), zone);
+            case 1 -> ZonedDateTime.of(requested, zone);
             default -> ZonedDateTime.ofLocal(
                     requested,
                     zone,

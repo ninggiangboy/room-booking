@@ -128,10 +128,12 @@ public class AuthenticationService {
             throw new EmailAlreadyRegisteredException(normalizedEmail, exception);
         }
 
+        // Reuse the user's audited createdAt as the role's grant instant so both rows share
+        // registration's single decision instant instead of a second, later clock read.
         userRoleRepository.grantRole(
                 user.getId(),
                 newUser.initialRole().getId().getRole().name(),
-                newUser.initialRole().getCreatedAt());
+                user.getCreatedAt());
         return createAuthResponse(user, List.of(Role.GUEST));
     }
 
