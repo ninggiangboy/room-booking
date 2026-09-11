@@ -765,6 +765,9 @@ These exercises cover the project's central ideas without requiring a new produc
 
 ## 18. Maintaining comments and documentation
 
+The full, binding rule set lives in [`docs/conventions/`](docs/conventions/README.md); this section
+is the documentation slice of it, kept here because it is where newcomers look first.
+
 Documentation is part of the definition of done. Review it in the same change as production code so names, routes, configuration, and security behavior cannot drift.
 
 ### JavaDoc rules

@@ -1,5 +1,10 @@
 # Repository Guidelines
 
+The binding rule set for this repository is `docs/conventions/`. Read
+[`docs/conventions/README.md`](docs/conventions/README.md) before writing code: it lists the
+non-negotiable rules and links to the document governing each layer. The sections below summarize
+those rules; where the two disagree, `docs/conventions/` is authoritative.
+
 ## Project Structure & Module Organization
 
 The application lives in `room-booking-backend/` and uses Java 25 with Spring Boot. Production code is under `src/main/java/dev/ngb/backend`, organized by responsibility: `controller`, shared request/response types in `dto`, `service`, `repository`, `model`, `config`, `event`, `time`, and `exception`. Runtime configuration and Liquibase migrations live in `src/main/resources`; add database changes to `db/changelog/changes/` and register them in `db.changelog-master.yaml`. API and data-model decisions are documented in `docs/`. Put tests in `src/test/java`, mirroring the production package layout. Treat `build/`, `.gradle/`, and IDE metadata as generated files.

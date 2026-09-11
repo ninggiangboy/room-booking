@@ -163,6 +163,7 @@ cd room-booking-backend
 
 ## Documentation
 
+- [Engineering conventions — the binding rule set for all code changes](room-booking-backend/docs/conventions/README.md)
 - [Backend project foundations](room-booking-backend/docs/backend-project-foundations.md)
 - [Beginner's guide](room-booking-backend/GUIDE.md)
 - [Marketplace target state and implementation dependencies](room-booking-backend/docs/marketplace-problem-breakdown.md)
