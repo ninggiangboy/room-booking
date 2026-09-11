@@ -22,7 +22,6 @@ import dev.ngb.backend.repository.UserRepository;
 import dev.ngb.backend.repository.UserRoleRepository;
 import dev.ngb.backend.service.user.UserFinder;
 import dev.ngb.backend.util.HashUtils;
-import dev.ngb.backend.util.SecureTokenUtils;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,6 +44,7 @@ public class EmailVerificationService {
     private final AuthTokenRepository authTokenRepository;
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
+    private final AuthTokenFactory authTokenFactory;
     private final UserFinder userFinder;
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
@@ -89,16 +89,12 @@ public class EmailVerificationService {
             authTokenRepository.save(token);
         });
 
-        String rawToken = SecureTokenUtils.generateUrlSafe();
         // Persist only a hash so a database leak cannot reveal a usable verification link.
-        authTokenRepository.save(AuthToken.builder()
-                .id(UUID.randomUUID())
-                .userId(user.getId())
-                .type(AuthTokenType.EMAIL_VERIFICATION)
-                .tokenHash(HashUtils.sha256Hex(rawToken))
-                .expiresAt(now.plus(tokenTtl))
-                .build());
-        eventPublisher.publishEvent(new EmailVerificationIssued(user.getEmail(), rawToken));
+        AuthTokenFactory.IssuedToken issued = authTokenFactory.create(
+                user.getId(), AuthTokenType.EMAIL_VERIFICATION, now, tokenTtl);
+        authTokenRepository.save(issued.token());
+        eventPublisher.publishEvent(
+                new EmailVerificationIssued(user.getEmail(), issued.rawToken()));
     }
 
     /**

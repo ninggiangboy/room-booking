@@ -12,7 +12,6 @@ import dev.ngb.backend.model.User;
 import dev.ngb.backend.repository.AuthTokenRepository;
 import dev.ngb.backend.util.DurationUtils;
 import dev.ngb.backend.util.HashUtils;
-import dev.ngb.backend.util.SecureTokenUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +26,7 @@ import org.springframework.stereotype.Service;
 public class RefreshTokenService {
 
     private final AuthTokenRepository authTokenRepository;
+    private final AuthTokenFactory authTokenFactory;
     private final Clock clock;
     private final Duration tokenExpiration;
 
@@ -34,31 +34,29 @@ public class RefreshTokenService {
      * Creates a service with a validated refresh-token lifetime.
      *
      * @param authTokenRepository persistence gateway for token records
+     * @param authTokenFactory builder of token records and their raw secrets
      * @param clock shared source of current UTC time
      * @param tokenExpiration configured positive token lifetime
      */
     public RefreshTokenService(
             AuthTokenRepository authTokenRepository,
+            AuthTokenFactory authTokenFactory,
             Clock clock,
             @Value("${security.jwt.refresh-token-expiration:30d}") Duration tokenExpiration) {
         this.authTokenRepository = authTokenRepository;
+        this.authTokenFactory = authTokenFactory;
         this.clock = clock;
         this.tokenExpiration = DurationUtils.requirePositive(
                 tokenExpiration, "refresh token expiration");
     }
 
     String issue(User user) {
-        String rawToken = SecureTokenUtils.generateUrlSafe();
         Instant now = clock.instant();
         // Only the SHA-256 hash is persisted; the raw secret is returned once to the client.
-        authTokenRepository.save(AuthToken.builder()
-                .id(UUID.randomUUID())
-                .userId(user.getId())
-                .type(AuthTokenType.REFRESH_TOKEN)
-                .tokenHash(HashUtils.sha256Hex(rawToken))
-                .expiresAt(now.plus(tokenExpiration))
-                .build());
-        return rawToken;
+        AuthTokenFactory.IssuedToken issued = authTokenFactory.create(
+                user.getId(), AuthTokenType.REFRESH_TOKEN, now, tokenExpiration);
+        authTokenRepository.save(issued.token());
+        return issued.rawToken();
     }
 
     UUID consume(String rawToken) {

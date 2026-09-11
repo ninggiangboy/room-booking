@@ -6,7 +6,6 @@ import dev.ngb.backend.dto.HostProfileResponse;
 import dev.ngb.backend.dto.UserResponse;
 import dev.ngb.backend.exception.UserNotFoundException;
 import dev.ngb.backend.model.HostProfile;
-import dev.ngb.backend.model.IdentityStatus;
 import dev.ngb.backend.model.Role;
 import dev.ngb.backend.model.User;
 import dev.ngb.backend.repository.HostProfileRepository;
@@ -30,6 +29,7 @@ public class HostOnboardingService {
 
     private final UserRoleRepository userRoleRepository;
     private final HostProfileRepository hostProfileRepository;
+    private final HostProfileFactory hostProfileFactory;
     private final UserFinder userFinder;
     private final Clock clock;
 
@@ -49,11 +49,8 @@ public class HostOnboardingService {
 
         Instant now = clock.instant();
         HostProfile profile = hostProfileRepository.findById(userId).orElseGet(() ->
-                hostProfileRepository.save(HostProfile.builder()
-                        .userId(userId)
-                        .bio(normalizeOptional(request.bio()))
-                        .identityStatus(IdentityStatus.UNVERIFIED)
-                        .build()));
+                hostProfileRepository.save(
+                        hostProfileFactory.create(userId, normalizeOptional(request.bio()))));
 
         userRoleRepository.grantRole(userId, Role.HOST.name(), now);
         List<Role> roles = userRoleRepository.findRolesByUserId(userId);

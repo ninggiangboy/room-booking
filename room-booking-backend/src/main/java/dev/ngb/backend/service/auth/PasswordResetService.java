@@ -3,7 +3,6 @@ package dev.ngb.backend.service.auth;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.UUID;
 
 import dev.ngb.backend.dto.ForgotPasswordRequest;
 import dev.ngb.backend.dto.ResetPasswordRequest;
@@ -19,7 +18,6 @@ import dev.ngb.backend.service.user.UserFinder;
 import dev.ngb.backend.service.validation.PasswordPolicy;
 import dev.ngb.backend.util.DurationUtils;
 import dev.ngb.backend.util.HashUtils;
-import dev.ngb.backend.util.SecureTokenUtils;
 import dev.ngb.backend.util.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
@@ -38,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PasswordResetService {
 
     private final AuthTokenRepository authTokenRepository;
+    private final AuthTokenFactory authTokenFactory;
     private final UserRepository userRepository;
     private final UserFinder userFinder;
     private final PasswordEncoder passwordEncoder;
@@ -50,6 +49,7 @@ public class PasswordResetService {
      * Creates a password-reset workflow with a validated token lifetime.
      *
      * @param authTokenRepository persistence gateway for reset and refresh tokens
+     * @param authTokenFactory builder of token records and their raw secrets
      * @param userRepository persistence gateway for accounts
      * @param userFinder shared user lookup and account-status gateway
      * @param passwordEncoder verifies and hashes passwords
@@ -60,6 +60,7 @@ public class PasswordResetService {
      */
     public PasswordResetService(
             AuthTokenRepository authTokenRepository,
+            AuthTokenFactory authTokenFactory,
             UserRepository userRepository,
             UserFinder userFinder,
             PasswordEncoder passwordEncoder,
@@ -68,6 +69,7 @@ public class PasswordResetService {
             Clock clock,
             @Value("${app.password-reset.token-ttl:30m}") Duration tokenTtl) {
         this.authTokenRepository = authTokenRepository;
+        this.authTokenFactory = authTokenFactory;
         this.userRepository = userRepository;
         this.userFinder = userFinder;
         this.passwordEncoder = passwordEncoder;
@@ -148,15 +150,11 @@ public class PasswordResetService {
                     authTokenRepository.save(token);
                 });
 
-        String rawToken = SecureTokenUtils.generateUrlSafe();
-        authTokenRepository.save(AuthToken.builder()
-                .id(UUID.randomUUID())
-                .userId(user.getId())
-                .type(AuthTokenType.PASSWORD_RESET)
-                .tokenHash(HashUtils.sha256Hex(rawToken))
-                .expiresAt(now.plus(tokenTtl))
-                .build());
-        eventPublisher.publishEvent(new PasswordResetIssued(user.getEmail(), rawToken));
+        AuthTokenFactory.IssuedToken issued = authTokenFactory.create(
+                user.getId(), AuthTokenType.PASSWORD_RESET, now, tokenTtl);
+        authTokenRepository.save(issued.token());
+        eventPublisher.publishEvent(
+                new PasswordResetIssued(user.getEmail(), issued.rawToken()));
     }
 
 }
