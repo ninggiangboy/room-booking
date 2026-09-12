@@ -81,6 +81,7 @@ configuration provenance, and second-market compatibility boundary are documente
 | 018 | Inventory and calendar | `018-inventory-and-calendar.sql` | Overselling is impossible under concurrency, for both unique and pooled supply |
 | 019 | Pricing, promotions, quotes, tax | `019-pricing-promotions-quotes-tax.sql` | Every price shown can be explained afterwards: immutable rule versions, write-once quotes, per-line tax liability |
 | 020 | Booking lifecycle | `020-booking-lifecycle.sql` | The contract survives what happens to it: five independent state dimensions, snapshotted terms, append-only evidence |
+| 021 | Payment orchestration | `021-payment-orchestration.sql` | What happens after money leaves the platform's control stays provable: database-enforced capture and refund ceilings, a submission fence, append-only provider evidence |
 
 ## Shared conventions
 
