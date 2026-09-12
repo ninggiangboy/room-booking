@@ -46,3 +46,6 @@ databaseChangeLog:
   - include:
       file: changes/014-identity-target-model.sql
       relativeToChangelogFile: true
+  - include:
+      file: changes/015-host-verification.sql
+      relativeToChangelogFile: true

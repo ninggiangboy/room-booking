@@ -75,6 +75,7 @@ configuration provenance, and second-market compatibility boundary are documente
 | 012 | Shared platform primitives | `012-platform-primitives.sql` | Commands are retry-safe, facts publish once, audit is append-only |
 | 013 | Market configuration | `013-market-configuration.sql` | Every decision can name the market, entity, and policy version that governed it |
 | 014 | Identity target model | `014-identity-target-model.sql` | Authority is scoped to resources, sessions own token lineage, contacts are verified |
+| 015 | Host verification | `015-host-verification.sql` | A seller's identity, eligibility, and payout destination are established before publication |
 
 ## Shared conventions
 
