@@ -65,6 +65,7 @@ public interface InventoryBlockRepository extends ListCrudRepository<InventoryBl
      * @param inventoryResourceId resource the block belongs to
      * @param sourceType import source performing the lookup
      * @param externalUid identifier the external calendar gave the event
+     * @param status block status to match, normally {@link dev.ngb.backend.model.BlockStatus#ACTIVE}
      * @return the block that import previously created, when one exists
      */
     Optional<InventoryBlock> findByInventoryResourceIdAndSourceTypeAndExternalUidAndStatus(

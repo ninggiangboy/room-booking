@@ -79,6 +79,7 @@ configuration provenance, and second-market compatibility boundary are documente
 | 016 | Supply catalog | `016-supply-catalog.sql` | Property, accommodation type, unit, listing, and rate plan replace the listing-centric model |
 | 017 | Geographic catalog | `017-geographic-catalog.sql` | Properties resolve to destinations, landmarks, and explainable coordinates |
 | 018 | Inventory and calendar | `018-inventory-and-calendar.sql` | Overselling is impossible under concurrency, for both unique and pooled supply |
+| 019 | Pricing, promotions, quotes, tax | `019-pricing-promotions-quotes-tax.sql` | Every price shown can be explained afterwards: immutable rule versions, write-once quotes, per-line tax liability |
 
 ## Shared conventions
 
