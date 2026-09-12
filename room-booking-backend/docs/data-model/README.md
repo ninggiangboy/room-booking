@@ -67,15 +67,16 @@ configuration provenance, and second-market compatibility boundary are documente
 | --- | --- | --- | --- |
 | 000 | PostgreSQL foundation | `000-platform.sql` | UUID, case-insensitive email and range constraints are available |
 | 001 | Identity | `001-identity.sql` | Users can register and become hosts |
-| 002 | Listing catalog | `002-listing-catalog.sql` | Hosts can draft and publish bookable spaces |
-| 003 | Calendar and pricing | `003-calendar-pricing.sql` | Hosts can expose availability and nightly prices |
-| 004 | Booking | `004-booking.sql` | Guests can reserve stays without double booking |
-| 005 | Payment | `005-payment.sql` | Payment attempts and refunds are auditable and idempotent |
-| 006 | Trust and engagement | `006-trust-engagement.sql` | Completed stays can be reviewed and listings saved |
+| 002 | Listing catalog | `002-listing-catalog.sql` | Superseded: retired by `016`, replaced by property/accommodation type/listing |
+| 003 | Calendar and pricing | `003-calendar-pricing.sql` | Superseded: retired by `016`, replaced by `018` inventory |
+| 004 | Booking | `004-booking.sql` | Superseded: retired by `016`, replaced by `020` booking lifecycle |
+| 005 | Payment | `005-payment.sql` | Superseded: retired by `016`, replaced by `021` payment orchestration |
+| 006 | Trust and engagement | `006-trust-engagement.sql` | Superseded: retired by `016`, replaced by `026` reviews and `029` saved listings |
 | 012 | Shared platform primitives | `012-platform-primitives.sql` | Commands are retry-safe, facts publish once, audit is append-only |
 | 013 | Market configuration | `013-market-configuration.sql` | Every decision can name the market, entity, and policy version that governed it |
 | 014 | Identity target model | `014-identity-target-model.sql` | Authority is scoped to resources, sessions own token lineage, contacts are verified |
 | 015 | Host verification | `015-host-verification.sql` | A seller's identity, eligibility, and payout destination are established before publication |
+| 016 | Supply catalog | `016-supply-catalog.sql` | Property, accommodation type, unit, listing, and rate plan replace the listing-centric model |
 
 ## Shared conventions
 
