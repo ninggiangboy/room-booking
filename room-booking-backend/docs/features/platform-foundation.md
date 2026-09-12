@@ -127,8 +127,9 @@ No Java code, configuration, or migration is changed by this document.
   model states.
 - Treating a shared library, API gateway, event broker, cache, or analytics store as a business
   system of record.
-- Requiring microservices, Kafka, event sourcing, Command Query Responsibility Segregation (CQRS),
-  a service mesh, sharding, or multi-region writes for the target release.
+- Requiring microservices, event sourcing, Command Query Responsibility Segregation (CQRS), a service
+  mesh, sharding, or multi-region writes for the target release. D19 owns the selected Kafka
+  transport for governed data events; the transport never becomes a transactional authority.
 - Inventing a generic workflow engine, rule engine, repository abstraction, or universal domain
   entity.
 - Providing an administrative user interface, a standalone runbook, staffing plan, cloud topology,

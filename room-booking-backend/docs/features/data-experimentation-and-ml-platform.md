@@ -54,21 +54,25 @@ owns market/locale/privacy activation context and the rule that models are valid
 This is a target design. It does not describe an implemented data warehouse, event bus, experiment
 service, feature store, training pipeline, model registry, or inference service.
 
-The current repository provides only these relevant foundations:
+The current repository provides these relevant foundations:
 
 - PostgreSQL, Spring Data JDBC, Liquibase, UTC audit timestamps, UUID support, and optimistic versions
   described in the [platform data model](../data-model/000-platform.md) and
   [data-model history and target gaps](../data-model/README.md);
 - transactional schemas for identity, listings, calendars, bookings, payments, reviews, favorites,
   and location search;
+- shared PostgreSQL `outbox_events` and `consumer_inbox_receipts` tables plus their Spring Data JDBC
+  models and repositories; these are persistence primitives only — no outbox appender, Debezium CDC
+  connector, Kafka consumer, or replay tooling is implemented yet;
 - two in-process immutable Java application-event records for authentication email work;
 - post-commit authentication email listeners; and
 - basic Spring Boot health exposure.
 
 The repository does **not** currently contain:
 
-- a durable transactional outbox or consumer inbox;
 - a versioned domain-event envelope or schema registry;
+- Kafka/Debezium cluster configuration, topic registry, replication slot/publication management,
+  consumer adapters, ACLs, retry/DLQ handling, offset/replay controls, or observability;
 - behavior-event ingestion, bot filtering, consent enforcement, or identity stitching;
 - warehouse/lake storage, transformations, lineage, semantic metrics, or data-quality automation;
 - experiment definitions, deterministic assignment, exposure records, guardrails, or analysis;
@@ -92,8 +96,10 @@ Recommended dependency order:
 6. Prove the shared point-in-time dataset and model-release contract with one model in shadow mode.
 7. Apply that contract to production personalized ranking, review intelligence, bounded pricing
    recommendation, and fraud/content moderation with consumer-owned constraints and fallback.
-8. Add specialized streaming, online feature infrastructure, or separate deployment units only when
-   measured freshness, throughput, reliability, or team-ownership needs justify them.
+8. Add specialized online feature infrastructure or separate deployment units only when measured
+   freshness, throughput, reliability, or team-ownership needs justify them. Kafka is the standard
+   event transport from dependency 1; the decision to add further streaming processors remains
+   separately evidence-based.
 
 This platform depends on stable domain identifiers and committed outcome facts. It must not delay
 correct non-ML implementations of search, quote, booking, payment, review, safety, or support.
@@ -129,8 +135,10 @@ the invariants and completion gates in this document and the consuming feature d
 
 - Replacing transactional domain tables with a warehouse, lake, search index, cache, or event log.
 - Implementing event sourcing or Command Query Responsibility Segregation (CQRS).
-- Requiring Kafka, a lakehouse, a real-time feature store, a vector database, Kubernetes, or separate
-  microservices when the target throughput, freshness, and ownership requirements do not justify them.
+- Treating Kafka as a source of truth, a substitute for transactional outbox/inbox, or an excuse to
+  move booking, money, authorization, or policy decisions outside their owning transactions.
+- Requiring a lakehouse, real-time feature store, vector database, Kubernetes, or separate
+  microservices before their measured throughput, freshness, and ownership requirements justify them.
 - Letting an experiment bypass availability, money, tax, contractual disclosure, safety, privacy, or
   host-control rules.
 - Letting a model directly confirm or cancel bookings, calculate tax, post ledger entries, capture or
@@ -193,7 +201,7 @@ event can affect a past event-time window without pretending it arrived on time.
 
 ### At-least-once delivery must converge
 
-Durable domain publication assumes at-least-once relay and possible reordering. Event identity,
+Durable domain publication assumes at-least-once CDC delivery and possible reordering. Event identity,
 producer aggregate version, inbox deduplication, idempotent transformations, deterministic merge
 logic, and reconciliation must converge after retries and replay. Exactly-once marketing language is
 not an excuse to omit database defenses.
@@ -246,10 +254,10 @@ outcomes without an auditable rule.
 
 ### Complexity requires measured need
 
-The target implementation may use PostgreSQL outbox tables, bounded event ingestion, scheduled exports, SQL
-transformations, object storage or a selected analytical warehouse, and simple batch artifacts. New
-distributed systems require measured volume, latency, availability, cost, or ownership evidence plus
-an operator, SLO, recovery design, and exit plan.
+The target implementation uses PostgreSQL outbox tables, Debezium change-data-capture (CDC), Kafka,
+bounded event ingestion, SQL transformations, object storage or a selected analytical warehouse, and
+simple batch artifacts. Additional distributed systems require measured volume, latency,
+availability, cost, or ownership evidence plus an operator, SLO, recovery design, and exit plan.
 
 ## Domain vocabulary
 
@@ -260,7 +268,8 @@ an operator, SLO, recovery design, and exit plan.
 | Event envelope | Common identity, version, time, actor, lineage, privacy, and payload metadata around an event |
 | Event taxonomy | Registry of allowed event types, meanings, owners, schemas, and lifecycle states |
 | Schema compatibility | Rules defining whether producers/consumers can read old and new event versions |
-| Outbox | Rows written atomically with a source-domain change and relayed after commit |
+| Outbox | Rows written atomically with a source-domain change and captured from PostgreSQL WAL after commit |
+| CDC | Reading committed database-log changes, here from the outbox table through Debezium, without polling application tables |
 | Inbox | Consumer-side durable event receipt used to deduplicate application of side effects |
 | Replay | Reprocessing retained facts through a selected consumer/version without duplicating effects |
 | Correction | Additive statement that supersedes or invalidates prior analytical meaning |
@@ -305,9 +314,9 @@ The evidence and learning loop is:
 ```text
 authoritative domain transaction                 validated client interaction
   -> fact + outbox in one commit                   -> consent/schema/rate validation
-  -> at-least-once relay                           -> idempotent accepted observation
+  -> Debezium CDC reads committed WAL              -> accepted observation + outbox in one commit
                 \                                  /
-                 -> raw immutable ingestion envelope
+                 -> Kafka-backed raw immutable ingestion envelope
                  -> validation, dedupe, privacy classification, bot/internal filtering
                  -> conformed facts + shared dimensions + source reconciliation
                  -> semantic metrics, experiment exposures, labels, and feature history
@@ -318,7 +327,7 @@ authoritative domain transaction                 validated client interaction
 ```
 
 The primary transaction boundary is always inside the source domain. It changes authoritative state
-and inserts its outbox fact atomically. Relay, ingestion, transformation, training, and inference are
+and inserts its outbox fact atomically. CDC publication, ingestion, transformation, training, and inference are
 separate operations. No warehouse or model call is held inside an inventory, booking, money, review,
 or safety transaction.
 
@@ -529,9 +538,17 @@ An outbox row includes event ID/name/schema, aggregate ID/version, occurrence/co
 correlation/causation, privacy class, compact payload, publication status, attempts, next-attempt
 time, and lease/fencing metadata.
 
-A relay claims a bounded ordered batch, publishes or transfers it, and records delivery evidence.
-Failure after publish but before acknowledgment causes a duplicate, which consumers must tolerate.
-Outbox cleanup occurs only after retention and replay requirements are satisfied.
+The default publisher is Debezium's PostgreSQL connector, which captures committed inserts from the
+write-ahead log (WAL) and routes only the outbox table into Kafka. The connector's replication offset
+(LSN) is delivery evidence; a restart resumes from that offset. It does not capture arbitrary
+booking, payment, or user table changes, because a row mutation is not a stable domain contract.
+The existing publication/lease fields remain available for an application-relay fallback and
+reconciliation, but a CDC deployment does not poll or claim rows to publish them.
+
+CDC and Kafka remain at least once from the consumer's perspective. A connector failure after a
+broker write but before offset persistence can redeliver the same `eventId`, which consumers must
+tolerate. Outbox cleanup occurs only after Kafka retention, consumer recovery, and approved replay
+requirements are satisfied.
 
 One shared physical outbox is a reasonable modular-monolith default if domain ownership, access,
 payload limits, and index contention remain controlled. Finance or other restricted domains may use
@@ -561,14 +578,134 @@ the current day.
 
 ### Delivery modes and backpressure
 
-The first implementation may relay to a bounded PostgreSQL landing table or export immutable files
-to approved object/warehouse storage. Scheduled micro-batches are acceptable when freshness
-objectives allow them. A stream broker becomes justified by measured throughput, fan-out, isolation,
-or latency, not by the existence of events.
+Kafka is the preferred durable transport for platform-domain facts and accepted interaction
+observations. It gives the pipeline independent consumer groups, partitioned throughput, bounded
+consumer lag, replay from a recorded offset, and isolation between delivery, analytics, search, and
+ML workloads. PostgreSQL remains the transactional authority: the source domain first commits its
+state and outbox row, then Debezium CDC publishes that immutable fact to Kafka at least once.
+
+Kafka is chosen here because a single committed fact can be consumed independently by analytics,
+search, notification, and feature materialization without coupling their deployment cadence or
+failure mode. A consumer may stop, recover from its offset, or rebuild a derived projection without
+asking the producer to re-run business work. This is materially better than synchronous fan-out or
+one database polling worker once those consumers are real, but it is not a reason to split the
+modular monolith or make Kafka authoritative.
+
+Scheduled micro-batch export remains acceptable for a low-volume, non-urgent sink that does not need
+independent replay or near-real-time freshness. It is not the default integration boundary between
+platform producers and analytical consumers. Kafka also does not make a consumer exactly-once:
+duplicates, delayed records, and aggregate-order gaps remain normal and each durable consumer still
+uses its inbox or business uniqueness constraint.
 
 Backpressure prioritizes authoritative outbox durability, then security/financial consumers, then
 product projections, then optional analytics enrichment. Analytics slowness must not exhaust the
 transactional connection pool or block source commits.
+
+### Kafka topology, contracts, and operating model
+
+The initial topology is deliberately small and keeps the monolith's database boundary intact:
+
+```text
+source-domain transaction
+  -> PostgreSQL authoritative state + outbox_events (one commit)
+  -> PostgreSQL WAL -> Debezium PostgreSQL connector
+  -> Kafka topic (event key = aggregate ID)
+  -> consumer groups
+       |- analytics-ingestion -> raw/conformed/semantic storage
+       |- search-projection   -> rebuildable search index
+       |- notification-intent -> channel-specific delivery workers
+       |- feature-materializer -> online/offline feature projections
+       `- audit/operations    -> bounded operational projections
+```
+
+Debezium reads only committed WAL records and Kafka Connect persists its source offset after the
+broker accepts the record. A failure between those steps republishes the same `eventId`; this is an
+intentional at-least-once path. The Kafka key is the aggregate ID for domain facts so one aggregate's
+records retain partition order. No consumer may assume a global order, cross-aggregate order, or
+order between client observations and domain facts.
+
+Start with these topic families, using an environment prefix and a versioned contract in each record:
+
+| Topic family | Producers | Consumers | Key | Retention and purpose |
+| --- | --- | --- | --- | --- |
+| `platform.domain-facts.v1` | Transactional domains through the outbox + Debezium CDC | analytics, search, notification, features | aggregate ID | Retained long enough for consumer recovery and approved replay; compact payloads only |
+| `platform.interactions.v1` | Validated client collector | analytics, experimentation, ranking features | event ID or session-scoped routing key | High-volume, privacy-classified observations; partitioned by event date in the sink |
+| `platform.data-lifecycle.v1` | Registry, transformation, experiment, feature, and model services | governed platform consumers | lifecycle record ID | Low-volume control facts such as quality, model, and privacy transitions |
+| `platform.retry.<consumer>.v1` | A consumer's retry adapter | the same named consumer | original event key | Delayed retry only; includes attempt/defer metadata, never a changed business fact |
+| `platform.dlq.<consumer>.v1` | A consumer after bounded retry or incompatibility | authorized operations/replay tooling | event ID | Quarantine evidence and replay reference; never silently discarded |
+
+The first implementation prioritizes these concrete cases:
+
+| Case | Kafka path | Improvement over a synchronous/local implementation | Authority boundary |
+| --- | --- | --- | --- |
+| Search-to-booking funnel analytics | `domain-facts` and `interactions` -> analytics ingestion -> raw/conformed/semantic layers | One event feed supports fresh funnel metrics, experiment analysis, and replay without loading the booking database with analytical reads | Booking, quote, and money records remain authoritative |
+| Search index and ranking-feature projection | `domain-facts` -> search projection and feature materializer | Search/index lag is isolated from listing or availability writes; projection can be rebuilt from offsets/outbox history | Search cannot make a listing bookable or override inventory |
+| Notification intent fan-out | `domain-facts` -> notification-intent -> email/push/SMS workers | A provider outage or bulk campaign does not delay booking confirmation; each channel has an independent consumer group and retry budget | A sent message is not proof that a booking or payment succeeded |
+| Risk and operational signals | `domain-facts` / accepted observations -> governed feature or monitoring consumer | Windowed, near-real-time indicators can be materialized without embedding analytics in checkout requests | A risk/ML output remains advice; domain policy owns the decision |
+| Data-quality and privacy propagation | `data-lifecycle` -> warehouse, feature, and model consumers | Correction, deletion, and invalidation progress is observable and replayable across every downstream product | Privacy and source-domain owners define the required action |
+
+Topic names, partition counts, retention, cleanup policy, producer/consumer owners, payload
+classification, and approved consumer groups are registry-controlled configuration. They are not
+created ad hoc by application code. The payload is an envelope encoded with a registered schema;
+JSON is acceptable for the first implementation only if compatibility checks are automated. Avro or
+Protobuf plus a schema registry is preferred once more than one independently deployed consumer
+exists, because compatibility can be enforced before publication.
+
+Debezium/Kafka Connect publishes with durable broker acknowledgement and persists source offsets;
+the application never treats connector lag or a timed-out broker write as failed business work.
+Kafka transactions are not used to replace the database transaction: the outbox closes that atomicity
+gap. Consumer-group names are stable, purpose-specific identities; changing a handler version does
+not silently create a new group and replay external effects.
+
+Consumers commit their Kafka offset only after their inbox record and local effect commit. For an
+ordering-sensitive effect, a consumer pauses that partition and retries the original record within a
+bounded budget. For an ordering-independent effect, it durably records a retry instruction keyed by
+the original `eventId`, acknowledges the source record, and lets a retry dispatcher republish the
+reference with capped exponential backoff and jitter. A bounded retry budget ends in the consumer's
+DLQ with an alert; it never silently drops the record. Replaying a DLQ record uses the original
+`eventId`, schema version, privacy/deletion watermark, and an approved replay run; it never edits
+the original record or repeats an external side effect blindly.
+
+Kafka credentials use least-privilege ACLs per producer and consumer group, encrypted in transit and
+at rest. Restricted payloads are not sent merely because a topic is access-controlled: envelopes
+carry only the minimum permitted identifiers and consumers retrieve protected detail through an
+authorized owner interface. Monitor producer error rate, outbox-to-Kafka age, partition skew,
+consumer lag, retry age, DLQ volume, replay throughput, and schema rejection count. Alerting has an
+owner and runbook before a consumer becomes production-critical.
+
+### Debezium CDC operating requirements
+
+The PostgreSQL connector uses logical decoding with a dedicated replication user, publication, and
+replication slot limited to `outbox_events` (and a separately approved accepted-observation outbox
+when the collector is introduced). The slot is never shared with an unrelated connector. The database
+role receives only the replication and table permissions required for that publication; it does not
+receive application-write credentials.
+
+The connector configuration follows the current [Debezium PostgreSQL connector
+documentation](https://debezium.io/documentation/reference/stable/connectors/postgresql.html); its
+outbox-router transformation is likewise a versioned dependency with an official [event-router
+contract](https://debezium.io/documentation/reference/stable/transformations/outbox-event-router.html).
+The application records the exact connector and router versions in deployment evidence.
+
+Initial connector policy is streaming-only after the explicit bootstrap point: do not emit an
+uncontrolled snapshot of historical outbox rows into production topics. Historical replay is a named,
+approved operation that creates a new consumer identity or controlled backfill topic and honours the
+privacy/deletion watermark. Enable transaction metadata when a consumer needs transaction-boundary
+diagnostics; transaction metadata helps explain delivery order but does not create global ordering.
+
+WAL retention is an availability dependency. Monitor replication-slot lag in bytes and time, oldest
+unconsumed outbox record, connector task state, Kafka Connect offset persistence, and PostgreSQL disk
+headroom. Alert before a stalled connector retains enough WAL to threaten the primary database. A
+failover, connector recreation, publication change, or slot loss has a written recovery procedure:
+verify the last LSN, choose a safe resume or backfill range, reconcile event IDs, and never reset an
+offset merely to clear lag.
+
+Debezium's outbox event-router transformation maps this repository's event columns to the governed
+envelope and routes records to the registered topic family. The mapping is version-controlled and
+contract-tested against fixture rows; a column rename or payload-shape change is an event-schema
+change, not an unreviewed connector edit. The router must preserve `eventId`, event name, schema
+version, aggregate ID/version, occurrence time, privacy class, and payload. It must not route a
+database `UPDATE` or `DELETE` as a new domain fact.
 
 ## Analytical storage, transformation, and lineage
 
@@ -1291,9 +1428,10 @@ dependent on one provider's proprietary dashboard.
 
 ## Conceptual data model
 
-No tables below exist today. Implementation uses new forward Liquibase migrations after the
-transactional outbox and privacy model are approved. Logical entities may share physical tables at
-the measured launch scale but keep the ownership and constraints below.
+`outbox_events` and `consumer_inbox_receipts` already exist as shared persistence primitives. The
+remaining records below do not exist today and require new forward Liquibase migrations after the
+privacy model is approved. Logical entities may share physical tables at the measured launch scale
+but keep the ownership and constraints below.
 
 ### Event and ingestion records
 
@@ -1377,7 +1515,7 @@ These are conceptual modules and do not require immediate microservice extractio
 | Module | Contract |
 | --- | --- |
 | `EventContractRegistry` | Register, validate, activate, deprecate, and resolve typed event contracts |
-| `TransactionalOutboxRelay` | Lease due rows, publish at least once, and expose delivery evidence |
+| `OutboxCdcPublisher` | Own Debezium publication, replication-slot, router, topic, and delivery-lag configuration for the outbox |
 | `BehaviorEventCollector` | Validate, consent-check, rate-limit, deduplicate, and durably accept client observations |
 | `AnalyticalIngestionService` | Persist arrivals, validate envelopes, dedupe conformed facts, quarantine failures |
 | `IdentityAttributionService` | Resolve approved pseudonymous session/user links and deletion scopes |
@@ -1722,7 +1860,7 @@ name their ledger/finance definition and close status.
 
 ### Technical metrics
 
-- outbox oldest age, due count, attempts, lease expiry, and relay throughput;
+- outbox oldest age, CDC publication lag, replication-slot/WAL lag, connector task health, and Kafka publish throughput;
 - collector request/event volume, latency, error, payload size, and throttling;
 - ingestion and transformation lag by watermark and partition;
 - warehouse/job queue time, run duration, retry, failed partition, and resource consumption;
@@ -1774,13 +1912,13 @@ incident, cost spike, and disaster restore/replay.
 | Failure | Required behavior |
 | --- | --- |
 | Source transaction rolls back | No domain fact or outbox event exists |
-| Process crashes after source commit | Durable outbox relay resumes; source fact remains correct |
-| Relay publishes twice | Inbox/conformed dedupe prevents duplicate effect/count |
+| Process crashes after source commit | Debezium resumes from its persisted WAL offset; source fact remains correct |
+| CDC publishes twice | Inbox/conformed dedupe prevents duplicate effect/count |
 | Event arrives out of order | Use aggregate version/event time; buffer, rebuild, or quarantine gaps according to contract |
 | Event schema is unknown | Reject/quarantine safely; do not guess semantics |
 | Client sends forged outcome | Reject; authoritative outcome comes from source domain |
 | Collector unavailable | Client buffers within bounded policy; transactional journeys continue |
-| Analytics sink unavailable | Outbox/landing backlog applies backpressure away from transactional pools; source domains continue |
+| Kafka or analytics sink unavailable | WAL/outbox and consumer lag are monitored; source domains continue until approved storage/backpressure limits require controlled degradation |
 | Bad producer deployment | Quarantine affected version, stop dependent publication, roll producer back, reconcile/backfill |
 | Transformation crashes mid-run | Output stays unpublished; retry pinned inputs idempotently |
 | Late/corrected source fact | Restate open versions with lineage; flag affected reports/models/experiments |
@@ -1934,18 +2072,28 @@ lineage, and aggregate dependencies are resolved.
 
 ### Scaling triggers
 
-Consider a broker when polling/relay cannot meet lag and fan-out objectives without hurting the
-database. Consider a dedicated online feature store when shared low-latency lookup volume,
-freshness, and parity justify it. Separate model serving when resource isolation, independent scaling,
-specialized runtime, or deployment cadence demands it. Partition or shard only after measuring
-volume, contention, query shape, and operational ownership.
+Kafka is the default event-transport boundary, so its capacity is reviewed before an event producer
+or critical consumer launches. Size partitions from measured peak record rate, payload size, target
+consumer lag, replay window, and the maximum consumer parallelism that preserves aggregate order.
+Increase partitions only with a documented key-distribution and consumer-rebalance plan; changing a
+partition count can change the mapping of aggregate keys and must not be treated as a harmless
+throughput switch.
+
+Introduce stream processing only when a named use case needs continuous joins, windows, or
+materialization that batch transformations cannot meet within its freshness objective. Typical valid
+cases are near-real-time search/ranking features, high-volume funnel monitoring, or fraud-signal
+aggregation; Kafka itself does not approve a model, alter inventory, capture money, or resolve a
+financial state. Consider a dedicated online feature store when shared low-latency lookup volume,
+freshness, and offline/online parity justify it. Separate model serving when resource isolation,
+independent scaling, specialized runtime, or deployment cadence demands it. Partition or shard
+authoritative stores only after measuring volume, contention, query shape, and operational ownership.
 
 ### Cost and overload controls
 
 Bound event batch size, payload, cardinality, feature width, candidate/model calls, inference tokens,
 training resources, concurrent jobs, query scans, and export volume. Apply quotas and budgets by
 environment/team/model. During overload, shed optional enrichment, shadow predictions, and ad hoc
-jobs before authoritative relays, privacy work, or required fallbacks.
+jobs before authoritative CDC publication, privacy work, or required fallbacks.
 
 ## Appropriate use of AI
 
@@ -2013,14 +2161,18 @@ Exit criteria:
 
 ### Dependency 1 — Durable facts and complete journey instrumentation
 
-Add forward migrations for common outbox/inbox, event registry, bounded behavior acceptance, and audit.
-Instrument one complete search/impression/click/quote/booking/confirmation/completion journey using
-server facts plus validated client observations. Use scheduled export or a simple approved landing
-store; no mandatory broker.
+Implement the common outbox/inbox application services, event registry, Debezium PostgreSQL CDC
+connector, publication/replication-slot management, outbox-router mapping, Kafka topic/ACL registry,
+consumer framework, bounded behavior acceptance, and audit. Instrument one complete
+search/impression/click/quote/booking/confirmation/completion journey using server facts plus
+validated client observations. Deliver its accepted envelopes through CDC and Kafka to a raw landing
+sink; the warehouse and transformations remain independently replaceable consumers.
 
 Exit criteria:
 
 - Source commit/outbox atomicity and consumer dedupe pass real-database/crash tests.
+- Connector restart, Kafka outage, WAL/slot growth alert, duplicate delivery, and controlled replay
+  pass before a production consumer is declared critical.
 - Journey IDs correlate without prohibited personal data or fingerprinting.
 - Reconciliation detects missing/duplicate events and backfill has explicit provenance.
 - Transactional latency remains within domain budgets during analytics backlog.
@@ -2157,9 +2309,9 @@ decision, consequences, rollout, and revisit trigger.
 1. Which team/domain owns the common event envelope, schema registry, outbox library, and operational
    on-call responsibility?
 2. Will the modular monolith start with one shared outbox table or domain-specific outboxes behind one
-   relay contract?
-3. What are the first delivery sink and transformation tools, and what measured trigger justifies a
-   broker or separate data platform?
+   CDC publication contract?
+3. Which managed or self-operated Kafka offering meets the first market's residency, availability,
+   encryption, backup, incident-response, and cost requirements; who owns its on-call rotation?
 4. Which event schema representation and backward/forward compatibility rules are mandatory?
 5. What aggregate ordering/gap policy applies to each first producer?
 6. Which complete journey and event versions form the first durable reference contract?
@@ -2222,16 +2374,17 @@ decision, consequences, rollout, and revisit trigger.
 38. What monitoring thresholds automatically page, pause, roll back, quarantine, retrain, or retire?
 39. Which operations may replay production facts, how are side effects suppressed, and what approval
     and evidence are required?
-40. What measured volume, latency, fan-out, reliability, team, and cost thresholds justify Kafka or
-    another broker, a dedicated feature store, specialized model serving, partitioning, or service
-    extraction?
+40. What measured volume, latency, fan-out, reliability, team, and cost thresholds justify more
+    Kafka partitions, stream processing, a dedicated feature store, specialized model serving,
+    partitioning, or service extraction?
 41. How will affected experiments, metrics, datasets, and active models be invalidated and re-reviewed
     after a source correction, policy change, privacy deletion, or label-definition change?
 42. Which cross-domain decision log fields are mandatory so support, risk, finance, product, and model
     owners can reproduce one consequential outcome?
 
-Target-release default: one governed event envelope, PostgreSQL transactional outbox/inbox, a bounded
-client collector, one approved analytical store and SQL transformation path, a small semantic metric
-catalog, deterministic experiment assignment/exposure, and deterministic product baselines. Add one
-interpretable model only after point-in-time features, mature labels, shadow evaluation, consumer
-fallback, privacy/fairness review, monitoring, and rollback are demonstrably ready.
+Target-release default: one governed event envelope, PostgreSQL transactional outbox/inbox, Kafka as
+the durable event transport, a bounded client collector, one approved analytical store and SQL
+transformation path, a small semantic metric catalog, deterministic experiment assignment/exposure,
+and deterministic product baselines. Add one interpretable model only after point-in-time features,
+mature labels, shadow evaluation, consumer fallback, privacy/fairness review, monitoring, and
+rollback are demonstrably ready.

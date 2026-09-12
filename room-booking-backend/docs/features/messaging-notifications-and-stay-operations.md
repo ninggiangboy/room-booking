@@ -125,8 +125,10 @@ feature.
   secrets in conversation content.
 - Letting a Large Language Model (LLM) autonomously send consequential promises, disclose secrets,
   classify safety severity conclusively, or execute remedies.
-- Introducing microservices, Kafka, event sourcing, sharding, vector databases, or multi-provider
-  channel routing before measured need.
+- Introducing microservices, event sourcing, sharding, vector databases, or multi-provider channel
+  routing before measured need. The module consumes the shared Kafka transport defined by D19 when a
+  notification projection is launched; it does not create a separate messaging-specific broker
+  topology without a measured need.
 
 ## Core principles and invariants
 
@@ -1294,8 +1296,8 @@ new infrastructure.
 
 Split services or partition tables only after metrics show sustained contention, retention/region
 requirements, independently scaling delivery/media workloads, or team/reliability ownership needs.
-Kafka, search indexes, and specialized case platforms are optional projections/integrations, never
-the conversation, notification-intent, access, or incident source of truth.
+The shared Kafka transport, search indexes, and specialized case platforms are projections or
+integrations, never the conversation, notification-intent, access, or incident source of truth.
 
 ## Appropriate use of AI
 
