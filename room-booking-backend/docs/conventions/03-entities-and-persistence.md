@@ -93,6 +93,16 @@ session. Related data is loaded through its own repository query (roles are load
 - A file-level comment explains *why* the migration exists, in the same voice as the JavaDoc.
 - Money is stored in minor units. Absolute timestamps are `timestamptz`; civil values are `date` or
   `time` and are meaningless without their zone column.
+- **Never begin a comment line with a Liquibase keyword.** A line starting `-- property ...` is
+  parsed as a `--property name= value=` directive and fails the whole changelog with
+  `Unexpected formatting in formatted changelog`, even though it is plainly prose. The same applies
+  to `changeset`, `rollback`, `precondition`, `comment`, and `include`. Rewrap the sentence so the
+  keyword is not the first word after `--`.
+- **A dollar-quoted body needs `splitStatements:false` on its changeset.** Liquibase splits on `;`
+  and would otherwise cut a `CREATE FUNCTION ... $$ ... $$` in half.
+- **No `now()` in a partial-index predicate.** A partial index whose predicate moves is not
+  immutable. Index the timestamp column without a predicate and let the worker bind its own decision
+  instant in the query.
 - **No `DEFAULT now()` on a column the application writes.** A database default is a second,
   unsynchronised clock, and it hides an insert path that forgot to supply a value. Migration `011`
   exists purely to remove those defaults.

@@ -52,3 +52,6 @@ databaseChangeLog:
   - include:
       file: changes/016-supply-catalog.sql
       relativeToChangelogFile: true
+  - include:
+      file: changes/017-geographic-catalog.sql
+      relativeToChangelogFile: true
