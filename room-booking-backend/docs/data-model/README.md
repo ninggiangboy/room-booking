@@ -84,6 +84,7 @@ configuration provenance, and second-market compatibility boundary are documente
 | 021 | Payment orchestration | `021-payment-orchestration.sql` | What happens after money leaves the platform's control stays provable: database-enforced capture and refund ceilings, a submission fence, append-only provider evidence |
 | 022 | Ledger, reconciliation, and host payout | `022-ledger-and-payout.sql` | The journal that says what the platform owns and owes: a deferred balance rule no code path can commit around, immutable posted history, and host money consumed exactly once at the payout boundary |
 | 023 | Cancellation, modification, and refund | `023-cancellation-and-modification.sql` | A cancellation is a recalculation somebody must be able to explain: frozen policy terms, a booking revision chain that cannot fork, and a committed decision whose lines are made to add up by a deferred rule |
+| 024 | Messaging and notifications | `024-messaging-and-notifications.sql` | What the platform said to somebody, kept apart from the facts that caused it: conversation membership and message order enforced by trigger, frozen approved wording, and one notice per event, recipient, purpose and policy |
 
 ## Shared conventions
 
