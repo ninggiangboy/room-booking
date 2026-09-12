@@ -83,6 +83,7 @@ configuration provenance, and second-market compatibility boundary are documente
 | 020 | Booking lifecycle | `020-booking-lifecycle.sql` | The contract survives what happens to it: five independent state dimensions, snapshotted terms, append-only evidence |
 | 021 | Payment orchestration | `021-payment-orchestration.sql` | What happens after money leaves the platform's control stays provable: database-enforced capture and refund ceilings, a submission fence, append-only provider evidence |
 | 022 | Ledger, reconciliation, and host payout | `022-ledger-and-payout.sql` | The journal that says what the platform owns and owes: a deferred balance rule no code path can commit around, immutable posted history, and host money consumed exactly once at the payout boundary |
+| 023 | Cancellation, modification, and refund | `023-cancellation-and-modification.sql` | A cancellation is a recalculation somebody must be able to explain: frozen policy terms, a booking revision chain that cannot fork, and a committed decision whose lines are made to add up by a deferred rule |
 
 ## Shared conventions
 

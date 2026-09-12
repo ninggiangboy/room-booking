@@ -70,3 +70,6 @@ databaseChangeLog:
   - include:
       file: changes/022-ledger-and-payout.sql
       relativeToChangelogFile: true
+  - include:
+      file: changes/023-cancellation-and-modification.sql
+      relativeToChangelogFile: true
