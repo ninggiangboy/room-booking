@@ -97,3 +97,6 @@ databaseChangeLog:
   - include:
       file: changes/031-ml-platform.sql
       relativeToChangelogFile: true
+  - include:
+      file: changes/032-admin-and-governance.sql
+      relativeToChangelogFile: true

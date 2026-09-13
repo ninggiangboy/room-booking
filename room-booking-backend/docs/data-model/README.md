@@ -92,6 +92,7 @@ configuration provenance, and second-market compatibility boundary are documente
 | 029 | Discovery projections | `029-discovery-projections.sql` | Discovery reads and never decides: every table is derived and rebuildable, an opt-out is enforced where the next batch job cannot undo it, and a rank carries the epoch, policy, model and feature digest that produced it |
 | 030 | Data and experimentation | `030-data-and-experimentation.sql` | Analytics observes and never repairs: contracts, arrivals, runs and numbers are different records, a number may not claim more authority than the run beneath it, and an experiment epoch is frozen the moment it buckets its first unit |
 | 031 | ML platform | `031-ml-platform.sql` | A model advises and never decides: a feature value may not become effective before it could have been read, an unobserved outcome is not a negative one, a registered version is frozen the moment it is trained, and nothing reaches live traffic without approvals its own owner did not sign |
+| 032 | Admin and governance | `032-admin-and-governance.sql` | An administrative action is a domain command with a name on it, never a database edit: authority is defined apart from the grant that confers it, separation of duties is refused at insert rather than reported quarterly, a configured value carries its schema, scope, priority, interval, owner and version, a kill switch is always pullable and never re-armable without approval, and emergency access expires and owes a review |
 
 ## Shared conventions
 
