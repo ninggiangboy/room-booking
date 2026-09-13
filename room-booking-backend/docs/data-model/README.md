@@ -90,6 +90,7 @@ configuration provenance, and second-market compatibility boundary are documente
 | 027 | Trust, safety and moderation | `027-trust-safety-and-moderation.sql` | What was observed, what was decided under which version of which rule, and which domain command actually honoured it -- three separable rows, so a refusal can be explained, enforced and appealed rather than merely recorded |
 | 028 | Disputes, damage claims and support | `028-disputes-and-support.sql` | An allegation, a finding, a decision and a movement of money are four different rows: a case coordinates all four without owning any of them, and no remedy exists without a named funder, a checked ceiling and an approval bound to the terms it approved |
 | 029 | Discovery projections | `029-discovery-projections.sql` | Discovery reads and never decides: every table is derived and rebuildable, an opt-out is enforced where the next batch job cannot undo it, and a rank carries the epoch, policy, model and feature digest that produced it |
+| 030 | Data and experimentation | `030-data-and-experimentation.sql` | Analytics observes and never repairs: contracts, arrivals, runs and numbers are different records, a number may not claim more authority than the run beneath it, and an experiment epoch is frozen the moment it buckets its first unit |
 
 ## Shared conventions
 

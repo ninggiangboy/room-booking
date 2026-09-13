@@ -2,6 +2,7 @@ package dev.ngb.backend.config;
 
 import java.sql.SQLException;
 
+import dev.ngb.backend.model.BucketRange;
 import dev.ngb.backend.model.JsonDocument;
 import dev.ngb.backend.model.StayRange;
 import org.postgresql.util.PGobject;
@@ -20,7 +21,8 @@ public class JdbcConversionConfig {
 
     /**
      * Allows PostgreSQL extension values such as {@code CITEXT} to populate Java strings, and maps
-     * {@link JsonDocument} onto {@code jsonb} in both directions.
+     * {@link JsonDocument} onto {@code jsonb} and the two range value types onto their PostgreSQL
+     * range types, in both directions.
      *
      * @return JDBC conversions used by repository entity mapping
      */
@@ -34,6 +36,8 @@ public class JdbcConversionConfig {
                     configurer.registerConverter(JsonDocumentToPgObjectConverter.INSTANCE);
                     configurer.registerConverter(PgObjectToStayRangeConverter.INSTANCE);
                     configurer.registerConverter(StayRangeToPgObjectConverter.INSTANCE);
+                    configurer.registerConverter(PgObjectToBucketRangeConverter.INSTANCE);
+                    configurer.registerConverter(BucketRangeToPgObjectConverter.INSTANCE);
                 });
     }
 
@@ -122,6 +126,59 @@ public class JdbcConversionConfig {
                 target.setValue(source.toRangeLiteral());
             } catch (SQLException e) {
                 throw new IllegalStateException("Driver rejected a daterange parameter", e);
+            }
+            return target;
+        }
+    }
+
+    /** Reads an {@code int4range} column into the value type the entities declare. */
+    @ReadingConverter
+    private enum PgObjectToBucketRangeConverter implements Converter<PGobject, @Nullable BucketRange> {
+        /** Stateless converter singleton. */
+        INSTANCE;
+
+        /**
+         * Parses the driver's canonical range text, preserving {@code null} values.
+         *
+         * @param source PostgreSQL {@code int4range} value
+         * @return the bucket range, or {@code null} when the column is null
+         */
+        @Override
+        public @Nullable BucketRange convert(PGobject source) {
+            String value = source.getValue();
+            return value == null ? null : BucketRange.parse(value);
+        }
+    }
+
+    /**
+     * Writes a {@link BucketRange} as a typed {@code int4range} parameter.
+     *
+     * <p>The explicit type name is what makes the bind work, and it is what lets the database apply
+     * the GiST exclusion constraint that keeps two variants of one epoch from claiming the same
+     * bucket: an untyped string parameter would arrive as {@code text}, which PostgreSQL will not
+     * implicitly cast to a range.</p>
+     */
+    @WritingConverter
+    private enum BucketRangeToPgObjectConverter implements Converter<BucketRange, PGobject> {
+        /** Stateless converter singleton. */
+        INSTANCE;
+
+        /**
+         * Binds the canonical half-open literal under the {@code int4range} type name.
+         *
+         * @param source bucket range to persist
+         * @return driver value typed as {@code int4range}
+         * @throws IllegalStateException when the driver rejects the value, which cannot happen for a
+         *         range the {@link BucketRange} constructor has already accepted
+         */
+        @Override
+        public PGobject convert(BucketRange source) {
+            PGobject target = new PGobject();
+            target.setType("int4range");
+            try {
+                target.setValue(source.toRangeLiteral());
+            } catch (SQLException e) {
+                throw new IllegalStateException("Driver rejected an int4range parameter", e);
             }
             return target;
         }
