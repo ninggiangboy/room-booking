@@ -1,10 +1,12 @@
 package dev.ngb.backend.config;
 
 import java.sql.SQLException;
+import java.time.Duration;
 
 import dev.ngb.backend.model.BucketRange;
 import dev.ngb.backend.model.JsonDocument;
 import dev.ngb.backend.model.StayRange;
+import org.postgresql.util.PGInterval;
 import org.postgresql.util.PGobject;
 import org.jspecify.annotations.Nullable;
 import org.springframework.context.annotation.Bean;
@@ -21,8 +23,8 @@ public class JdbcConversionConfig {
 
     /**
      * Allows PostgreSQL extension values such as {@code CITEXT} to populate Java strings, and maps
-     * {@link JsonDocument} onto {@code jsonb} and the two range value types onto their PostgreSQL
-     * range types, in both directions.
+     * {@link JsonDocument} onto {@code jsonb}, the two range value types onto their PostgreSQL
+     * range types, and {@link Duration} onto {@code interval}, in both directions.
      *
      * @return JDBC conversions used by repository entity mapping
      */
@@ -38,6 +40,8 @@ public class JdbcConversionConfig {
                     configurer.registerConverter(StayRangeToPgObjectConverter.INSTANCE);
                     configurer.registerConverter(PgObjectToBucketRangeConverter.INSTANCE);
                     configurer.registerConverter(BucketRangeToPgObjectConverter.INSTANCE);
+                    configurer.registerConverter(PgIntervalToDurationConverter.INSTANCE);
+                    configurer.registerConverter(DurationToPgObjectConverter.INSTANCE);
                 });
     }
 
@@ -179,6 +183,76 @@ public class JdbcConversionConfig {
                 target.setValue(source.toRangeLiteral());
             } catch (SQLException e) {
                 throw new IllegalStateException("Driver rejected an int4range parameter", e);
+            }
+            return target;
+        }
+    }
+
+    /**
+     * Reads an {@code interval} column into a {@link Duration}.
+     *
+     * <p>A PostgreSQL interval can carry years and months, which are not fixed spans of time: how
+     * long a month is depends on which month it falls in. The label horizons and maturity delays
+     * this application stores are exact spans, so a year or month component means the value was
+     * written by something other than this application and is rejected rather than silently
+     * approximated -- a label horizon that quietly changed length by a day or three would move the
+     * instant at which every outcome under it is allowed to mature.</p>
+     */
+    @ReadingConverter
+    private enum PgIntervalToDurationConverter implements Converter<PGInterval, @Nullable Duration> {
+        /** Stateless converter singleton. */
+        INSTANCE;
+
+        /**
+         * Converts the day and time components of the driver's interval into an exact duration.
+         *
+         * @param source PostgreSQL {@code interval} value
+         * @return the equivalent duration
+         * @throws IllegalArgumentException when the interval carries years or months, which have no
+         *         exact length
+         */
+        @Override
+        public @Nullable Duration convert(PGInterval source) {
+            if (source.getYears() != 0 || source.getMonths() != 0) {
+                throw new IllegalArgumentException(
+                        "An interval carrying years or months has no exact length: " + source);
+            }
+            return Duration.ofDays(source.getDays())
+                    .plusHours(source.getHours())
+                    .plusMinutes(source.getMinutes())
+                    .plusMillis(Math.round(source.getSeconds() * 1000.0));
+        }
+    }
+
+    /**
+     * Writes a {@link Duration} as a typed {@code interval} parameter.
+     *
+     * <p>The ISO-8601 text {@link Duration#toString()} produces is an interval literal PostgreSQL
+     * accepts directly. The explicit type name is what makes the bind work, for the same reason it
+     * does for the range and JSON converters: an untyped string arrives as {@code text}, and the
+     * database will not implicitly cast it.</p>
+     */
+    @WritingConverter
+    private enum DurationToPgObjectConverter implements Converter<Duration, PGobject> {
+        /** Stateless converter singleton. */
+        INSTANCE;
+
+        /**
+         * Binds the ISO-8601 duration text under the {@code interval} type name.
+         *
+         * @param source duration to persist
+         * @return driver value typed as {@code interval}
+         * @throws IllegalStateException when the driver rejects the value, which cannot happen for
+         *         text {@link Duration#toString()} produced
+         */
+        @Override
+        public PGobject convert(Duration source) {
+            PGobject target = new PGobject();
+            target.setType("interval");
+            try {
+                target.setValue(source.toString());
+            } catch (SQLException e) {
+                throw new IllegalStateException("Driver rejected an interval parameter", e);
             }
             return target;
         }
