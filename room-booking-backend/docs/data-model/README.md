@@ -88,6 +88,7 @@ configuration provenance, and second-market compatibility boundary are documente
 | 025 | Stay operations | `025-stay-operations.sql` | What happened in the building, with custody: five independent readiness dimensions, instructions released per sensitivity band and audited on every retrieval, access entitlements kept apart from the credentials that honour them, and a safety severity no model can quietly lower |
 | 026 | Reviews and reputation | `026-reviews-and-reputation.sql` | A completed stay earns a bounded right to speak, not a rating: sealed until both sides have or the window closes, immutable once written, and kept apart from every number derived from it |
 | 027 | Trust, safety and moderation | `027-trust-safety-and-moderation.sql` | What was observed, what was decided under which version of which rule, and which domain command actually honoured it -- three separable rows, so a refusal can be explained, enforced and appealed rather than merely recorded |
+| 028 | Disputes, damage claims and support | `028-disputes-and-support.sql` | An allegation, a finding, a decision and a movement of money are four different rows: a case coordinates all four without owning any of them, and no remedy exists without a named funder, a checked ceiling and an approval bound to the terms it approved |
 
 ## Shared conventions
 
