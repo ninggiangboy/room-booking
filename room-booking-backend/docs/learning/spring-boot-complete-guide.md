@@ -129,7 +129,7 @@ Spring singleton không phải GoF singleton toàn JVM. Singleton cũng không t
 | `@Configuration` | nguồn bean definitions |
 | `@Bean` | đăng ký return value của factory method |
 
-Project dùng `@Component` cho [JwtAuthenticationFilter.java](../../src/main/java/dev/ngb/backend/filter/JwtAuthenticationFilter.java), `@Service` cho use case, `@RestController` cho API, `@Configuration` + `@Bean` trong [SecurityConfig.java](../../src/main/java/dev/ngb/backend/config/SecurityConfig.java). Spring Data tự tạo implementation cho repository interface.
+Project dùng `@Component` cho [JwtAuthenticationFilter.java](../../src/main/java/dev/ngb/backend/config/JwtAuthenticationFilter.java), `@Service` cho use case, `@RestController` cho API, `@Configuration` + `@Bean` trong [SecurityConfig.java](../../src/main/java/dev/ngb/backend/config/SecurityConfig.java). Spring Data tự tạo implementation cho repository interface.
 
 **Tự kiểm tra:** Singleton bean có đồng nghĩa singleton toàn JVM không? Vì sao object tạo bằng `new` có thể bỏ qua `@Transactional`? Prototype bean được cleanup ra sao?
 
@@ -235,7 +235,7 @@ Exception trong controller đi qua `HandlerExceptionResolver`/`@ExceptionHandler
 
 ### Mapping và request data
 
-`@RequestMapping` thường đặt prefix ở class. `@GetMapping`, `@PostMapping`, `@PutMapping`, `@PatchMapping`, `@DeleteMapping` biểu đạt HTTP verb. [UserController.java](../../src/main/java/dev/ngb/backend/controller/UserController.java) có GET `/me`, PUT `/me/password`, POST `/me/host-profile`, DELETE `/me`.
+`@RequestMapping` thường đặt prefix ở class. `@GetMapping`, `@PostMapping`, `@PutMapping`, `@PatchMapping`, `@DeleteMapping` biểu đạt HTTP verb. [UserController.java](../../src/main/java/dev/ngb/backend/identity/internal/web/UserController.java) có GET `/me`, PUT `/me/password`, POST `/me/host-profile`, DELETE `/me`.
 
 - `@PathVariable`: identity nằm trong URI `/bookings/{id}`;
 - `@RequestParam`: filter/pagination/query; project dùng `?email=`;
@@ -327,7 +327,7 @@ security.jwt.access-token-expiration=15m
 
 YAML chỉ là biểu diễn phân cấp khác. Nên chọn một format nhất quán; nếu `.properties` và YAML cùng location thì phải hiểu precedence.
 
-`@Value` hợp vài giá trị độc lập; [AuthEmailNotifier.java](../../src/main/java/dev/ngb/backend/service/auth/AuthEmailNotifier.java) inject URL. Nhóm cấu hình nên dùng type-safe binding:
+`@Value` hợp vài giá trị độc lập; [AuthEmailNotifier.java](../../src/main/java/dev/ngb/backend/identity/internal/service/auth/AuthEmailNotifier.java) inject URL. Nhóm cấu hình nên dùng type-safe binding:
 
 ```java
 @ConfigurationProperties("security.jwt")
@@ -374,7 +374,7 @@ Sơ đồ là mental model rút gọn cho các nguồn phổ biến, không thay
 
 ## 6. Validation
 
-`@Valid` ở controller yêu cầu validate DTO sau JSON binding, trước khi method chạy. [RegisterRequest.java](../../src/main/java/dev/ngb/backend/dto/RegisterRequest.java) dùng `@NotBlank`, `@Email`, `@Size`.
+`@Valid` ở controller yêu cầu validate DTO sau JSON binding, trước khi method chạy. [RegisterRequest.java](../../src/main/java/dev/ngb/backend/identity/internal/web/RegisterRequest.java) dùng `@NotBlank`, `@Email`, `@Size`.
 
 | Constraint | `null` | chuỗi rỗng | chỉ whitespace | collection rỗng |
 |---|---:|---:|---:|---:|
@@ -441,7 +441,7 @@ Project có `DomainException` và các base type cho bad request, unauthorized, 
 
 `@ExceptionHandler` bắt type cụ thể. Trong controller thì local; trong `@ControllerAdvice` thì cross-controller. `@RestControllerAdvice` thêm response-body serialization.
 
-[ApiExceptionHandler.java](../../src/main/java/dev/ngb/backend/filter/ApiExceptionHandler.java) xử lý:
+[ApiExceptionHandler.java](../../src/main/java/dev/ngb/backend/config/ApiExceptionHandler.java) xử lý:
 
 - domain failure → status theo base exception;
 - malformed JSON/missing parameter/Bean Validation → 400 có cấu trúc;
@@ -521,7 +521,7 @@ flowchart TB
 - **Hibernate ORM** là một JPA provider phổ biến, hiện thực persistence context, dirty checking, lazy proxy, SQL generation và caching.
 - **Spring Data JPA** tạo repository abstraction trên JPA/Hibernate, không thay thế Hibernate.
 
-Project dùng `spring-boot-starter-data-jdbc`, không có `spring-boot-starter-data-jpa`. [User.java](../../src/main/java/dev/ngb/backend/model/User.java) import `org.springframework.data.annotation.Id` và `org.springframework.data.relational.core.mapping.Table`, không import `jakarta.persistence.Entity`. Vì vậy runtime hiện tại không có Hibernate Session, JPA persistence context, lazy proxy hoặc JPQL.
+Project dùng `spring-boot-starter-data-jdbc`, không có `spring-boot-starter-data-jpa`. [User.java](../../src/main/java/dev/ngb/backend/identity/internal/model/account/User.java) import `org.springframework.data.annotation.Id` và `org.springframework.data.relational.core.mapping.Table`, không import `jakarta.persistence.Entity`. Vì vậy runtime hiện tại không có Hibernate Session, JPA persistence context, lazy proxy hoặc JPQL.
 
 ### 8.2 Raw JDBC và Spring JDBC
 
@@ -657,11 +657,11 @@ Relational converter đổi row/column value thành Java property. Type đơn gi
 
 [JdbcAuditingConfig.java](../../src/main/java/dev/ngb/backend/config/JdbcAuditingConfig.java) bật `@EnableJdbcAuditing` và cung cấp `DateTimeProvider` dùng shared `Clock`. Nhờ đó `@CreatedDate`/`@LastModifiedDate` deterministic trong test và nhất quán UTC.
 
-Lưu ý: SQL `@Modifying` chạy trực tiếp không đi qua save lifecycle callbacks; auditing/version không tự thay đổi nếu câu SQL không update chúng. [UserRoleRepository.grantRole](../../src/main/java/dev/ngb/backend/repository/UserRoleRepository.java) vì thế nhận `createdAt` và INSERT giá trị rõ ràng.
+Lưu ý: SQL `@Modifying` chạy trực tiếp không đi qua save lifecycle callbacks; auditing/version không tự thay đổi nếu câu SQL không update chúng. [UserRoleRepository.grantRole](../../src/main/java/dev/ngb/backend/identity/internal/repository/capability/UserRoleRepository.java) vì thế nhận `createdAt` và INSERT giá trị rõ ràng.
 
 ### 8.6 `CrudRepository`, `ListCrudRepository` và `JdbcAggregateTemplate`
 
-[UserRepository.java](../../src/main/java/dev/ngb/backend/repository/UserRepository.java) khai báo:
+[UserRepository.java](../../src/main/java/dev/ngb/backend/identity/internal/repository/account/UserRepository.java) khai báo:
 
 ```java
 public interface UserRepository extends ListCrudRepository<User, UUID> {
@@ -816,7 +816,7 @@ WHERE id = :id
   AND version = :expectedVersion;
 ```
 
-Nếu affected rows bằng 0, một transaction khác đã sửa/xóa row; Spring ném optimistic-lock exception. [AuthToken.java](../../src/main/java/dev/ngb/backend/model/AuthToken.java) dùng version để hai consumer không cùng consume token thành công âm thầm. Retry phải reload state và chạy lại toàn business decision với giới hạn.
+Nếu affected rows bằng 0, một transaction khác đã sửa/xóa row; Spring ném optimistic-lock exception. [AuthToken.java](../../src/main/java/dev/ngb/backend/identity/internal/model/session/AuthToken.java) dùng version để hai consumer không cùng consume token thành công âm thầm. Retry phải reload state và chạy lại toàn business decision với giới hạn.
 
 ```mermaid
 sequenceDiagram
@@ -1019,12 +1019,12 @@ Không có lựa chọn thắng tuyệt đối:
 Đọc theo thứ tự:
 
 1. [build.gradle](../../build.gradle): xác nhận starter JDBC, PostgreSQL driver, Liquibase.
-2. [User.java](../../src/main/java/dev/ngb/backend/model/User.java): `@Table`, `@Id`, auditing, `@Version`.
-3. [UserRepository.java](../../src/main/java/dev/ngb/backend/repository/UserRepository.java): inherited CRUD, derived query, explicit row-lock SQL.
-4. [UserRoleRepository.java](../../src/main/java/dev/ngb/backend/repository/UserRoleRepository.java): scalar projection và `@Modifying` PostgreSQL upsert.
+2. [User.java](../../src/main/java/dev/ngb/backend/identity/internal/model/account/User.java): `@Table`, `@Id`, auditing, `@Version`.
+3. [UserRepository.java](../../src/main/java/dev/ngb/backend/identity/internal/repository/account/UserRepository.java): inherited CRUD, derived query, explicit row-lock SQL.
+4. [UserRoleRepository.java](../../src/main/java/dev/ngb/backend/identity/internal/repository/capability/UserRoleRepository.java): scalar projection và `@Modifying` PostgreSQL upsert.
 5. [JdbcConversionConfig.java](../../src/main/java/dev/ngb/backend/config/JdbcConversionConfig.java): vendor type conversion.
 6. [JdbcAuditingConfig.java](../../src/main/java/dev/ngb/backend/config/JdbcAuditingConfig.java): callbacks lấy thời gian từ shared clock.
-7. [AuthenticationService.java](../../src/main/java/dev/ngb/backend/service/auth/AuthenticationService.java): service transaction nối nhiều repositories.
+7. [AuthenticationService.java](../../src/main/java/dev/ngb/backend/identity/internal/service/auth/AuthenticationService.java): service transaction nối nhiều repositories.
 8. [001-identity.sql](../../src/main/resources/db/changelog/changes/001-identity.sql): schema constraints là nguồn bảo vệ cuối.
 
 Khi persistence sai, kiểm tra theo thứ tự: transaction có thật sự mở không; SQL/parameters là gì; entity được coi new hay existing; column naming/type conversion đúng không; version predicate có bị bypass không; query có load quá nhiều round trips không; constraint/index có khớp invariant/query không.
@@ -1210,7 +1210,7 @@ Authentication trả lời “ai đang gọi?”, authorization trả lời “n
 - route còn lại cần authentication;
 - JWT filter chạy trước username/password filter.
 
-[JwtAuthenticationFilter.java](../../src/main/java/dev/ngb/backend/filter/JwtAuthenticationFilter.java) đọc Bearer token, verify claims, tạo `UsernamePasswordAuthenticationToken`, đổi roles thành authorities có `ROLE_` prefix rồi đặt vào context. Invalid token để request anonymous; authorization sau đó gọi [RestAuthenticationEntryPoint.java](../../src/main/java/dev/ngb/backend/config/RestAuthenticationEntryPoint.java) trả JSON 401.
+[JwtAuthenticationFilter.java](../../src/main/java/dev/ngb/backend/config/JwtAuthenticationFilter.java) đọc Bearer token, verify claims, tạo `UsernamePasswordAuthenticationToken`, đổi roles thành authorities có `ROLE_` prefix rồi đặt vào context. Invalid token để request anonymous; authorization sau đó gọi [RestAuthenticationEntryPoint.java](../../src/main/java/dev/ngb/backend/config/RestAuthenticationEntryPoint.java) trả JSON 401.
 
 ```mermaid
 sequenceDiagram
@@ -1687,7 +1687,7 @@ Luôn có tie-breaker unique, max page size và index khớp predicate/order.
 
 ### Locking
 
-Optimistic locking dùng version; UPDATE có `WHERE id=? AND version=?`, zero row nghĩa conflict. [User.java](../../src/main/java/dev/ngb/backend/model/User.java) và `AuthToken` có `@Version`. Phù hợp conflict hiếm; retry toàn use case với state mới và giới hạn, không chỉ retry save state cũ.
+Optimistic locking dùng version; UPDATE có `WHERE id=? AND version=?`, zero row nghĩa conflict. [User.java](../../src/main/java/dev/ngb/backend/identity/internal/model/account/User.java) và `AuthToken` có `@Version`. Phù hợp conflict hiếm; retry toàn use case với state mới và giới hạn, không chỉ retry save state cũ.
 
 Pessimistic lock dùng `SELECT ... FOR UPDATE`, như `UserRepository.findByIdForUpdate`. Lock giữ đến transaction end, có blocking/deadlock; giữ critical section ngắn, lock order nhất quán, timeout/monitor. Java `synchronized` không bảo vệ nhiều pod.
 

@@ -123,41 +123,59 @@ through the default zone, and the PostgreSQL driver reports it as the session ti
 
 ## 5. Project structure
 
+The codebase is a Spring Modulith modular monolith: `dev.ngb.backend` has 22 direct sub-packages,
+one per module, and nothing else. There is no top-level `model`, `repository`, `service`, or
+`controller` package — those responsibilities exist inside every module instead, under `internal/`.
+`docs/modules/README.md` is the index; each module has its own document describing what it owns,
+its aggregate clusters, its public API, and which other modules it may depend on.
+
 ```text
 src/main/java/dev/ngb/backend
-├── config/          Spring configuration, security filter, and API error handlers
-├── controller/      HTTP endpoints
-├── dto/             Shared request and response data-transfer objects
-├── event/           Internal application events
-├── exception/       Business failures with stable error codes
-├── model/           Spring Data JDBC entities and enums
-├── repository/      Database access interfaces
-├── service/         Business workflows, validation, tokens, accounts, and email
-├── time/            Clock-driven calendar primitives and IANA time-zone validation
-└── util/            Shared stateless helpers such as string normalization
+├── platform/         Shared kernel: idempotency, outbox, audit, ~35 cross-module value types/enums
+│   ├── time/, util/, exception/base/    moved here unchanged; nothing else depends on them
+│   └── internal/     command_idempotency_records, outbox_events, consumer_inbox_receipts,
+│                     audit_events, external_resource_references, and service/mail
+├── config/           Security filter chain, OpenAPI, JDBC conversion, global exception handling
+│                     (an "open" module -- may depend on anything, since it wires everything)
+├── identity/         Account holder, session, credential, capability; the only live auth/onboarding
+│   └── internal/     service/{auth,account,user,validation,host}, web (controllers + DTOs), model
+├── hostverification/ Seller KYC/KYB, screening, tax identity, payout-destination eligibility
+├── market/, supply/, inventory/, pricing/, booking/, payment/, ledger/, messaging/, stay/,
+│   review/, trust/, support/, discovery/, analytics/, ml/, admin/, hostops/, growth/
+│                     One module per remaining domain; schema only until each gets a service.
+│                     Inside each: internal/model (entities+enums, by aggregate cluster),
+│                     internal/repository (mirrors model), internal/service, internal/web.
+└── (no top-level model/, repository/, service/, controller/, dto/, event/, exception/, filter/,
+     time/, or util/ -- all absorbed into the modules above)
 
 src/main/resources
 ├── application.properties
 ├── application-local.properties
-└── db/changelog/    Liquibase migration history
+└── db/changelog/    Liquibase migration history, 000-035 (035: the event publication registry table)
 ```
 
-The usual dependency direction is:
+The usual dependency direction, inside one module:
 
 ```text
 HTTP request
-    -> security filter
-    -> controller
-    -> service
-    -> repository
+    -> security filter (config)
+    -> controller (<module>.internal.web)
+    -> service (<module>.internal.service.*)
+    -> repository (<module>.internal.repository.*)
     -> PostgreSQL
 
-DomainException
-    -> ApiExceptionHandler
+DomainException (platform.exception.base)
+    -> ApiExceptionHandler (config)
     -> JSON error response
 ```
 
 Controllers should stay thin. Spring binds HTTP bodies to request DTOs, which controllers pass intact to services; services own validation and business rules and return response DTOs. Repositories isolate persistence operations.
+
+Across modules, the only legitimate target is another module's root package (never anything under
+its `internal/`), and Spring Modulith's `ApplicationModules.verify()` — not just code review —
+enforces that. See `docs/architecture/modular-monolith.md` for what it checks and, just as
+important, what it cannot see (schema-level foreign keys crossing a module boundary carry no Java
+import and are invisible to it).
 
 ## 6. Java concepts used in this codebase
 
@@ -721,16 +739,25 @@ represented by status rather than removing historical rows. Date and time-zone s
 
 ## 12. Recommended reading order
 
-1. `RoomBookingBackendApplication` to see startup.
-2. `AuthController` and its request/response records to see the HTTP surface.
-3. `SecurityConfig` and `JwtAuthenticationFilter` to understand public and protected routes.
-4. `AuthenticationService` to follow the main use cases.
-5. `User`, `AuthToken`, and their repositories to connect Java objects to tables.
-6. `EmailVerificationService`, `PasswordResetService`, and `AuthEmailNotifier` to see reusable token utilities, transactions, and post-commit events.
-7. `UserFinder` to see shared user lookup and active-account behavior extracted from workflows.
-8. `ApiExceptionHandler` and the exception package to understand failures.
-9. The Liquibase master file and `docs/data-model/README.md` to see the whole schema at once and to
-   read what it does not yet prove.
+1. `docs/modules/README.md` and `docs/architecture/modular-monolith.md` to see the module map before
+   any code, and what `ApplicationModules.verify()` does and does not check.
+2. `RoomBookingBackendApplication` to see startup and where component scanning anchors.
+3. `identity/internal/web/AuthController.java` and its request/response records to see the HTTP surface.
+4. `config/SecurityConfig.java` and `config/JwtAuthenticationFilter.java` to understand public and
+   protected routes, and `docs/modules/config.md` for why they live in an "open" module.
+5. `identity/internal/service/auth/AuthenticationService.java` to follow the main use cases.
+6. `identity/internal/model/account/User.java`, `identity/internal/model/session/AuthToken.java`, and
+   their repositories to connect Java objects to tables — and `docs/modules/identity.md` for why both
+   `users` and the target-model `account_holders` live in this one module.
+7. `EmailVerificationService`, `PasswordResetService`, and `AuthEmailNotifier` (all under
+   `identity/internal/service/auth/`) to see reusable token utilities, transactions, and post-commit
+   events — and `docs/architecture/event-publication-registry.md` for why these two events
+   deliberately stay off the `@ApplicationModuleListener` registry.
+8. `identity/internal/service/user/UserFinder.java` to see shared user lookup and active-account
+   behavior extracted from workflows.
+9. `config/ApiExceptionHandler.java` and `platform/exception/base/` to understand failures.
+10. The Liquibase master file and `docs/data-model/README.md` to see the whole schema at once and to
+    read what it does not yet prove.
 
 Use the IDE's “Go to declaration” action whenever an annotation, method, or type is unfamiliar.
 

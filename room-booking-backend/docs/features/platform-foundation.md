@@ -52,7 +52,7 @@ Current foundations are:
 - a shared Coordinated Universal Time (UTC) `Clock`, Spring Data JDBC creation/modification
   auditing, and PostgreSQL-specific scalar conversion;
 - one JavaScript Object Notation (JSON)
-  [`ApiErrorResponse`](../../src/main/java/dev/ngb/backend/dto/ApiErrorResponse.java) shape and
+  [`ApiErrorResponse`](../../src/main/java/dev/ngb/backend/config/ApiErrorResponse.java) shape and
   centralized exception translation;
 - stateless bearer-token security, current account/role reloading, password encoding, and separate
   handlers for unauthenticated and forbidden requests;

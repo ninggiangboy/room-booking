@@ -62,23 +62,23 @@ Current foundations are:
   produce one `auth_tokens` table holding a unique Secure Hash Algorithm 256 (SHA-256) token digest,
   a `type` of `EMAIL_VERIFICATION`/`PASSWORD_RESET`/`REFRESH_TOKEN`, an expiry, and a consumption
   instant, with indexes for per-user lookup and unconsumed-token expiry;
-- [`AuthController`](../../src/main/java/dev/ngb/backend/controller/AuthController.java) exposes
+- [`AuthController`](../../src/main/java/dev/ngb/backend/identity/internal/web/AuthController.java) exposes
   register, login, refresh, logout, forgot/reset password, and email-verification request/confirm;
-- [`UserController`](../../src/main/java/dev/ngb/backend/controller/UserController.java) exposes the
+- [`UserController`](../../src/main/java/dev/ngb/backend/identity/internal/web/UserController.java) exposes the
   current-user projection, a public email-existence check, password change, atomic host onboarding,
   and self-service soft deletion;
 - [`SecurityConfig`](../../src/main/java/dev/ngb/backend/config/SecurityConfig.java) is stateless,
   disables Cross-Site Request Forgery (CSRF) protection for a bearer-token API, lists public routes
   explicitly, reserves `/api/v1/admin/**` for the `ADMIN` role, and requires authentication
   everywhere else;
-- [`JwtAuthenticationFilter`](../../src/main/java/dev/ngb/backend/filter/JwtAuthenticationFilter.java)
+- [`JwtAuthenticationFilter`](../../src/main/java/dev/ngb/backend/config/JwtAuthenticationFilter.java)
   verifies the JSON Web Token (JWT) signature and expiry, then reloads account status and roles from
   PostgreSQL on every protected request, so a role grant applies on the next request and a
   suspension or deletion blocks an unexpired access token immediately;
 - opaque refresh, verification, and reset secrets are returned once and stored only as digests;
   refreshing consumes the presented token and issues a new one; password reset and account status
   changes revoke outstanding unconsumed tokens;
-- [`PasswordPolicy`](../../src/main/java/dev/ngb/backend/service/validation/PasswordPolicy.java)
+- [`PasswordPolicy`](../../src/main/java/dev/ngb/backend/identity/internal/service/validation/PasswordPolicy.java)
   enforces length, character classes, and the 72-byte BCrypt input limit through Spring Security's
   delegating password encoder;
 - email verification applies a per-account cooldown plus a rolling-window request limit, and

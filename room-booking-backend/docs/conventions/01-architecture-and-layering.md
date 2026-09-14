@@ -2,36 +2,57 @@
 
 ## Package map
 
-Production code lives under `dev.ngb.backend`, organized by responsibility rather than by feature:
+Production code lives under `dev.ngb.backend`, organized by module first and by responsibility
+second. There is no top-level `model`, `repository`, `service`, `controller`, `dto`, `event`, or
+`exception` package — each of those responsibilities exists **inside every module**, under
+`internal/`. `docs/modules/README.md` is the binding index of the 22 modules; the table below is the
+responsibility layer that repeats inside each one:
+
+| Sub-package (inside a module) | Contains | May depend on |
+| --- | --- | --- |
+| `internal/web` | HTTP entry points and their request/response records | this module's `internal/service` |
+| `internal/service` | Use cases, business rules, factories, policies | this module's `internal/model`, `internal/repository`, and — for another module — only its root package or a `@NamedInterface` |
+| `internal/repository` | Spring Data JDBC interfaces | this module's `internal/model` |
+| `internal/model` | Persistence aggregates and domain enums, subdivided by aggregate cluster | nothing in the application |
+
+The dependency direction inside a module is one-way: `internal/web → internal/service →
+internal/repository → internal/model`. A repository must never be injected into a controller, and
+`internal/model` must never import from `internal/service` or above.
+
+Two packages sit outside every module's `internal/`, by design:
 
 | Package | Contains | May depend on |
 | --- | --- | --- |
-| `controller` | HTTP entry points, one per resource | `dto`, `service` |
-| `dto` | Request and response records shared across the HTTP boundary | `model` (for projections only) |
-| `service` | Use cases, business rules, factories, policies | `dto`, `model`, `repository`, `event`, `time`, `util`, `exception` |
-| `repository` | Spring Data JDBC interfaces | `model` |
-| `model` | Persistence aggregates and domain enums | nothing in the application |
-| `time` | Calendar and time-zone primitives | nothing in the application |
-| `exception` | Domain failures; `exception.base` holds the abstract HTTP-mapped types | nothing in the application |
-| `filter` | Servlet filters and the global exception handler | `dto`, `exception`, `service` |
-| `config` | Spring configuration and security wiring | anything |
-| `event` | Application events published for post-commit work | nothing in the application |
-| `util` | Stateless helpers with no Spring dependency | nothing in the application |
+| `platform` (root) | The shared kernel: value types and enums genuinely used by 3+ modules with no natural owner. `platform.time`, `platform.util`, `platform.exception.base` moved in unchanged because they depend on nothing else in the application. | nothing else in the application — every other module depends on `platform`, never the reverse |
+| `config` | Spring configuration, security wiring, the global exception handler | anything — the one module Spring Modulith declares `Type.OPEN` |
 
-The dependency direction is one-way: `controller → service → repository → model`. A repository must
-never be injected into a controller, and `model`, `time`, `util`, and `event` must never import from
-`service` or above.
+A module may also expose a `<module>.types` package for an enum used by a downstream module that is
+already dependent on it in every other respect (see `docs/modules/platform.md`'s R3 rule) — a
+`@NamedInterface`, not an escape hatch for anything else.
 
-## Service subpackages
+`ApplicationModules.verify()` enforces the module boundary at build time: a reference into another
+module's `internal/` package fails the check regardless of what this document says. See
+`docs/architecture/modular-monolith.md` for what it checks and — just as important — what it
+structurally cannot see (a foreign key crossing a module boundary carries no Java import).
 
-`service` is divided by capability — `service.auth`, `service.account`, `service.host`,
-`service.mail`, `service.user`, `service.validation`. A new capability gets its own subpackage with
-its own `package-info.java`.
+## Module and service subpackages
 
-Subpackage visibility is load-bearing, not cosmetic. Types that exist only to support one workflow —
-factories above all — are **package-private** so that partially constructed state and raw secrets
-cannot escape the package that knows how to handle them. Only the type a different package actually
-calls is `public`.
+Inside `internal/service`, work is further divided by capability, the same way `identity` already
+does it — `service.auth`, `service.account`, `service.host`, `service.user`, `service.validation`
+(and `platform`'s `internal.service.mail`). A new capability gets its own subpackage with its own
+`package-info.java`.
+
+Subpackage visibility is load-bearing, not cosmetic, at **both** levels this codebase now has. Types
+that exist only to support one workflow — factories above all — are **package-private** so that
+partially constructed state and raw secrets cannot escape the package that knows how to handle them;
+only the type a different package actually calls is `public`. The same principle now also applies
+one level up: only the type a different *module* actually calls belongs at that module's root —
+everything else stays under `internal`, even if it is `public` for intra-module reasons. Getting this
+wrong is not hypothetical: building this migration surfaced two real cases where a caller's
+promotion to a module's public root stranded a package-private collaborator it needed —
+`AccessTokenService` (`identity`) and `HostOnboardingService` (identity's own legacy host-onboarding
+workflow, not `hostverification`'s) both needed their factory moved to the same root package,
+package-private modifier intact, rather than widened to `public`. See `docs/modules/identity.md`.
 
 ## Keep controllers thin
 
@@ -61,6 +82,20 @@ replaced in a test, and its dependencies stay explicit.
 ## Events for post-commit work
 
 Work that must not roll back the command and must not run inside its transaction — sending an
-email, above all — is published as an application event (`EmailVerificationIssued`,
-`PasswordResetIssued`) and handled after commit. A service must never call an SMTP client, an HTTP
-client, or any other remote system inline inside a `@Transactional` method.
+email, above all — is published as an application event and handled after commit. A service must
+never call an SMTP client, an HTTP client, or any other remote system inline inside a
+`@Transactional` method.
+
+**`@ApplicationModuleListener` is the default for an event crossing a module boundary.** It composes
+`@Async @Transactional(REQUIRES_NEW) @TransactionalEventListener` and, backed by
+`spring-modulith-starter-jdbc`, records the event durably: a listener that has not yet run survives a
+process restart instead of being silently lost the way a bare `ApplicationEventPublisher` would lose
+it. See `docs/architecture/event-publication-registry.md` for the mechanics and the two settings that
+make it behave like an outbox rather than a write-only log.
+
+**No event carrying a secret, raw personal data, or anything without a retention policy may go
+through the registry.** The registry serializes the full event payload as plaintext JSON into a table
+with no retention policy of its own. `EmailVerificationIssued` and `PasswordResetIssued` — both carry
+a raw token secret — are the one named exception: they stay on a bare `@TransactionalEventListener`,
+documented as such in `AuthEmailNotifier`'s Javadoc, exactly as they behaved before Spring Modulith
+was introduced.

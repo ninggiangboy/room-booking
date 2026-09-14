@@ -135,22 +135,45 @@ or container setting; see [Date, time, and time-zone handling](room-booking-back
 
 ## Project structure
 
+The application is a Spring Modulith modular monolith: `dev.ngb.backend` has no top-level
+`model`/`repository`/`service`/`controller` packages of its own. Every persistence type and every
+piece of live application code lives inside one of 22 modules, each a direct sub-package with its
+own `internal/` the Spring Modulith ArchUnit test enforces other modules cannot reach into. See
+[`room-booking-backend/docs/modules/README.md`](room-booking-backend/docs/modules/README.md) for the
+full module index and
+[`room-booking-backend/docs/architecture/modular-monolith.md`](room-booking-backend/docs/architecture/modular-monolith.md)
+for why this shape exists.
+
 ```text
 room-booking-backend/
 ├── src/main/java/dev/ngb/backend/
-│   ├── config/       # Security and application configuration
-│   ├── controller/   # REST endpoints
-│   ├── dto/          # Request and response types
-│   ├── event/        # Application events
-│   ├── exception/    # Domain and API errors
-│   ├── model/        # Spring Data JDBC entities
-│   ├── repository/   # Persistence interfaces
-│   ├── service/      # Business logic
-│   ├── time/         # Calendar primitives and IANA time-zone validation
-│   └── util/         # Shared normalization, duration, hashing, and token helpers
+│   ├── platform/     # Shared kernel: idempotency, outbox, audit, the ~35-type value/enum kernel
+│   ├── config/       # Security, OpenAPI, JDBC conversion, global exception handling (open module)
+│   ├── market/       # Legal entity, provider account, policy bundle, localized content
+│   ├── identity/     # Account holder, session, credential, capability -- the only running auth code
+│   ├── hostverification/  # Seller KYC/KYB, screening, tax, payout-destination eligibility
+│   ├── supply/       # Property, accommodation type, physical unit, listing, rate plan, geo catalog
+│   ├── inventory/    # Availability day, hold, claim, block, iCal sync
+│   ├── pricing/      # Price rule, promotion, quote, tax
+│   ├── booking/      # The stay contract plus its revision, cancellation, and refund-instruction chain
+│   ├── payment/      # Provider-independent payment state, webhook, refund execution, dispute gateway
+│   ├── ledger/       # Double-entry accounting, host payable, payout, statement, reconciliation
+│   ├── messaging/    # Conversation, message, notification intent, delivery
+│   ├── stay/         # Operational stay, access grant, task, incident, evidence
+│   ├── review/       # Review right, revision, publication, aspect intelligence, reputation
+│   ├── trust/        # Risk signal/decision/enforcement, challenge, restriction, moderation
+│   ├── support/      # Support case, evidence custody, damage claim, remedy, appeal
+│   ├── discovery/    # Search/recommendation projections, ranking epoch, exposure
+│   ├── analytics/    # Event/dataset contract, lineage, quality, metric, experiment
+│   ├── ml/           # Feature store, label, model registry, prediction
+│   ├── admin/        # Operator role, break-glass, configuration, change request, feature flag
+│   ├── hostops/      # Host metric, benchmark, forecast, advice, bulk edit
+│   └── growth/       # Program, referral, stored value, loyalty, campaign, affiliate
 ├── src/main/resources/
-│   └── db/changelog/ # Liquibase migrations, 000-034
+│   └── db/changelog/ # Liquibase migrations, 000-035 (035 is the event publication registry table)
 ├── docs/
+│   ├── architecture/ # The modular-monolith decision and the event publication registry
+│   ├── modules/      # One document per module: ownership, clusters, API, allowed dependencies
 │   ├── conventions/  # The binding rule set for code changes
 │   ├── data-model/   # One note per migration, plus the schema overview
 │   ├── features/     # Authoritative feature designs
@@ -158,6 +181,13 @@ room-booking-backend/
 │   └── templates/    # Document prompts
 └── compose.local.yaml
 ```
+
+Inside a module, the same responsibility split the codebase always used still applies, just nested
+under `internal/`: `internal/web` (controllers, request/response records), `internal/service`
+(business logic, factories), `internal/repository` (persistence interfaces), `internal/model`
+(entities and enums, subdivided by aggregate cluster in every module large enough to need it). Only
+a module's root package — never anything under `internal/` — is a legitimate target for another
+module's code.
 
 ## Build and test
 
