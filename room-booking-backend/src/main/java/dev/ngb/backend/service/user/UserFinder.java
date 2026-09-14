@@ -6,8 +6,8 @@ import java.util.function.Supplier;
 
 import dev.ngb.backend.exception.UserAccountDisabledException;
 import dev.ngb.backend.exception.UserNotFoundException;
-import dev.ngb.backend.model.User;
-import dev.ngb.backend.repository.UserRepository;
+import dev.ngb.backend.identity.internal.model.account.User;
+import dev.ngb.backend.identity.internal.repository.account.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

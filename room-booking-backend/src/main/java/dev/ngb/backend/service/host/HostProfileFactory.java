@@ -2,8 +2,8 @@ package dev.ngb.backend.service.host;
 
 import java.util.UUID;
 
-import dev.ngb.backend.model.HostProfile;
-import dev.ngb.backend.model.IdentityStatus;
+import dev.ngb.backend.identity.internal.model.capability.HostProfile;
+import dev.ngb.backend.identity.internal.model.capability.IdentityStatus;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
 

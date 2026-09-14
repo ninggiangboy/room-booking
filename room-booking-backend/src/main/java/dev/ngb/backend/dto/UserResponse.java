@@ -1,8 +1,8 @@
 package dev.ngb.backend.dto;
 
-import dev.ngb.backend.model.Role;
-import dev.ngb.backend.model.User;
-import dev.ngb.backend.model.UserStatus;
+import dev.ngb.backend.identity.internal.model.Role;
+import dev.ngb.backend.identity.internal.model.account.User;
+import dev.ngb.backend.identity.internal.model.account.UserStatus;
 
 import java.time.Instant;
 import java.util.List;

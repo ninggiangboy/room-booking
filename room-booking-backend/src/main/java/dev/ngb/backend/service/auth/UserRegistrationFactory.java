@@ -2,11 +2,11 @@ package dev.ngb.backend.service.auth;
 
 import java.util.UUID;
 
-import dev.ngb.backend.model.Role;
-import dev.ngb.backend.model.User;
-import dev.ngb.backend.model.UserRole;
-import dev.ngb.backend.model.UserRoleId;
-import dev.ngb.backend.model.UserStatus;
+import dev.ngb.backend.identity.internal.model.Role;
+import dev.ngb.backend.identity.internal.model.account.User;
+import dev.ngb.backend.identity.internal.model.capability.UserRole;
+import dev.ngb.backend.identity.internal.model.capability.UserRoleId;
+import dev.ngb.backend.identity.internal.model.account.UserStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;

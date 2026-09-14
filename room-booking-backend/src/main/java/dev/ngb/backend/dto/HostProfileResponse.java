@@ -1,7 +1,7 @@
 package dev.ngb.backend.dto;
 
-import dev.ngb.backend.model.HostProfile;
-import dev.ngb.backend.model.IdentityStatus;
+import dev.ngb.backend.identity.internal.model.capability.HostProfile;
+import dev.ngb.backend.identity.internal.model.capability.IdentityStatus;
 
 import java.math.BigDecimal;
 import java.time.Instant;

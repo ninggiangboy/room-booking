@@ -3,7 +3,7 @@ package dev.ngb.backend.exception;
 import java.util.Map;
 
 import dev.ngb.backend.exception.base.ForbiddenException;
-import dev.ngb.backend.model.User;
+import dev.ngb.backend.identity.internal.model.account.User;
 
 /** Blocks business operations for an account whose status is not active. */
 public class UserAccountDisabledException extends ForbiddenException {

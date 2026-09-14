@@ -6,11 +6,11 @@ import java.time.Instant;
 import java.util.UUID;
 
 import dev.ngb.backend.exception.InvalidRefreshTokenException;
-import dev.ngb.backend.model.AuthToken;
-import dev.ngb.backend.model.AuthTokenType;
-import dev.ngb.backend.model.TokenConsumptionReason;
-import dev.ngb.backend.model.User;
-import dev.ngb.backend.repository.AuthTokenRepository;
+import dev.ngb.backend.identity.internal.model.session.AuthToken;
+import dev.ngb.backend.identity.internal.model.session.AuthTokenType;
+import dev.ngb.backend.identity.internal.model.session.TokenConsumptionReason;
+import dev.ngb.backend.identity.internal.model.account.User;
+import dev.ngb.backend.identity.internal.repository.session.AuthTokenRepository;
 import dev.ngb.backend.util.DurationUtils;
 import dev.ngb.backend.util.HashUtils;
 import org.springframework.beans.factory.annotation.Value;

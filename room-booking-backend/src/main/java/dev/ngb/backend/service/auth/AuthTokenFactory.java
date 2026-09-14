@@ -4,8 +4,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
-import dev.ngb.backend.model.AuthToken;
-import dev.ngb.backend.model.AuthTokenType;
+import dev.ngb.backend.identity.internal.model.session.AuthToken;
+import dev.ngb.backend.identity.internal.model.session.AuthTokenType;
 import dev.ngb.backend.util.HashUtils;
 import dev.ngb.backend.util.SecureTokenUtils;
 import org.springframework.stereotype.Component;

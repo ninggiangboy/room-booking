@@ -1,6 +1,6 @@
 package dev.ngb.backend.dto;
 
-import dev.ngb.backend.model.UserStatus;
+import dev.ngb.backend.identity.internal.model.account.UserStatus;
 import jakarta.validation.constraints.NotNull;
 
 /**
