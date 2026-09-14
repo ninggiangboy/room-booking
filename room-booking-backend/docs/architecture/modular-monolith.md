@@ -115,3 +115,17 @@ It does not resolve the open `users`-versus-`account_holders` question tracked i
 [`../data-model/README.md`](../data-model/README.md); it places both tables in `identity` so that
 whichever way that question resolves, it resolves inside one module's internals instead of across a
 module boundary.
+
+## Status
+
+Complete and enforced. All 423 live entities and their repositories, and every existing piece of
+application code (`identity`'s auth stack, `hostverification`'s legacy host-onboarding workflow — see
+[`../modules/identity.md`](../modules/identity.md#the-legacy-host-onboarding-workflow) for why it is
+identity's, not hostverification's — and `platform`'s mail port), live under one of the 22 modules.
+`src/test/java/dev/ngb/backend/ModularityTests.java` runs `ApplicationModules.of(...).verify()` with
+no allow-list and no violations: every `allowedDependencies` entry was set from the actual
+cross-module Java import graph, re-derived by grep after an audit pass removed spurious imports the
+move script had generated from ordinary English words in Javadoc prose matching a class's simple
+name (see the commit that fixed it for the full account — it is a real failure mode of any
+identifier-matching import generator, not specific to this one). `./gradlew build`, `./gradlew test`,
+and `./gradlew javadoc` are all clean from a fresh clone.
