@@ -15,10 +15,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
-import dev.ngb.backend.identity.internal.model.Role;
-
-import dev.ngb.backend.identity.internal.model.Role;
-
 
 /**
  * One due component of a collection: a deposit, a pay-now amount, or a later balance.

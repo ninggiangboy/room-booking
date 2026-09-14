@@ -18,11 +18,8 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.DataPrivacyClass;
 import dev.ngb.backend.analytics.types.DeletionBehaviour;
 
-import dev.ngb.backend.analytics.types.DeletionBehaviour;
 import dev.ngb.backend.ml.internal.model.DefinitionStatus;
 import dev.ngb.backend.ml.internal.model.FeatureEntityKind;
-import dev.ngb.backend.platform.DataPrivacyClass;
-
 
 /**
  * Registered definition of one model input, at one semantic version.

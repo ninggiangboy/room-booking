@@ -16,9 +16,7 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.booking.types.BookingActorType;
 
-import dev.ngb.backend.booking.types.BookingActorType;
 import dev.ngb.backend.payment.internal.model.PaymentFailureCategory;
-
 
 /**
  * One external side effect: authorize, capture, sale, void, refund, or query.

@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.inventory.internal.model.resource.InventoryHold;
-
-
 /**
  * Reads and locks temporary inventory holds.
  *

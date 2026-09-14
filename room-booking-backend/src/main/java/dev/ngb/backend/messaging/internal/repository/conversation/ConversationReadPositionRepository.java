@@ -6,9 +6,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.messaging.internal.model.conversation.ConversationReadPosition;
-
-
 /**
  * Reads how far participants have read.
  *

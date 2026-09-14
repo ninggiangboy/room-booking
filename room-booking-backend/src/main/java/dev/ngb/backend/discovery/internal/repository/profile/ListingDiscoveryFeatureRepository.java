@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.discovery.internal.model.profile.ListingDiscoveryFeature;
-
-
 /**
  * Reads the features inside one listing profile version.
  *

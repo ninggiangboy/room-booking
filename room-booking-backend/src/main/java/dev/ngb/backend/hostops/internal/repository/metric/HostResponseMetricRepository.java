@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.hostops.internal.model.metric.HostResponseMetric;
-
-
 /**
  * Reads how responsive, accepting and reliable a host was over one period.
  *

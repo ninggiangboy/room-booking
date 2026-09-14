@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.hostverification.internal.model.profile.HostTaxIdentifier;
-
-
 /**
  * Reads the tax identifiers a host has declared.
  *

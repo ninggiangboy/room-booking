@@ -15,12 +15,9 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
-import dev.ngb.backend.supply.internal.model.listing.Listing;
 
 import dev.ngb.backend.review.internal.model.TrendDirection;
 import dev.ngb.backend.review.types.DerivedProfileStatus;
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-
 
 /**
  * The ranking-quality projection for one listing.

@@ -8,10 +8,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.booking.internal.model.relocation.RelocationExpense;
-import dev.ngb.backend.booking.internal.model.relocation.RelocationExpenseState;
-
-
 /**
  * Reads receipts from moving a guest.
  *

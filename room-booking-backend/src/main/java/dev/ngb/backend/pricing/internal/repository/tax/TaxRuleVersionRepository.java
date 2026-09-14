@@ -9,10 +9,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.pricing.internal.model.tax.TaxRuleVersion;
-import dev.ngb.backend.pricing.internal.model.tax.TaxType;
-
-
 /**
  * Reads the tax rules the platform applies.
  *

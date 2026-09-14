@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.discovery.internal.model.profile.ListingDiscoveryProfile;
-import dev.ngb.backend.review.types.DerivedProfileStatus;
-
-
 /**
  * Reads the versioned listing read model discovery serves from.
  *

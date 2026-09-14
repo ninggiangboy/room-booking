@@ -15,10 +15,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
 import dev.ngb.backend.pricing.types.RecommendationConfidence;
 
-import dev.ngb.backend.platform.JsonDocument;
-import dev.ngb.backend.pricing.types.RecommendationConfidence;
-
-
 /**
  * What a host was actually shown about one piece of advice: its evidence, its uncertainty, its
  * expected impact and its economic effect.

@@ -9,10 +9,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.growth.internal.model.loyalty.LoyaltyTierTransition;
-import dev.ngb.backend.growth.internal.model.loyalty.LoyaltyTransitionReason;
-
-
 /**
  * Reads how each member arrived at the tier they hold.
  *

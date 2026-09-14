@@ -1,4 +1,4 @@
-package dev.ngb.backend.hostverification;
+package dev.ngb.backend.identity.internal.service.host;
 
 import java.util.UUID;
 import dev.ngb.backend.identity.internal.model.capability.HostProfile;

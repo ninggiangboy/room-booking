@@ -6,9 +6,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.review.internal.model.record_.ReviewRevision;
-
-
 /**
  * Reads what reviews actually said.
  *

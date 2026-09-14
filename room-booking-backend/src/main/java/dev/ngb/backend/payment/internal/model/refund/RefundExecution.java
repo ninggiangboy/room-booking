@@ -15,14 +15,9 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.RefundExecutionState;
-import dev.ngb.backend.booking.internal.model.contract.Booking;
 import dev.ngb.backend.booking.types.BookingActorType;
 
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-import dev.ngb.backend.booking.types.BookingActorType;
 import dev.ngb.backend.payment.internal.model.PaymentFailureCategory;
-import dev.ngb.backend.platform.RefundExecutionState;
-
 
 /**
  * Carrying out a refund somebody else decided.

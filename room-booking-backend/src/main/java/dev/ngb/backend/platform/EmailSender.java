@@ -1,4 +1,4 @@
-package dev.ngb.backend.platform.internal.service.mail;
+package dev.ngb.backend.platform;
 
 /**
  * Port used by application code to send email without depending on SMTP details.

@@ -14,18 +14,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
-import dev.ngb.backend.market.internal.model.market.Market;
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-import dev.ngb.backend.supply.internal.model.property.Property;
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-import dev.ngb.backend.messaging.internal.model.conversation.Conversation;
-
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-import dev.ngb.backend.market.internal.model.market.Market;
-import dev.ngb.backend.messaging.internal.model.conversation.Conversation;
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-import dev.ngb.backend.supply.internal.model.property.Property;
-
 
 /**
  * Something is wrong during a stay.

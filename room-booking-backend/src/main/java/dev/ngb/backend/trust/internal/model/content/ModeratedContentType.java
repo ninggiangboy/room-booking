@@ -1,9 +1,5 @@
 package dev.ngb.backend.trust.internal.model.content;
 
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-
 /**
  * What kind of content is under moderation.
  */

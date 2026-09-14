@@ -16,9 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
 
-import dev.ngb.backend.platform.JsonDocument;
-
-
 /**
  * One person recorded as having been referred by another.
  *

@@ -11,11 +11,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.review.internal.model.aspect.AspectProfileSubjectType;
-import dev.ngb.backend.review.internal.model.aspect.AspectProfileVersion;
-import dev.ngb.backend.review.types.DerivedProfileStatus;
-
-
 /**
  * Reads aspect profiles.
  *

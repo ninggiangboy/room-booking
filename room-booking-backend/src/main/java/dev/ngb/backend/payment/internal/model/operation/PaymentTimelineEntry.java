@@ -14,10 +14,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.TimelineVisibility;
 import dev.ngb.backend.booking.types.BookingActorType;
 
-import dev.ngb.backend.booking.types.BookingActorType;
-import dev.ngb.backend.platform.TimelineVisibility;
-
-
 /**
  * One human-readable step in what happened to a guest's money.
  *

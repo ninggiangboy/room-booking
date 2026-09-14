@@ -14,9 +14,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.ActorType;
 
-import dev.ngb.backend.platform.ActorType;
-
-
 /**
  * When a review was visible, as an interval rather than a timestamp.
  *

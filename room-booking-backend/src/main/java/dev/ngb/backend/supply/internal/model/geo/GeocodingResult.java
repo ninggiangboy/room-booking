@@ -14,10 +14,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
 
-import dev.ngb.backend.platform.JsonDocument;
 import dev.ngb.backend.supply.internal.model.GeocodeConfidence;
-import dev.ngb.backend.supply.internal.model.property.Property;
-
 
 /**
  * One attempt to resolve a property's address into coordinates, or the reverse.

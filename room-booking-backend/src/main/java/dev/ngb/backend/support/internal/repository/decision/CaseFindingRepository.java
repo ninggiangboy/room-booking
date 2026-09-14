@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.support.internal.model.decision.CaseFinding;
-
-
 /**
  * Reads the authorized interpretations a decision may rest on.
  *

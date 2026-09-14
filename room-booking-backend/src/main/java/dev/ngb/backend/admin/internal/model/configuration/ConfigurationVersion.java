@@ -16,9 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
 
-import dev.ngb.backend.platform.JsonDocument;
-
-
 /**
  * One value a setting held over one interval.
  * <p>Append-only apart from being closed by its successor, and no two values of one setting may be

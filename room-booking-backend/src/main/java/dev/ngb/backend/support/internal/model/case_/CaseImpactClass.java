@@ -1,9 +1,5 @@
 package dev.ngb.backend.support.internal.model.case_;
 
-import dev.ngb.backend.supply.internal.model.property.Property;
-
-import dev.ngb.backend.supply.internal.model.property.Property;
-
 /**
  * The impact class of {@code support_cases}.
  */

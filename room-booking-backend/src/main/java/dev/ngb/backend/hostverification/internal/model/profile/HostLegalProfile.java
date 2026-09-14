@@ -15,10 +15,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
-import dev.ngb.backend.market.internal.model.market.Market;
-
-import dev.ngb.backend.market.internal.model.market.Market;
-
 
 /**
  * The legal identity of a selling host: who they are, where, and under what legal form.

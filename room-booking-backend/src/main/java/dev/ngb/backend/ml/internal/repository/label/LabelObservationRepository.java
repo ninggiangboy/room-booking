@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.ml.internal.model.label.LabelObservation;
-import dev.ngb.backend.ml.internal.model.label.LabelValueState;
-
-
 /**
  * Reads observed outcomes, including the ones that are not answers.
  *

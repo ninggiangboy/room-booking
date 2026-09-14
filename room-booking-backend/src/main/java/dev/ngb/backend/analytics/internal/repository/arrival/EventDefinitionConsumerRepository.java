@@ -6,9 +6,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.analytics.internal.model.arrival.EventDefinitionConsumer;
-
-
 /**
  * Reads who declares themselves a reader of an event contract.
  *

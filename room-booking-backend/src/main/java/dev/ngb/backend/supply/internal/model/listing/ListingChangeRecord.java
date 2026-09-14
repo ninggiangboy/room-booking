@@ -14,10 +14,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.ActorType;
 import dev.ngb.backend.platform.JsonDocument;
 
-import dev.ngb.backend.platform.ActorType;
-import dev.ngb.backend.platform.JsonDocument;
-
-
 /**
  * One recorded change to a listing.
  *

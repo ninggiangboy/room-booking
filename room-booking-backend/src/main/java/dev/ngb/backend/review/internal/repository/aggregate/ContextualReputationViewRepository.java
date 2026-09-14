@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.review.internal.model.aggregate.ContextualReputationView;
-
-
 /**
  * Reads contextual reputation answers.
  *

@@ -8,9 +8,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.messaging.internal.model.notification.NotificationPolicy;
-
-
 /**
  * Reads the rules that turn committed facts into notices.
  *

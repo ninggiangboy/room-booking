@@ -16,9 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
 
-import dev.ngb.backend.platform.JsonDocument;
-
-
 /**
  * Whether one capability, payment method, or payout rail may be used in a market, and when.
  *

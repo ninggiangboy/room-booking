@@ -8,9 +8,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.hostverification.internal.model.case_.RegulatoryRegistration;
-
-
 /**
  * Reads local authorisations to let accommodation, and the limits attached to them.
  *

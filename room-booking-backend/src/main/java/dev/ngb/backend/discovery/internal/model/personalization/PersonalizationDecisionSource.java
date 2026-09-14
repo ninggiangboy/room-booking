@@ -1,9 +1,5 @@
 package dev.ngb.backend.discovery.internal.model.personalization;
 
-import dev.ngb.backend.market.internal.model.market.Market;
-
-import dev.ngb.backend.market.internal.model.market.Market;
-
 /**
  * Whose decision the personalization settings record.
  *

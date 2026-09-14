@@ -8,10 +8,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.analytics.internal.model.experiment.ExperimentMetric;
-import dev.ngb.backend.analytics.internal.model.experiment.MetricRole;
-
-
 /**
  * Reads the metrics an epoch declared before it started.
  *

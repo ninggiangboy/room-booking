@@ -18,10 +18,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.GovernedRegistryStatus;
 import dev.ngb.backend.platform.JsonDocument;
 
-import dev.ngb.backend.platform.GovernedRegistryStatus;
-import dev.ngb.backend.platform.JsonDocument;
-
-
 /**
  * One published set of terms for a growth programme.
  *

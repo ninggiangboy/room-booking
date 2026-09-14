@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.support.internal.model.claim.CoverageSnapshot;
-
-
 /**
  * Reads the coverage frozen against a booking.
  *

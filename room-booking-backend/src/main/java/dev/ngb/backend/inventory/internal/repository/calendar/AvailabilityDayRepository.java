@@ -10,10 +10,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.inventory.internal.model.calendar.AvailabilityDay;
-import dev.ngb.backend.inventory.internal.model.calendar.AvailabilityDayId;
-
-
 /**
  * Reads and locks the per-night calendar that pooled inventory is sold from.
  *

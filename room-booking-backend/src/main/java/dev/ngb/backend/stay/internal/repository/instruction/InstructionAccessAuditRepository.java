@@ -8,9 +8,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.stay.internal.model.instruction.InstructionAccessAudit;
-
-
 /**
  * Reads the record of who retrieved which instruction band.
  *

@@ -10,7 +10,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import dev.ngb.backend.identity.EmailVerificationIssued;
 import dev.ngb.backend.identity.PasswordResetIssued;
-import dev.ngb.backend.platform.internal.service.mail.EmailSender;
+import dev.ngb.backend.platform.EmailSender;
 
 /**
  * Sends authentication-related token emails after their database transactions commit.

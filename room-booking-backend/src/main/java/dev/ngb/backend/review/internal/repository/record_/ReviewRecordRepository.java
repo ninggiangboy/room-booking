@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.review.internal.model.ReviewDirection;
-import dev.ngb.backend.review.internal.model.record_.ReviewRecord;
-
-
 /**
  * Reads review aggregates.
  *

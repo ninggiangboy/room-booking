@@ -8,10 +8,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.ml.internal.model.feature.FeatureDefinition;
-import dev.ngb.backend.ml.internal.model.feature.FeatureSetMember;
-
-
 /**
  * Reads which feature versions belong to a feature set version.
  *

@@ -14,10 +14,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
-import dev.ngb.backend.identity.internal.model.Role;
-
-import dev.ngb.backend.identity.internal.model.Role;
-
 
 /**
  * What one person is permitted to hold, bounded in time.

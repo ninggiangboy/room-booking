@@ -6,9 +6,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.messaging.internal.model.delivery.DeliveryObservation;
-
-
 /**
  * Reads provider evidence about deliveries.
  *

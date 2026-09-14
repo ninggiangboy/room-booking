@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.ml.internal.model.model.TrainingDatasetManifest;
-
-
 /**
  * Reads the immutable descriptions of dataset builds.
  *

@@ -5,9 +5,6 @@ import org.springframework.data.repository.ListCrudRepository;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.inventory.internal.model.sync.IcalSyncRun;
-
-
 /**
  * Reads the history of calendar synchronisation attempts.
  *

@@ -11,10 +11,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-import dev.ngb.backend.booking.internal.model.contract.BookingLifecycleState;
-
-
 /**
  * Reads and writes booking contracts.
  *

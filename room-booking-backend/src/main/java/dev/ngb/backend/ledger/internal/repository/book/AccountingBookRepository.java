@@ -7,10 +7,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.ledger.internal.model.book.AccountingBook;
-import dev.ngb.backend.platform.ConfigurationLifecycle;
-
-
 /**
  * Reads the books the journal posts into.
  *

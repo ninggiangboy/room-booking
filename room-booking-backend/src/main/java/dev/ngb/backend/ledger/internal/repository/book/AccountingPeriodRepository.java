@@ -8,9 +8,6 @@ import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.ledger.internal.model.book.AccountingPeriod;
-
-
 /**
  * Reads and claims the periods a transaction posts into.
  *

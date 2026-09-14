@@ -7,9 +7,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.admin.internal.model.role.OperatorRolePermission;
-
-
 /**
  * Reads what a role version actually confers.
  *

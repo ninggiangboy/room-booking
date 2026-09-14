@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.growth.internal.model.storedvalue.StoredValueEntry;
-
-
 /**
  * Reads the movements of a guest's stored-value balance.
  *

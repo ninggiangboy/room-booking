@@ -7,10 +7,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.pricing.internal.model.promotion.Promotion;
-import dev.ngb.backend.pricing.internal.model.promotion.PromotionStatus;
-
-
 /**
  * Reads campaign identities and their budgets.
  *

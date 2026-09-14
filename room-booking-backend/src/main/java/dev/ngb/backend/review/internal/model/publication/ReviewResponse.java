@@ -14,12 +14,9 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
-import dev.ngb.backend.supply.internal.model.listing.Listing;
 
 import dev.ngb.backend.review.internal.model.ReviewModerationState;
 import dev.ngb.backend.review.internal.model.ReviewPublicProjection;
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-
 
 /**
  * A host's public answer to a published review.

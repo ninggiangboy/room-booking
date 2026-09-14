@@ -7,9 +7,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.payment.internal.model.dispute.PaymentDisputeEvidence;
-
-
 /**
  * Reads the manifest of what was sent to defend a dispute.
  *

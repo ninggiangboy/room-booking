@@ -8,10 +8,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.ledger.internal.model.reconciliation.FinanceReconciliationMatch;
-import dev.ngb.backend.ledger.internal.model.reconciliation.ReconciliationMatchOutcome;
-
-
 /**
  * Reads the verdicts a reconciliation run produced.
  *

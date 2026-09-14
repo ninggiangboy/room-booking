@@ -6,10 +6,6 @@ import org.springframework.data.repository.ListCrudRepository;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.review.internal.model.aspect.AspectTaxonomyStatus;
-import dev.ngb.backend.review.internal.model.aspect.AspectTaxonomyVersion;
-
-
 /**
  * Reads versions of the aspect vocabulary.
  *

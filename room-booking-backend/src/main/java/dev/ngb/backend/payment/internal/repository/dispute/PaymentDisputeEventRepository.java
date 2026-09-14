@@ -7,9 +7,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.payment.internal.model.dispute.PaymentDisputeEvent;
-
-
 /**
  * Reads the append-only history of a dispute case.
  *

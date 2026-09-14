@@ -9,9 +9,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.support.internal.model.policy.AuthorityPolicyVersion;
-
-
 /**
  * Reads what a role may do, evaluated at execution time rather than at assignment time.
  *

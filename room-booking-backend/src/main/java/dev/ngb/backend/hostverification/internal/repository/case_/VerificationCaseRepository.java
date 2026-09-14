@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.hostverification.internal.model.case_.VerificationCase;
-
-
 /**
  * Reads the verification questions asked about a host and the evidence gathered for them.
  *

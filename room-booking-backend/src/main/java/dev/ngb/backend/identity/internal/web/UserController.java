@@ -22,9 +22,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 import dev.ngb.backend.config.ApiErrorResponse;
-import dev.ngb.backend.hostverification.HostOnboardingRequest;
-import dev.ngb.backend.hostverification.HostOnboardingResponse;
-import dev.ngb.backend.hostverification.HostOnboardingService;
+import dev.ngb.backend.identity.internal.service.host.HostOnboardingRequest;
+import dev.ngb.backend.identity.internal.service.host.HostOnboardingResponse;
+import dev.ngb.backend.identity.internal.service.host.HostOnboardingService;
 import dev.ngb.backend.identity.internal.service.account.UserAccountService;
 
 

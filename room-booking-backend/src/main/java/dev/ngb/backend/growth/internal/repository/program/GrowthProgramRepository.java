@@ -10,11 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.growth.internal.model.program.GrowthProgram;
-import dev.ngb.backend.growth.internal.model.program.GrowthProgramKind;
-import dev.ngb.backend.growth.internal.model.program.GrowthProgramStatus;
-
-
 /**
  * Reads the growth programmes the platform runs and the balance sheet behind each of them.
  *

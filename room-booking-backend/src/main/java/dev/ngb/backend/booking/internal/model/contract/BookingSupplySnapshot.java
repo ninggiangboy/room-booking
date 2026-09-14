@@ -13,13 +13,6 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-import dev.ngb.backend.supply.internal.model.property.Property;
-
-import dev.ngb.backend.platform.JsonDocument;
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-import dev.ngb.backend.supply.internal.model.property.Property;
-
 
 /**
  * What the guest was shown and the host offered, frozen at booking time.

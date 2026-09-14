@@ -19,10 +19,7 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
 import dev.ngb.backend.platform.StayRange;
 
-import dev.ngb.backend.platform.JsonDocument;
-import dev.ngb.backend.platform.StayRange;
 import dev.ngb.backend.pricing.internal.model.PublicationState;
-
 
 /**
  * The frozen terms of a promotion, including who pays for it.

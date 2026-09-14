@@ -17,9 +17,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.PolicyVersionStatus;
 
-import dev.ngb.backend.platform.PolicyVersionStatus;
-
-
 /**
  * One approved purpose reputation may be computed for.
  *

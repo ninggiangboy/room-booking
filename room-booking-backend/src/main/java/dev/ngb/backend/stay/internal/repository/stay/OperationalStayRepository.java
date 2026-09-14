@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.stay.internal.model.stay.OperationalStay;
-import dev.ngb.backend.stay.internal.model.stay.OperationalStayStatus;
-
-
 /**
  * Reads the operational view of bookings.
  *

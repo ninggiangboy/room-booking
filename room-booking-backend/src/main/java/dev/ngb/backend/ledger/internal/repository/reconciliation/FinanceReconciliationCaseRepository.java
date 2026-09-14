@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.ledger.internal.model.reconciliation.FinanceReconciliationCase;
-
-
 /**
  * Reads the differences somebody owns until they are explained.
  *

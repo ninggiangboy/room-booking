@@ -17,10 +17,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.ExceptionSeverity;
 import dev.ngb.backend.booking.types.BookingActorType;
 
-import dev.ngb.backend.booking.types.BookingActorType;
-import dev.ngb.backend.platform.ExceptionSeverity;
-
-
 /**
  * Operations asking another domain to do something, and that domain's answer.
  *

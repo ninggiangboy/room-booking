@@ -17,9 +17,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.GovernedRegistryStatus;
 
-import dev.ngb.backend.platform.GovernedRegistryStatus;
-
-
 /**
  * What a feature flag is, who may turn it on, and the date it is gone by.
  * <p>Every flag carries an expiry. Extending one is allowed and is recorded as an extension with a

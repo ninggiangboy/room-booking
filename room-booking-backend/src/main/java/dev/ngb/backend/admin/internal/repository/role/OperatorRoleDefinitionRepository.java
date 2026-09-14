@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.admin.internal.model.role.OperatorRoleDefinition;
-import dev.ngb.backend.platform.GovernedRegistryStatus;
-
-
 /**
  * Reads the registry of what operator roles mean.
  *

@@ -1,9 +1,5 @@
 package dev.ngb.backend.support.internal.model.policy;
 
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-
 /**
  * The occurrence time basis of {@code support_policy_versions}.
  */

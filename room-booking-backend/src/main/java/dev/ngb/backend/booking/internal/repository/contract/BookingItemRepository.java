@@ -6,10 +6,6 @@ import org.springframework.data.repository.ListCrudRepository;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.booking.internal.model.contract.BookingItem;
-import dev.ngb.backend.booking.internal.model.contract.BookingItemStatus;
-
-
 /**
  * Reads the claimed resources that make up a booking.
  *

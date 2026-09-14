@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.review.internal.model.aggregate.ListingQualityProfile;
-import dev.ngb.backend.review.types.DerivedProfileStatus;
-
-
 /**
  * Reads the ranking-quality projection for listings.
  *

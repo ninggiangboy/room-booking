@@ -8,9 +8,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.supply.internal.model.listing.ListingChangeRecord;
-
-
 /**
  * Reads what changed on a listing, and when.
  *

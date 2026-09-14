@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.growth.internal.model.demand.ListingCollectionItem;
-
-
 /**
  * Reads what is in a wish list and in what order.
  *

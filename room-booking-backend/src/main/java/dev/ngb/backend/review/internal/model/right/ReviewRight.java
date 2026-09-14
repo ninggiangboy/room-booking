@@ -15,14 +15,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.RetentionClass;
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-import dev.ngb.backend.booking.internal.model.contract.Booking;
 
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-import dev.ngb.backend.platform.RetentionClass;
 import dev.ngb.backend.review.internal.model.ReviewDirection;
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-
 
 /**
  * One bounded permission to review, in one direction, with its policy frozen onto the row.

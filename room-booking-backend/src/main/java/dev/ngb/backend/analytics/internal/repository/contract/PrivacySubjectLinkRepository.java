@@ -9,10 +9,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.analytics.internal.model.contract.PrivacySubjectLink;
-import dev.ngb.backend.analytics.internal.model.contract.SubjectLinkState;
-
-
 /**
  * Reads the declared links between pseudonymous subjects.
  *

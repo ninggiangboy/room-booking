@@ -14,9 +14,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.BucketRange;
 
-import dev.ngb.backend.platform.BucketRange;
-
-
 /**
  * One arm of an epoch and the buckets it holds.
  *

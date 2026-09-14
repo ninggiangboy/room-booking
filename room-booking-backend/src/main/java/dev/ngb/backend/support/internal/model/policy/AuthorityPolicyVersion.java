@@ -15,13 +15,9 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.PolicyVersionStatus;
-import dev.ngb.backend.identity.internal.model.Role;
 
-import dev.ngb.backend.identity.internal.model.Role;
-import dev.ngb.backend.platform.PolicyVersionStatus;
 import dev.ngb.backend.support.internal.model.ApprovalTier;
 import dev.ngb.backend.support.internal.model.CaseSeverity;
-
 
 /**
  * What a role may do unaided, and where an independent approver becomes mandatory.

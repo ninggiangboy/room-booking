@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.hostops.internal.model.forecast.CalendarValueKind;
-import dev.ngb.backend.hostops.internal.model.forecast.CalendarValueSource;
-
-
 /**
  * Reads which layer set the value a host sees on one night, and which layer it beat.
  *

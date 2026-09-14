@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.supply.internal.model.geo.GeocodingResult;
-
-
 /**
  * Reads how a property's coordinates were arrived at.
  *

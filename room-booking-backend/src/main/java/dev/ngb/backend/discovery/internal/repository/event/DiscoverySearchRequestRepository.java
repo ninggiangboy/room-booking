@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.discovery.internal.model.event.DiscoverySearchRequest;
-
-
 /**
  * Writes the server-issued record of one search and reads it back for diagnostics.
  *

@@ -1,9 +1,5 @@
 package dev.ngb.backend.support.internal.model.claim;
 
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-
 /**
  * The ownership relation of {@code damage_claim_items}.
  */

@@ -14,10 +14,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
-import dev.ngb.backend.market.internal.model.market.Market;
-
-import dev.ngb.backend.market.internal.model.market.Market;
-
 
 /**
  * A tax identifier a host has declared for one market, and how far it has been checked.

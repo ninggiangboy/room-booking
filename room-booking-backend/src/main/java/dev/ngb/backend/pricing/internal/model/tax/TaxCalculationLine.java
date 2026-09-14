@@ -14,9 +14,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
-import dev.ngb.backend.pricing.internal.model.quote.Quote;
 import dev.ngb.backend.pricing.types.MoneyPartyRole;
-
 
 /**
  * One tax, in one jurisdiction, on one taxed line.

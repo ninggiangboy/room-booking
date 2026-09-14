@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.support.internal.model.decision.CaseAppeal;
-import dev.ngb.backend.support.internal.model.decision.CaseAppealState;
-
-
 /**
  * Reads the appeals brought against decisions.
  *

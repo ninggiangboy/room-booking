@@ -8,9 +8,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.admin.internal.model.role.BreakGlassGrant;
-
-
 /**
  * Reads emergency access: what was opened, by whom, and whether anybody has looked at it since.
  *

@@ -11,11 +11,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.review.internal.model.ReviewDirection;
-import dev.ngb.backend.review.internal.model.right.ReviewRight;
-import dev.ngb.backend.review.internal.model.right.ReviewRightState;
-
-
 /**
  * Reads the bounded permissions to review.
  *

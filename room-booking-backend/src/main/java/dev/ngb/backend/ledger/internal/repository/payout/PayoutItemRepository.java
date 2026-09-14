@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.ledger.internal.model.payout.PayoutItem;
-
-
 /**
  * Reads which host money a payout consists of.
  *

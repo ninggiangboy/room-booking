@@ -17,8 +17,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 
 import dev.ngb.backend.supply.internal.model.SupplyLifecycle;
-import dev.ngb.backend.supply.internal.model.property.Property;
-
 
 /**
  * The sellable category at a property: what a guest is actually buying a night of.

@@ -17,9 +17,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.review.types.DerivedProfileStatus;
 
-import dev.ngb.backend.review.types.DerivedProfileStatus;
-
-
 /**
  * What a listing with no evidence is assumed to be, and at which geographic level that came from.
  *

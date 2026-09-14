@@ -17,11 +17,8 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.EvidenceScanState;
 import dev.ngb.backend.platform.RetentionClass;
 
-import dev.ngb.backend.platform.EvidenceScanState;
-import dev.ngb.backend.platform.RetentionClass;
 import dev.ngb.backend.review.internal.model.ReviewModerationState;
 import dev.ngb.backend.review.internal.model.ReviewPublicProjection;
-
 
 /**
  * A file a reviewer attached.

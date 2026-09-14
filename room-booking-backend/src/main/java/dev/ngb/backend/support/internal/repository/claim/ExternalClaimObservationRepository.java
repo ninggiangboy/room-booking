@@ -6,9 +6,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.support.internal.model.claim.ExternalClaimObservation;
-
-
 /**
  * Reads the normalized provider statements on a claim.
  *

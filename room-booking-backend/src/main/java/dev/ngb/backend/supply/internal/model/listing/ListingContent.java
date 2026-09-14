@@ -16,9 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.TranslationSource;
 
-import dev.ngb.backend.platform.TranslationSource;
-
-
 /**
  * A listing's wording in one language.
  *

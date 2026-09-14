@@ -7,10 +7,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.review.internal.model.record_.ReviewInteractionEvent;
-import dev.ngb.backend.review.internal.model.record_.ReviewInteractionType;
-
-
 /**
  * Reads public interaction with reviews.
  *

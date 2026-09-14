@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.discovery.internal.model.ranking.ReasonCodeStatus;
-import dev.ngb.backend.discovery.internal.model.ranking.RecommendationReasonCode;
-
-
 /**
  * Reads the approved vocabulary an explanation may draw from.
  *

@@ -1,15 +1,5 @@
 package dev.ngb.backend.support.internal.model.evidence;
 
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-import dev.ngb.backend.messaging.internal.model.delivery.Message;
-import dev.ngb.backend.stay.internal.model.incident.Incident;
-
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-import dev.ngb.backend.messaging.internal.model.delivery.Message;
-import dev.ngb.backend.stay.internal.model.incident.Incident;
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-
 /**
  * The evidence kind of {@code case_evidence_items}.
  */

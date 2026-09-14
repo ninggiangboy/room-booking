@@ -10,9 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.hostops.internal.model.advice.HostPayoutPreview;
-
-
 /**
  * Reads what a host was told to expect before the money existed.
  *

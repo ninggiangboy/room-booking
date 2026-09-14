@@ -15,11 +15,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.ExternalReferenceLifecycle;
-import dev.ngb.backend.market.internal.model.market.Market;
-
-import dev.ngb.backend.market.internal.model.market.Market;
-import dev.ngb.backend.platform.ExternalReferenceLifecycle;
-
 
 /**
  * A claim about where a host's money may be sent, and how well that claim is evidenced.

@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.hostops.internal.model.advice.HostAdviceDisclosure;
-import dev.ngb.backend.hostops.internal.model.advice.HostAdviceKind;
-
-
 /**
  * Reads what a host was actually shown about one piece of advice.
  *

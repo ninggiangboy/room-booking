@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.discovery.internal.model.personalization.SavedListing;
-import dev.ngb.backend.discovery.internal.model.personalization.SavedListingState;
-
-
 /**
  * Reads and writes the listings a guest has explicitly saved.
  *

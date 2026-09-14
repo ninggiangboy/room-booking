@@ -1,11 +1,5 @@
 package dev.ngb.backend.stay.internal.model.incident;
 
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-
 /**
  * Which domain is being asked to do something.
  */

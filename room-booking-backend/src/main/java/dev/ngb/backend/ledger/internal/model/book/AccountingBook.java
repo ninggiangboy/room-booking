@@ -16,9 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.ConfigurationLifecycle;
 
-import dev.ngb.backend.platform.ConfigurationLifecycle;
-
-
 /**
  * One legal entity, one accounting purpose, one coherent set of accounts and policies.
  *

@@ -10,11 +10,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.growth.internal.model.demand.DemandAlert;
-import dev.ngb.backend.growth.internal.model.demand.DemandAlertKind;
-import dev.ngb.backend.growth.internal.model.demand.DemandAlertState;
-
-
 /**
  * Reads the standing requests to be told when a price falls or a room opens.
  *

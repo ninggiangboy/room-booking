@@ -16,10 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.StayRange;
 
-import dev.ngb.backend.pricing.internal.model.quote.Quote;
-import dev.ngb.backend.platform.StayRange;
-
-
 /**
  * A promise that nights stay reservable while a guest finishes paying.
  *

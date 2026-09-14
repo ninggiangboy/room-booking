@@ -1,9 +1,5 @@
 package dev.ngb.backend.support.internal.model.evidence;
 
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-
 /**
  * The provenance ladder, from an authoritative domain fact down to an unverified external assertion.
  *

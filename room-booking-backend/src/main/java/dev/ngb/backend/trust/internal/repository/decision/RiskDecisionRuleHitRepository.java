@@ -5,9 +5,6 @@ import org.springframework.data.repository.ListCrudRepository;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.trust.internal.model.decision.RiskDecisionRuleHit;
-
-
 /**
  * Reads which rules fired, in order.
  *

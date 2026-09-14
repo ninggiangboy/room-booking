@@ -10,8 +10,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import dev.ngb.backend.identity.internal.model.Role;
-import dev.ngb.backend.identity.internal.model.account.User;
-
 
 /**
  * Composite identifier for a user-role assignment.

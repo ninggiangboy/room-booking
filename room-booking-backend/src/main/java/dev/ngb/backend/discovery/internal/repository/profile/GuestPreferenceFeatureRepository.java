@@ -9,10 +9,6 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.discovery.internal.model.PreferenceDimensionKind;
-import dev.ngb.backend.discovery.internal.model.profile.GuestPreferenceFeature;
-
-
 /**
  * Reads the preference dimensions inside one guest profile version.
  *

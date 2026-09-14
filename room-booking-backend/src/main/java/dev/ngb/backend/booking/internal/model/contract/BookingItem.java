@@ -16,9 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.StayRange;
 
-import dev.ngb.backend.platform.StayRange;
-
-
 /**
  * One claimed inventory resource within a booking.
  *

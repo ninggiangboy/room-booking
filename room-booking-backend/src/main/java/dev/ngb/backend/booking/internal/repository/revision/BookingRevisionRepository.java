@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.booking.internal.model.revision.BookingRevision;
-
-
 /**
  * Reads the terms a booking has held over its life.
  *

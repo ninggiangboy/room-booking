@@ -15,9 +15,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
 
-import dev.ngb.backend.platform.JsonDocument;
-
-
 /**
  * What a host should expect to receive, before the money exists.
  * <p>It is not a statement and not a promise: it names the basis it was computed on, carries a

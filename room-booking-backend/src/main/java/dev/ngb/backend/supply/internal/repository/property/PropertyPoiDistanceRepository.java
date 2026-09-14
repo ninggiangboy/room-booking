@@ -8,10 +8,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.supply.internal.model.property.PropertyPoiDistance;
-import dev.ngb.backend.supply.internal.model.property.PropertyPoiDistanceId;
-
-
 /**
  * Reads precomputed distances between properties and landmarks.
  *

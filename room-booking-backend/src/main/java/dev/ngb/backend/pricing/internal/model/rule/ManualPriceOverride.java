@@ -18,9 +18,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.StayRange;
 
-import dev.ngb.backend.platform.StayRange;
-
-
 /**
  * A host's direct price instruction for specific nights, outranking every rule.
  *

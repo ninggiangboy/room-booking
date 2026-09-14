@@ -1,9 +1,5 @@
 package dev.ngb.backend.supply.internal.model.geo;
 
-import dev.ngb.backend.market.internal.model.market.Market;
-
-import dev.ngb.backend.market.internal.model.market.Market;
-
 /**
  * Kind of landmark a guest measures distance to.
  *

@@ -9,9 +9,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.ledger.internal.model.journal.PostingRuleVersion;
-
-
 /**
  * Resolves which posting rule applies to a source fact.
  *

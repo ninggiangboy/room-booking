@@ -2,8 +2,6 @@ package dev.ngb.backend.booking.internal.model.instruction;
 
 import dev.ngb.backend.platform.RefundExecutionState;
 
-import dev.ngb.backend.platform.RefundExecutionState;
-
 /**
  * Lifecycle of the entitlement to have money returned.
  *

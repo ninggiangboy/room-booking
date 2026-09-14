@@ -8,9 +8,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.hostverification.internal.model.case_.VerificationDocument;
-
-
 /**
  * Reads references to identity documents held in encrypted storage.
  *

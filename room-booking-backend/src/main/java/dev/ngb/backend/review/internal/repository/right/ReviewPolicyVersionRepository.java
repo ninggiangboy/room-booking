@@ -8,9 +8,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.review.internal.model.right.ReviewPolicyVersion;
-
-
 /**
  * Reads the effective-dated rules reviews are judged by.
  *

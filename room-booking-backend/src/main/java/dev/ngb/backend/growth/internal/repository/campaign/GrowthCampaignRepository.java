@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.growth.internal.model.campaign.CampaignStatus;
-import dev.ngb.backend.growth.internal.model.campaign.GrowthCampaign;
-
-
 /**
  * Reads the campaigns the platform runs and the limits each one set for itself.
  *

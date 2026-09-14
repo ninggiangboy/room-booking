@@ -5,9 +5,6 @@ import org.springframework.data.repository.ListCrudRepository;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.stay.internal.model.incident.IncidentEvent;
-
-
 /**
  * Reads incident timelines.
  *

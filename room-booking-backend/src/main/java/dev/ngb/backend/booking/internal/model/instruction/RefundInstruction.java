@@ -17,12 +17,7 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.RefundExecutionState;
 import dev.ngb.backend.pricing.types.MoneyPartyRole;
 
-import dev.ngb.backend.booking.internal.model.contract.Booking;
 import dev.ngb.backend.booking.types.BookingActorType;
-import dev.ngb.backend.payment.internal.model.refund.RefundExecution;
-import dev.ngb.backend.platform.RefundExecutionState;
-import dev.ngb.backend.pricing.types.MoneyPartyRole;
-
 
 /**
  * The entitlement to have money returned.
@@ -33,7 +28,7 @@ import dev.ngb.backend.pricing.types.MoneyPartyRole;
  *
  * <p>{@code projectedExecutionState} exists so a guest-facing screen can say "sent to your bank"
  * without joining across domains. It is explicitly not authority -- payment owns
- * {@link RefundExecution}, and a write here can never make a refund successful.</p>
+ * {@code RefundExecution}, and a write here can never make a refund successful.</p>
  *
  * <p>{@code instructionVersion} is the reissue counter. A refund whose destination failed is reissued
  * as a new version of the same instruction rather than as a second instruction, which is what makes the

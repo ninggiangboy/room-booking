@@ -15,9 +15,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.TranslationSource;
 
-import dev.ngb.backend.platform.TranslationSource;
 import dev.ngb.backend.review.internal.model.ReviewModerationState;
-
 
 /**
  * A derived reading of an exact revision, never a replacement for it.

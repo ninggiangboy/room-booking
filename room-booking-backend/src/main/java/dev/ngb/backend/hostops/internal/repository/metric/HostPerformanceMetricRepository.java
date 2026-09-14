@@ -11,10 +11,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.hostops.internal.model.metric.HostMetricSubjectKind;
-import dev.ngb.backend.hostops.internal.model.metric.HostPerformanceMetric;
-
-
 /**
  * Reads the computed figures shown to a host about one subject over one period.
  *

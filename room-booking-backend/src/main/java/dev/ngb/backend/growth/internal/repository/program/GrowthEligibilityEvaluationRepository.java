@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.growth.internal.model.program.GrowthEligibilityEvaluation;
-import dev.ngb.backend.growth.internal.model.program.GrowthEligibilityOutcome;
-
-
 /**
  * Reads the recorded decisions about who qualified for what, and why.
  *

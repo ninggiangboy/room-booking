@@ -15,8 +15,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
 
 import dev.ngb.backend.ml.internal.model.FeatureEntityKind;
-import dev.ngb.backend.platform.JsonDocument;
-
 
 /**
  * One request to a model and what came back, bounded and expiring.

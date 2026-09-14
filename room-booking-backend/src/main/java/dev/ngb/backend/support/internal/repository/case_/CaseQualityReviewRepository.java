@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.support.internal.model.case_.CaseQualityReview;
-import dev.ngb.backend.support.internal.model.case_.QualitySampleCohort;
-
-
 /**
  * Reads the sampled quality reviews.
  *

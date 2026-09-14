@@ -16,9 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.StayRange;
 
-import dev.ngb.backend.platform.StayRange;
-
-
 /**
  * What a host is told about a period or a payout, frozen at the moment they were told it.
  *

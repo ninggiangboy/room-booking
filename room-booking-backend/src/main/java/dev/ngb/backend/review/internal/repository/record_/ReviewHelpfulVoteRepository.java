@@ -7,9 +7,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.review.internal.model.record_.ReviewHelpfulVote;
-
-
 /**
  * Reads helpfulness votes.
  *

@@ -6,9 +6,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.support.internal.model.case_.CaseTransition;
-
-
 /**
  * Reads the state-change history of a case.
  *

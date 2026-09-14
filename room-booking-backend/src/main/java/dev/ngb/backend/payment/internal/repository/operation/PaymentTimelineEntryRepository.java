@@ -7,9 +7,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.payment.internal.model.operation.PaymentTimelineEntry;
-
-
 /**
  * Reads the human-readable history of what happened to a guest's money.
  *

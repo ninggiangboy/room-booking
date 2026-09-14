@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.admin.internal.model.command.OperationalCommandApproval;
-
-
 /**
  * Reads who agreed to an operator command.
  *

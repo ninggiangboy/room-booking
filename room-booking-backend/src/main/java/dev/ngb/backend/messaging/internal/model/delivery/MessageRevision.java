@@ -14,9 +14,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.ActorType;
 
-import dev.ngb.backend.platform.ActorType;
-
-
 /**
  * A correction, withdrawal or redaction recorded beside the message it changes.
  *

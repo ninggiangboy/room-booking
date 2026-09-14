@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.ml.internal.model.model.ModelReleaseRoute;
-import dev.ngb.backend.ml.internal.model.model.RouteMode;
-
-
 /**
  * Reads where each model version is live.
  *

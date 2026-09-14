@@ -8,9 +8,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.trust.internal.model.review.RiskReviewTask;
-
-
 /**
  * Reads and claims human risk work.
  *

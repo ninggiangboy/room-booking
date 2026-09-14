@@ -8,9 +8,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.ledger.internal.model.payable.HostFundReleaseDecision;
-
-
 /**
  * Reads the record of why a host's money was or was not released.
  *

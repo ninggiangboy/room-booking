@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.review.internal.model.right.ReviewCycle;
-
-
 /**
  * Reads the disclosure coordinators.
  *

@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.discovery.internal.model.ranking.RankingModelStatus;
-import dev.ngb.backend.discovery.internal.model.ranking.RankingModelVersion;
-
-
 /**
  * Reads the discovery serving registry.
  *

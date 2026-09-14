@@ -5,9 +5,6 @@ import org.springframework.data.repository.ListCrudRepository;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.review.internal.model.aggregate.ReviewerAttentionValue;
-
-
 /**
  * Reads the per-aspect values of a reviewer attention profile.
  *

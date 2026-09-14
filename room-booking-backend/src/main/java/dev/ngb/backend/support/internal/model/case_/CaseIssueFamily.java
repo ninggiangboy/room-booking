@@ -1,9 +1,5 @@
 package dev.ngb.backend.support.internal.model.case_;
 
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-
 /**
  * The issue family of {@code support_cases}.
  */

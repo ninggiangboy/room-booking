@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.inventory.internal.model.sync.IcalConnection;
-
-
 /**
  * Reads the calendar feeds exchanged with other platforms.
  *

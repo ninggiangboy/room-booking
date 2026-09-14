@@ -7,9 +7,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.analytics.internal.model.contract.DataProductDependency;
-
-
 /**
  * Reads the declared lineage edges between dataset versions.
  *

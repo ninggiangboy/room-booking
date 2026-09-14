@@ -17,15 +17,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.StayRange;
-import dev.ngb.backend.market.internal.model.market.Market;
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-import dev.ngb.backend.supply.internal.model.property.Property;
-
-import dev.ngb.backend.market.internal.model.market.Market;
-import dev.ngb.backend.platform.StayRange;
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-import dev.ngb.backend.supply.internal.model.property.Property;
-
 
 /**
  * The contract between a guest and a host for a stay.

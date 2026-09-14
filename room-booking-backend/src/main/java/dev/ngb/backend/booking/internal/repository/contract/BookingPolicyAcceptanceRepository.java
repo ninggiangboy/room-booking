@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.booking.internal.model.contract.BookingPolicyAcceptance;
-import dev.ngb.backend.booking.internal.model.contract.BookingPolicyType;
-
-
 /**
  * Reads the evidence that a guest accepted each policy.
  *

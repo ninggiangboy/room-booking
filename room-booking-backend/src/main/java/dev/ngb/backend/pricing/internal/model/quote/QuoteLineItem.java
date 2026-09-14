@@ -17,14 +17,12 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 
-import dev.ngb.backend.pricing.internal.model.promotion.Promotion;
 import dev.ngb.backend.pricing.types.LineDirection;
 import dev.ngb.backend.pricing.types.LineTaxTreatment;
 import dev.ngb.backend.pricing.types.MoneyPartyRole;
 import dev.ngb.backend.pricing.types.QuoteLineType;
 import dev.ngb.backend.pricing.types.Refundability;
 import dev.ngb.backend.pricing.types.SupplyRole;
-
 
 /**
  * One line of the authoritative breakdown behind a quote's summary.

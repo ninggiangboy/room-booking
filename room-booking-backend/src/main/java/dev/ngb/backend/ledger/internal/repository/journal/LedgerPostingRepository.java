@@ -8,9 +8,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.ledger.internal.model.journal.LedgerPosting;
-
-
 /**
  * Reads the individual lines of the journal.
  *

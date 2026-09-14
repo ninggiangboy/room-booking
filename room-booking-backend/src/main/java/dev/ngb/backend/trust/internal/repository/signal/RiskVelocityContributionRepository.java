@@ -6,9 +6,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.trust.internal.model.signal.RiskVelocityContribution;
-
-
 /**
  * Reads what moved a velocity counter.
  *

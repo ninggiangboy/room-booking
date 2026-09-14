@@ -14,9 +14,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.DataPrivacyClass;
 
-import dev.ngb.backend.platform.DataPrivacyClass;
-
-
 /**
  * One permission a role version confers.
  * <p>The permissions are the role. Membership is frozen when the role leaves draft, and a role

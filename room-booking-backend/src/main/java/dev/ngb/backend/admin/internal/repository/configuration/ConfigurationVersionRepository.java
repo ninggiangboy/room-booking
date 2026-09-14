@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.admin.internal.model.configuration.ConfigurationVersion;
-
-
 /**
  * Reads what a setting was actually set to, and when.
  *

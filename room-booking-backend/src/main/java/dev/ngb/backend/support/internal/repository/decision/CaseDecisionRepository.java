@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.support.internal.model.decision.CaseDecision;
-
-
 /**
  * Reads the decisions taken on a case.
  *

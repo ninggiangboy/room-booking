@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.support.internal.model.case_.CaseWorkItem;
-import dev.ngb.backend.support.internal.model.case_.WorkItemState;
-
-
 /**
  * Reads and claims the work waiting on a queue.
  *

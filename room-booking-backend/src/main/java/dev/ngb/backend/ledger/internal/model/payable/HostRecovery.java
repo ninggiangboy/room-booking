@@ -14,10 +14,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-
 
 /**
  * What a host owes the platform after money already left, and how it is being collected.

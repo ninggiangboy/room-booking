@@ -1,9 +1,5 @@
 package dev.ngb.backend.support.internal.model.case_;
 
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-
 /**
  * The related domain of {@code case_relationships}.
  */

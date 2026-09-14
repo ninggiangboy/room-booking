@@ -5,9 +5,6 @@ import org.springframework.data.repository.ListCrudRepository;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.booking.internal.model.revision.BookingRevisionNight;
-
-
 /**
  * Reads the nightly shape of a booking revision.
  *

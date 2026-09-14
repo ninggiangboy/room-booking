@@ -8,9 +8,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.ledger.internal.model.payout.PayoutOperation;
-
-
 /**
  * Reads and claims the individual calls made to the payout provider.
  *

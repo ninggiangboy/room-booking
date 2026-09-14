@@ -11,10 +11,6 @@ import lombok.Setter;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
-import dev.ngb.backend.market.internal.model.market.Market;
-
-import dev.ngb.backend.market.internal.model.market.Market;
-
 
 /**
  * What the platform concluded about one host capability, from what evidence, under which policy.

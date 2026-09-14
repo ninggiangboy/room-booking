@@ -16,9 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.GovernedRegistryStatus;
 
-import dev.ngb.backend.platform.GovernedRegistryStatus;
-
-
 /**
  * Which analytics metric a host may see, in what words, and how much evidence it needs before the
  * number is shown at all.

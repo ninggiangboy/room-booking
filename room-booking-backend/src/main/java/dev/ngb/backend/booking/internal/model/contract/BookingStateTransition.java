@@ -14,8 +14,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
 
 import dev.ngb.backend.booking.types.BookingActorType;
-import dev.ngb.backend.platform.JsonDocument;
-
 
 /**
  * One movement of one of a booking's state dimensions.

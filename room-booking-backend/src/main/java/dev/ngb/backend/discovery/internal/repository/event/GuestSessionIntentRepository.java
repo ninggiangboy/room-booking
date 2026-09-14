@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.discovery.internal.model.PreferenceDimensionKind;
-import dev.ngb.backend.discovery.internal.model.event.GuestSessionIntent;
-
-
 /**
  * Reads what the current session appears to be looking for.
  *

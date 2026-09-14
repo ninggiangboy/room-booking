@@ -7,9 +7,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.support.internal.model.evidence.EvidenceAccessEntry;
-
-
 /**
  * Reads the purpose-bound access record for case evidence.
  *

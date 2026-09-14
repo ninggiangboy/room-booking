@@ -6,10 +6,6 @@ import org.springframework.data.repository.ListCrudRepository;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.supply.internal.model.property.PhysicalUnit;
-import dev.ngb.backend.supply.internal.model.property.PhysicalUnitStatus;
-
-
 /**
  * Reads the specific rooms a stay may be assigned to.
  *

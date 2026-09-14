@@ -18,8 +18,6 @@ import dev.ngb.backend.platform.SensitivityClass;
 
 import dev.ngb.backend.analytics.internal.model.DataContractStatus;
 import dev.ngb.backend.analytics.internal.model.RestatementPolicy;
-import dev.ngb.backend.platform.SensitivityClass;
-
 
 /**
  * One governed metric at one semantic version.

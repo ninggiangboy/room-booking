@@ -16,9 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.DocumentScanState;
 
-import dev.ngb.backend.platform.DocumentScanState;
-
-
 /**
  * A photograph, video, floor plan, or tour attached to a listing.
  *

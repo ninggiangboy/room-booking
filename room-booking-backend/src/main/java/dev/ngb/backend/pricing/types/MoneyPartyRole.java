@@ -1,13 +1,10 @@
 package dev.ngb.backend.pricing.types;
 
-import dev.ngb.backend.identity.internal.model.Role;
-
-import dev.ngb.backend.identity.internal.model.Role;
 
 /**
  * A party's relationship to one money line.
  *
- * <p>Named for money specifically, to keep it clear of {@link Role}, which is about what someone may
+ * <p>Named for money specifically, to keep it clear of {@code Role}, which is about what someone may
  * do in the product. Who pays, who receives, and who funds are three separate questions about the
  * same amount, and a single "party" column collapsing them is how a fee reaches the wrong payout.</p>
  */

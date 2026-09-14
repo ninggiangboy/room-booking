@@ -8,9 +8,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.booking.internal.model.contract.BookingNight;
-
-
 /**
  * Reads what was agreed for each night of a booking.
  *

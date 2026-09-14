@@ -17,10 +17,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.EvidenceScanState;
 import dev.ngb.backend.booking.types.BookingActorType;
 
-import dev.ngb.backend.booking.types.BookingActorType;
-import dev.ngb.backend.platform.EvidenceScanState;
-
-
 /**
  * One item in the manifest of what was sent to defend a dispute.
  *

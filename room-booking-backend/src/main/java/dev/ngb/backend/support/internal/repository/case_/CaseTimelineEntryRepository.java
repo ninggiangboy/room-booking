@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.support.internal.model.case_.CaseTimelineEntry;
-import dev.ngb.backend.support.internal.model.case_.TimelineSourceDomain;
-
-
 /**
  * Reads the case timeline projection.
  *

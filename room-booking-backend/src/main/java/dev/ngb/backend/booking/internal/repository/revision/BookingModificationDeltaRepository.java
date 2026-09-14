@@ -5,9 +5,6 @@ import org.springframework.data.repository.ListCrudRepository;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.booking.internal.model.revision.BookingModificationDelta;
-
-
 /**
  * Reads what a modification proposal would change, dimension by dimension.
  *

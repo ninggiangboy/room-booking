@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.trust.internal.model.feature.FeatureDefinitionStatus;
-import dev.ngb.backend.trust.internal.model.feature.RiskFeatureDefinition;
-
-
 /**
  * Reads feature definitions.
  *

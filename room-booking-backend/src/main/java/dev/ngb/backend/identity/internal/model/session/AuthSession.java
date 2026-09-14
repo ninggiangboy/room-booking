@@ -16,10 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.AssuranceLevel;
 
-import dev.ngb.backend.identity.internal.model.account.User;
-import dev.ngb.backend.platform.AssuranceLevel;
-
-
 /**
  * One durable sign-in, owning the refresh-token lineage issued under it.
  *

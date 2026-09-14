@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.pricing.internal.model.tax.TaxRegistration;
-import dev.ngb.backend.pricing.internal.model.tax.TaxType;
-
-
 /**
  * Reads parties' registrations with tax authorities.
  *

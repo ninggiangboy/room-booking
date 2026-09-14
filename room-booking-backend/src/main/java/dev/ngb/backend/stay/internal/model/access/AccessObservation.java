@@ -15,10 +15,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.ObservationSource;
 import dev.ngb.backend.platform.VerificationMethod;
 
-import dev.ngb.backend.platform.ObservationSource;
-import dev.ngb.backend.platform.VerificationMethod;
-
-
 /**
  * Something a lock or its provider reported.
  *

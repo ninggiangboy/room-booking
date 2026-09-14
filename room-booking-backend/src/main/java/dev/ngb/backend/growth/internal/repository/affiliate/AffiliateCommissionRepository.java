@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.growth.internal.model.affiliate.AffiliateCommission;
-import dev.ngb.backend.growth.internal.model.affiliate.AffiliateCommissionState;
-
-
 /**
  * Reads what each partner is owed, and what has been paid or reversed.
  *

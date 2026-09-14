@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.hostverification.internal.model.eligibility.HostEligibilityDecision;
-
-
 /**
  * Reads what the platform concluded about a host's capabilities, and why.
  *

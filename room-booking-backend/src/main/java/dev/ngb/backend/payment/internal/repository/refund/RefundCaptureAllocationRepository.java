@@ -7,9 +7,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.payment.internal.model.refund.RefundCaptureAllocation;
-
-
 /**
  * Reads which capture each part of a refund draws on.
  *

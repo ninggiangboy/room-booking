@@ -1,9 +1,5 @@
 package dev.ngb.backend.payment.internal.model.obligation;
 
-import dev.ngb.backend.identity.internal.model.Role;
-
-import dev.ngb.backend.identity.internal.model.Role;
-
 /**
  * Role of one due component within a collection schedule.
  *

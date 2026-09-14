@@ -16,10 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.ConfigurationLifecycle;
 
-import dev.ngb.backend.market.internal.model.market.Market;
-import dev.ngb.backend.platform.ConfigurationLifecycle;
-
-
 /**
  * An approved external integration context: which provider, for which capability, in which market.
  *

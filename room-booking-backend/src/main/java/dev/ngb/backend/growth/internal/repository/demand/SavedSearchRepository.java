@@ -11,11 +11,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.growth.internal.model.demand.SavedSearch;
-import dev.ngb.backend.growth.internal.model.demand.SavedSearchCadence;
-import dev.ngb.backend.growth.internal.model.demand.SavedSearchState;
-
-
 /**
  * Reads the searches guests kept and how often they agreed to hear about them.
  *

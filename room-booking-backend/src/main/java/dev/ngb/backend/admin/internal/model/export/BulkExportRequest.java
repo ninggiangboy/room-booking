@@ -16,9 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.DataPrivacyClass;
 
-import dev.ngb.backend.platform.DataPrivacyClass;
-
-
 /**
  * One bulk read of production data, approved, bounded and expiring.
  * <p>Minimisation is the columns: the classes asked for, the rows expected, the redaction applied

@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.hostops.internal.model.bulkedit.BulkEditRequestState;
-import dev.ngb.backend.hostops.internal.model.bulkedit.HostBulkEditRequest;
-
-
 /**
  * Reads the requests to change many nights, listings or rate plans at once.
  *

@@ -16,9 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.StayRange;
 
-import dev.ngb.backend.platform.StayRange;
-
-
 /**
  * One guest waiting for something that is not currently available.
  *

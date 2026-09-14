@@ -7,9 +7,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.hostverification.internal.model.profile.BeneficialOwner;
-
-
 /**
  * Reads who ultimately owns or controls a business host.
  *

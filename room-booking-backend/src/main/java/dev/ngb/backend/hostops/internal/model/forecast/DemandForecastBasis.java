@@ -1,9 +1,5 @@
 package dev.ngb.backend.hostops.internal.model.forecast;
 
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-
 /**
  * What a demand forecast run reasons from.
  */

@@ -7,10 +7,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.booking.internal.model.contract.BookingPartyRole;
-import dev.ngb.backend.booking.internal.model.contract.BookingPartySnapshot;
-
-
 /**
  * Reads who the parties to a booking were.
  *

@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.hostverification.internal.model.eligibility.PayoutDestinationClaim;
-
-
 /**
  * Reads where a host's money may be sent, and whether it may be sent yet.
  *

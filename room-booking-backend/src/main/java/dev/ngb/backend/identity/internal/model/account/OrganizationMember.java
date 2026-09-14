@@ -15,9 +15,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 
-import dev.ngb.backend.identity.internal.model.Role;
-
-
 /**
  * A person's membership of an organization, and the role they hold in it.
  *

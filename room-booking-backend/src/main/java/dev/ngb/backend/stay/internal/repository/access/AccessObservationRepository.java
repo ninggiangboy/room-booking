@@ -6,9 +6,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.stay.internal.model.access.AccessObservation;
-
-
 /**
  * Reads what locks and their providers reported.
  *

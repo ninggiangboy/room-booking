@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.booking.internal.model.contract.BookingStateDimension;
-import dev.ngb.backend.booking.internal.model.contract.BookingStateTransition;
-
-
 /**
  * Reads the recorded movements of a booking's state.
  *

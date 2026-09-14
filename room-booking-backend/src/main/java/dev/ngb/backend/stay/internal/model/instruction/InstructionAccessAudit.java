@@ -16,11 +16,6 @@ import dev.ngb.backend.platform.ActorType;
 import dev.ngb.backend.platform.AssuranceLevel;
 import dev.ngb.backend.platform.AuditOutcome;
 
-import dev.ngb.backend.platform.ActorType;
-import dev.ngb.backend.platform.AssuranceLevel;
-import dev.ngb.backend.platform.AuditOutcome;
-
-
 /**
  * One retrieval of one instruction band, and what came of it.
  *

@@ -9,10 +9,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.hostops.internal.model.bulkedit.BulkEditTargetOutcome;
-import dev.ngb.backend.hostops.internal.model.bulkedit.HostBulkEditTarget;
-
-
 /**
  * Reads what actually happened to each night, listing or rate plan in a bulk edit.
  *

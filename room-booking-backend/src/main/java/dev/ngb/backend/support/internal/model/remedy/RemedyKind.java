@@ -1,11 +1,5 @@
 package dev.ngb.backend.support.internal.model.remedy;
 
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-
 /**
  * The remedy kind of {@code case_remedies}.
  */

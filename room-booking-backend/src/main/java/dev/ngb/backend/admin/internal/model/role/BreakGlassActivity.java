@@ -14,9 +14,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.DataPrivacyClass;
 
-import dev.ngb.backend.platform.DataPrivacyClass;
-
-
 /**
  * One action taken under emergency access.
  * <p>Append-only, and refused outside the window the grant was open for: an activity recorded

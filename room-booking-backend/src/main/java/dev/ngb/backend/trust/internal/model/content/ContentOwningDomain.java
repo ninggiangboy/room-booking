@@ -1,11 +1,5 @@
 package dev.ngb.backend.trust.internal.model.content;
 
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-import dev.ngb.backend.stay.internal.model.incident.Incident;
-
-import dev.ngb.backend.stay.internal.model.incident.Incident;
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-
 /**
  * Which domain holds the content itself.
  *

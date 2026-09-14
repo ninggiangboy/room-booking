@@ -15,12 +15,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.ConsentLegalBasis;
-import dev.ngb.backend.market.internal.model.market.Market;
 
-import dev.ngb.backend.market.internal.model.market.Market;
 import dev.ngb.backend.messaging.types.NotificationChannel;
-import dev.ngb.backend.platform.ConsentLegalBasis;
-
 
 /**
  * Evidence that somebody agreed to be contacted, or withdrew that agreement.

@@ -15,11 +15,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.ExceptionSeverity;
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-import dev.ngb.backend.platform.ExceptionSeverity;
-
 
 /**
  * A reconciliation difference somebody has to resolve, and the record of how.

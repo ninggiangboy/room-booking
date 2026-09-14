@@ -15,10 +15,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
 import dev.ngb.backend.platform.TranslationSource;
 
-import dev.ngb.backend.platform.JsonDocument;
-import dev.ngb.backend.platform.TranslationSource;
-
-
 /**
  * The words a guest actually read, in one locale.
  *

@@ -15,13 +15,10 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
-import dev.ngb.backend.market.internal.model.market.Market;
 
-import dev.ngb.backend.market.internal.model.market.Market;
 import dev.ngb.backend.supply.internal.model.GeocodeConfidence;
 import dev.ngb.backend.supply.internal.model.SupplyLifecycle;
 import dev.ngb.backend.supply.types.PropertyType;
-
 
 /**
  * A physical, operational location where guests stay.

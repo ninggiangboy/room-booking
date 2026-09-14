@@ -13,9 +13,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.ExceptionSeverity;
 
-import dev.ngb.backend.platform.ExceptionSeverity;
-
-
 /**
  * One external row compared against one internal operation, with the verdict.
  *

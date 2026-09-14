@@ -6,10 +6,6 @@ import org.springframework.data.repository.ListCrudRepository;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.pricing.internal.model.tax.TaxCalculationLine;
-import dev.ngb.backend.pricing.internal.model.tax.TaxRemittanceModel;
-
-
 /**
  * Reads the per-jurisdiction detail of a tax determination.
  *

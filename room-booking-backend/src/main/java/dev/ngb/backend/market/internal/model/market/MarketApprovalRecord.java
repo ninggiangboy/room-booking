@@ -12,9 +12,6 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
-import dev.ngb.backend.identity.internal.model.Role;
-
-
 /**
  * Evidence that a named operator approved, refused, or revoked a piece of configuration.
  *

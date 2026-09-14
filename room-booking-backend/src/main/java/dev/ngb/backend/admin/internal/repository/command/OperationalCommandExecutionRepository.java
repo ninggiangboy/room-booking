@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.admin.internal.model.command.CommandDomainOutcome;
-import dev.ngb.backend.admin.internal.model.command.OperationalCommandExecution;
-
-
 /**
  * Reads what operators asked for and what the domains answered.
  *

@@ -5,9 +5,6 @@ import org.springframework.data.repository.ListCrudRepository;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.review.internal.model.record_.ReviewTranslation;
-
-
 /**
  * Reads derived translations of review text.
  *

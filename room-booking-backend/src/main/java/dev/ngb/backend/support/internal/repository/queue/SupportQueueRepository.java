@@ -7,10 +7,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.support.internal.model.queue.SupportQueue;
-import dev.ngb.backend.support.internal.model.queue.SupportQueueStatus;
-
-
 /**
  * Reads the queue definitions routing evaluates against.
  *

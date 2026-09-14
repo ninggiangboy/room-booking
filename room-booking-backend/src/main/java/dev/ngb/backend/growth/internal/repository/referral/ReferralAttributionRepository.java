@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.growth.internal.model.referral.ReferralAttribution;
-import dev.ngb.backend.growth.internal.model.referral.ReferralAttributionState;
-
-
 /**
  * Reads who referred whom, and what the anti-abuse screening found about the pair.
  *

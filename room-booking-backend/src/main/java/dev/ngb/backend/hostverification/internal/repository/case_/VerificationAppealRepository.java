@@ -7,9 +7,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.hostverification.internal.model.case_.VerificationAppeal;
-
-
 /**
  * Reads host challenges to eligibility decisions.
  *

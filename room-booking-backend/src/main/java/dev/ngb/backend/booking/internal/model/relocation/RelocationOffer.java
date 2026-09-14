@@ -14,10 +14,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.StayRange;
 
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-import dev.ngb.backend.platform.StayRange;
-
-
 /**
  * One replacement stay offered to a guest who must be moved.
  *

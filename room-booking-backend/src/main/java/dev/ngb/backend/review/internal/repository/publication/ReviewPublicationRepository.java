@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.review.internal.model.publication.ReviewPublication;
-
-
 /**
  * Reads when reviews were visible.
  *

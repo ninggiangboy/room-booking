@@ -18,9 +18,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
 
-import dev.ngb.backend.platform.JsonDocument;
-
-
 /**
  * The materialized price of one night, with the arithmetic that produced it.
  *

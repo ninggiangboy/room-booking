@@ -18,10 +18,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.StayRange;
 import dev.ngb.backend.messaging.types.NotificationChannel;
 
-import dev.ngb.backend.messaging.types.NotificationChannel;
-import dev.ngb.backend.platform.StayRange;
-
-
 /**
  * One standing request to be told when a price falls or a room opens.
  *

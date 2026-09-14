@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.ledger.internal.model.payout.PayoutInstruction;
-
-
 /**
  * Reads and claims the transfers that send host money out.
  *

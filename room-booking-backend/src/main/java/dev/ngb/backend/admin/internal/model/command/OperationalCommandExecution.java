@@ -16,9 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
 
-import dev.ngb.backend.platform.JsonDocument;
-
-
 /**
  * One operator asking a domain to do something, and what the domain answered.
  * <p>A request and a recorded outcome, never a change written directly. A command that would have

@@ -1,11 +1,5 @@
 package dev.ngb.backend.trust.internal.model.review;
 
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-import dev.ngb.backend.messaging.internal.model.delivery.Message;
-
-import dev.ngb.backend.messaging.internal.model.delivery.Message;
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-
 /**
  * What a reviewer must be qualified in to take work from a queue.
  */

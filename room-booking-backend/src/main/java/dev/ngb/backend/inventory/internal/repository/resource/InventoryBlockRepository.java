@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.inventory.internal.model.resource.BlockSource;
-import dev.ngb.backend.inventory.internal.model.resource.InventoryBlock;
-
-
 /**
  * Reads why nights are unavailable when nobody has booked them.
  *

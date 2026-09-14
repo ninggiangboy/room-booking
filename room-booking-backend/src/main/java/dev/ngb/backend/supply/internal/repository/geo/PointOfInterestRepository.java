@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.supply.internal.model.geo.PointOfInterest;
-
-
 /**
  * Reads the landmarks guests measure distance to.
  *

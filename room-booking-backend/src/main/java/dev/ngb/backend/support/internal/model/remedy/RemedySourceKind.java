@@ -1,11 +1,5 @@
 package dev.ngb.backend.support.internal.model.remedy;
 
-import dev.ngb.backend.pricing.internal.model.quote.Quote;
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-import dev.ngb.backend.pricing.internal.model.quote.Quote;
-
 /**
  * The source kind of {@code case_remedy_lines}.
  */

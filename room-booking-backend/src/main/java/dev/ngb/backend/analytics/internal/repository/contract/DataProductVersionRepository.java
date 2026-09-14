@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.analytics.internal.model.DataContractStatus;
-import dev.ngb.backend.analytics.internal.model.contract.DataProductVersion;
-
-
 /**
  * Reads the registered versions of an analytical dataset.
  *

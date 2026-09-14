@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.admin.internal.model.change.ChangeRequestApproval;
-
-
 /**
  * Reads who agreed to what.
  *

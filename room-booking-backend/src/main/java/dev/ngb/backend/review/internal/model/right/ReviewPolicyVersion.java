@@ -15,13 +15,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.PolicyVersionStatus;
-import dev.ngb.backend.market.internal.model.market.Market;
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-import dev.ngb.backend.market.internal.model.market.Market;
-import dev.ngb.backend.platform.PolicyVersionStatus;
-
 
 /**
  * The effective-dated rules a review cycle is judged by.

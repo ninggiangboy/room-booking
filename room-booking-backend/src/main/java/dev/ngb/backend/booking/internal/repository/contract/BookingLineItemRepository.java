@@ -7,9 +7,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.booking.internal.model.contract.BookingLineItem;
-
-
 /**
  * Reads the money lines of a booking.
  *

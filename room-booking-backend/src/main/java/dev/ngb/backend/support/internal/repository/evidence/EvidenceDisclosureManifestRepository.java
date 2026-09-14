@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.support.internal.model.evidence.DisclosureManifestState;
-import dev.ngb.backend.support.internal.model.evidence.EvidenceDisclosureManifest;
-
-
 /**
  * Reads the frozen evidence packages that leave the platform.
  *

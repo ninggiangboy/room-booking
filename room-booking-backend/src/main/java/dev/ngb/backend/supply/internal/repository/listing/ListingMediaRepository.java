@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.supply.internal.model.listing.ListingMedia;
-
-
 /**
  * Reads the photographs and other media attached to listings.
  *

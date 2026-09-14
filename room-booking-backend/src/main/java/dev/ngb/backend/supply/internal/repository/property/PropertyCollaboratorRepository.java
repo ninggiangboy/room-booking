@@ -7,10 +7,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.supply.internal.model.property.CollaboratorStatus;
-import dev.ngb.backend.supply.internal.model.property.PropertyCollaborator;
-
-
 /**
  * Reads who works on a property they do not own.
  *

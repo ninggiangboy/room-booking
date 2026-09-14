@@ -11,10 +11,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.discovery.internal.model.personalization.ErasureDirectiveState;
-import dev.ngb.backend.discovery.internal.model.personalization.PersonalizationErasureDirective;
-
-
 /**
  * Reads erasure directives and the cutoffs derived jobs must respect.
  *

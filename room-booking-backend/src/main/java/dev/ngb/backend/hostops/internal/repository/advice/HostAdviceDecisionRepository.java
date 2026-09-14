@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.hostops.internal.model.advice.HostAdviceDecision;
-
-
 /**
  * Reads what a host did about advice they were shown.
  *

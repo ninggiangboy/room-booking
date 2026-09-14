@@ -1,9 +1,5 @@
 package dev.ngb.backend.support.internal.model.remedy;
 
-import dev.ngb.backend.supply.internal.model.property.Property;
-
-import dev.ngb.backend.supply.internal.model.property.Property;
-
 /**
  * The covered object of {@code protection_program_versions}.
  */

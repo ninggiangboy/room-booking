@@ -14,11 +14,6 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.SensitivityClass;
-import dev.ngb.backend.market.internal.model.market.Market;
-
-import dev.ngb.backend.market.internal.model.market.Market;
-import dev.ngb.backend.platform.SensitivityClass;
-
 
 /**
  * One atomic observation, with its provenance attached.

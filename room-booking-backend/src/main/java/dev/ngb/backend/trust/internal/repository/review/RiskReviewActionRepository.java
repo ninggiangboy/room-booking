@@ -8,9 +8,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.trust.internal.model.review.RiskReviewAction;
-
-
 /**
  * Reads what reviewers did.
  *

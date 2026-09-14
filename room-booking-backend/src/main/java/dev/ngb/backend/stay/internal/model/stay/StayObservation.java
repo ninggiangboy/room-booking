@@ -14,10 +14,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.RetentionClass;
 
-import dev.ngb.backend.platform.RetentionClass;
 import dev.ngb.backend.stay.internal.model.EvidenceConfidence;
 import dev.ngb.backend.stay.internal.model.OperationalEvidenceSource;
-
 
 /**
  * A typed observation about what happened during a stay.

@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.ml.internal.model.prediction.DecisionDomain;
-import dev.ngb.backend.ml.internal.model.prediction.DecisionReference;
-
-
 /**
  * Reads the monitoring index of domain decisions a model or a fallback fed into.
  *

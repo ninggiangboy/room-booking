@@ -14,9 +14,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.ObservationSource;
 
-import dev.ngb.backend.platform.ObservationSource;
-
-
 /**
  * One piece of provider evidence about a delivery attempt.
  *

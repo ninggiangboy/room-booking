@@ -7,10 +7,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.stay.internal.model.stay.StayObservation;
-import dev.ngb.backend.stay.internal.model.stay.StayObservationSubject;
-
-
 /**
  * Reads the evidence gathered about a stay.
  *

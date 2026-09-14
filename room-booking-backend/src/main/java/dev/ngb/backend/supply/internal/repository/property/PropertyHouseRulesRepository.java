@@ -4,9 +4,6 @@ import dev.ngb.backend.supply.internal.model.property.PropertyHouseRules;
 import org.springframework.data.repository.ListCrudRepository;
 import java.util.UUID;
 
-import dev.ngb.backend.supply.internal.model.property.PropertyHouseRules;
-
-
 /**
  * Reads the rules and stay times a property operates under.
  *

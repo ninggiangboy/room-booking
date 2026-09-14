@@ -7,9 +7,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.booking.internal.model.policy.PolicyOverrideProgramVersion;
-
-
 /**
  * Reads the frozen scope and funding of override programmes.
  *

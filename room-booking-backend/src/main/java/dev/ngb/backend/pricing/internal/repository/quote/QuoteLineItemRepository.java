@@ -5,12 +5,6 @@ import dev.ngb.backend.pricing.types.QuoteLineType;
 import org.springframework.data.repository.ListCrudRepository;
 import java.util.List;
 import java.util.UUID;
-import dev.ngb.backend.pricing.internal.model.quote.Quote;
-
-import dev.ngb.backend.pricing.internal.model.quote.Quote;
-import dev.ngb.backend.pricing.internal.model.quote.QuoteLineItem;
-import dev.ngb.backend.pricing.types.QuoteLineType;
-
 
 /**
  * Reads the authoritative breakdown behind an offer.

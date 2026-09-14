@@ -17,10 +17,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.DataPrivacyClass;
 import dev.ngb.backend.platform.GovernedRegistryStatus;
 
-import dev.ngb.backend.platform.DataPrivacyClass;
-import dev.ngb.backend.platform.GovernedRegistryStatus;
-
-
 /**
  * What an operator role means, kept apart from the grant that confers it.
  * <p>The grant that actually opens the door is migration 014's capability grant. This row says what

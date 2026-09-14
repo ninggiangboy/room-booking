@@ -18,8 +18,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
 
 import dev.ngb.backend.admin.internal.model.ConfigurationScopeType;
-import dev.ngb.backend.platform.JsonDocument;
-
 
 /**
  * What a flag was set to, at one scope, over one interval.

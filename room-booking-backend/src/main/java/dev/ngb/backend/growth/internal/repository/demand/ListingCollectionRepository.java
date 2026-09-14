@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.growth.internal.model.demand.ListingCollection;
-import dev.ngb.backend.growth.internal.model.demand.ListingCollectionState;
-
-
 /**
  * Reads the wish lists guests keep.
  *

@@ -8,10 +8,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.ml.internal.model.model.ModelEvaluationKind;
-import dev.ngb.backend.ml.internal.model.model.ModelEvaluationRun;
-
-
 /**
  * Reads the evidence a model version was compared against something.
  *

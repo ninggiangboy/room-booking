@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.supply.internal.model.geo.GeoArea;
-import dev.ngb.backend.supply.internal.model.geo.GeoAreaType;
-
-
 /**
  * Reads the catalog of places a guest can name as a destination.
  *

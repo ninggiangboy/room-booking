@@ -16,12 +16,8 @@ import dev.ngb.backend.platform.EvidenceScanState;
 import dev.ngb.backend.platform.RetentionClass;
 import dev.ngb.backend.platform.SensitivityClass;
 
-import dev.ngb.backend.platform.EvidenceScanState;
-import dev.ngb.backend.platform.RetentionClass;
-import dev.ngb.backend.platform.SensitivityClass;
 import dev.ngb.backend.stay.internal.model.EvidenceConfidence;
 import dev.ngb.backend.stay.internal.model.OperationalEvidenceSource;
-
 
 /**
  * Something submitted in support of a task attestation.

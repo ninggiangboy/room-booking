@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.hostops.internal.model.checklist.ListingQualityChecklistItem;
-
-
 /**
  * Reads the individual things a listing may be asked to do.
  *

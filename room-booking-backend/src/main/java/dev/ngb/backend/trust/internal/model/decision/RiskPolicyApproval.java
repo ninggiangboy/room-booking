@@ -14,9 +14,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.AssuranceLevel;
 
-import dev.ngb.backend.platform.AssuranceLevel;
-
-
 /**
  * One approver's answer on a policy version.
  *

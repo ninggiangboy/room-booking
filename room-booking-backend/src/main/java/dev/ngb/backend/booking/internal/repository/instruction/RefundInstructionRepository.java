@@ -8,10 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.booking.internal.model.instruction.RefundInstruction;
-import dev.ngb.backend.payment.internal.repository.refund.RefundExecutionRepository;
-
-
 /**
  * Reads entitlements to have money returned.
  *

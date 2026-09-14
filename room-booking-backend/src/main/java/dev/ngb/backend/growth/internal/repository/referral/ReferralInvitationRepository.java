@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.growth.internal.model.referral.ReferralInvitation;
-
-
 /**
  * Reads the invitations sent under a referral code.
  *

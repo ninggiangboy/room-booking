@@ -11,10 +11,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.discovery.internal.model.ranking.RankingEpoch;
-import dev.ngb.backend.discovery.internal.model.ranking.RankingEpochState;
-
-
 /**
  * Reads the ranking epoch a cursor is bound to.
  *

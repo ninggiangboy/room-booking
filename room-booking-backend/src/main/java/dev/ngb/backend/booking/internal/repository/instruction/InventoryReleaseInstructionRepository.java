@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.booking.internal.model.instruction.InventoryReleaseInstruction;
-
-
 /**
  * Reads instructions to hand nights back to the calendar.
  *

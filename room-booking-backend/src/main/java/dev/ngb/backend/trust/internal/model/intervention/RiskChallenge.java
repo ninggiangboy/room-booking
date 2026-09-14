@@ -16,9 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.AssuranceLevel;
 
-import dev.ngb.backend.platform.AssuranceLevel;
-
-
 /**
  * Additional proof demanded before a protected action may continue.
  *

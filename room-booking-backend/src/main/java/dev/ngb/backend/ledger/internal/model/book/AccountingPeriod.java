@@ -16,9 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.StayRange;
 
-import dev.ngb.backend.platform.StayRange;
-
-
 /**
  * A governed interval a transaction posts into, and the evidence of how it was closed.
  *

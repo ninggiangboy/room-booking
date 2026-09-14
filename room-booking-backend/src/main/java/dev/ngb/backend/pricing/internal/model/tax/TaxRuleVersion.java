@@ -17,9 +17,7 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
 
-import dev.ngb.backend.platform.JsonDocument;
 import dev.ngb.backend.pricing.internal.model.PublicationState;
-
 
 /**
  * An authority's tax rule as the platform understood it, with the source it was read from.

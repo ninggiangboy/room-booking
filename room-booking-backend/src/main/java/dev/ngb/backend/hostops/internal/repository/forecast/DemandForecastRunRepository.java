@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.hostops.internal.model.forecast.DemandForecastRun;
-import dev.ngb.backend.hostops.internal.model.forecast.DemandForecastRunState;
-
-
 /**
  * Reads the passes of the demand model over a market.
  *

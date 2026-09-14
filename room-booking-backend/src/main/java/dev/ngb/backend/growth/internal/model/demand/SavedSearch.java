@@ -17,10 +17,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
 import dev.ngb.backend.platform.StayRange;
 
-import dev.ngb.backend.platform.JsonDocument;
-import dev.ngb.backend.platform.StayRange;
-
-
 /**
  * One search a guest kept, and how often they agreed to hear about it.
  *

@@ -7,9 +7,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.trust.internal.model.label.RiskLabelTaxonomyVersion;
-
-
 /**
  * Reads label vocabularies.
  *

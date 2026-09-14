@@ -15,14 +15,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.ExceptionSeverity;
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-import dev.ngb.backend.supply.internal.model.property.Property;
-
-import dev.ngb.backend.platform.ExceptionSeverity;
-import dev.ngb.backend.stay.internal.model.incident.Incident;
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-import dev.ngb.backend.supply.internal.model.property.Property;
-
 
 /**
  * A defect in the building, and what was asked of the domains that own the consequences.

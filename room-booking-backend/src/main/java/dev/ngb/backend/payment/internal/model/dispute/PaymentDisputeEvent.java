@@ -13,9 +13,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.booking.types.BookingActorType;
 
-import dev.ngb.backend.booking.types.BookingActorType;
-
-
 /**
  * Something the provider said about a dispute, in the order it was learned.
  *

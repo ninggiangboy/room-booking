@@ -4,11 +4,6 @@ import dev.ngb.backend.pricing.internal.model.quote.QuoteNight;
 import org.springframework.data.repository.ListCrudRepository;
 import java.util.List;
 import java.util.UUID;
-import dev.ngb.backend.pricing.internal.model.quote.Quote;
-
-import dev.ngb.backend.pricing.internal.model.quote.Quote;
-import dev.ngb.backend.pricing.internal.model.quote.QuoteNight;
-
 
 /**
  * Reads the per-night detail of an offer.

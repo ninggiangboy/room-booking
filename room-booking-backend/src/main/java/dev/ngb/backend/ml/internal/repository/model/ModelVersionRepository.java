@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.ml.internal.model.model.ModelVersion;
-import dev.ngb.backend.ml.internal.model.model.ModelVersionStatus;
-
-
 /**
  * Reads the registry of model versions.
  *

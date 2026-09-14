@@ -6,10 +6,6 @@ import org.springframework.data.repository.ListCrudRepository;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.supply.internal.model.amenity.AmenityTranslation;
-import dev.ngb.backend.supply.internal.model.amenity.AmenityTranslationId;
-
-
 /**
  * Reads what amenity terms are called in each language.
  *

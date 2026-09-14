@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.growth.internal.model.storedvalue.GiftCard;
-
-
 /**
  * Reads the gift cards issued, and what became of the value on each one.
  *

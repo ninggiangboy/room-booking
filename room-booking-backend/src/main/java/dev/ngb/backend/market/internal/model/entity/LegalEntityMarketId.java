@@ -10,9 +10,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import dev.ngb.backend.market.internal.model.market.Market;
-
-
 /**
  * Composite identifier for one entity's accountability in one market over one span.
  *

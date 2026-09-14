@@ -1,9 +1,5 @@
 package dev.ngb.backend.stay.internal.model.stay;
 
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-
 /**
  * What operations currently believes the stay should become.
  *

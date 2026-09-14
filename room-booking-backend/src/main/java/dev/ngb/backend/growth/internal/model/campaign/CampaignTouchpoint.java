@@ -14,9 +14,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.messaging.types.NotificationChannel;
 
-import dev.ngb.backend.messaging.types.NotificationChannel;
-
-
 /**
  * One message sent to one person under one campaign.
  *

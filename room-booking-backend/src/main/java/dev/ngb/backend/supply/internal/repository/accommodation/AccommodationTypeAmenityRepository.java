@@ -10,10 +10,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.supply.internal.model.accommodation.AccommodationTypeAmenity;
-import dev.ngb.backend.supply.internal.model.accommodation.AccommodationTypeAmenityId;
-
-
 /**
  * Reads and records which amenities an accommodation type claims.
  *

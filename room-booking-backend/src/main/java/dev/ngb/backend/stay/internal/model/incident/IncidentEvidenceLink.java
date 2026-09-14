@@ -18,11 +18,6 @@ import dev.ngb.backend.platform.RetentionClass;
 import dev.ngb.backend.platform.SensitivityClass;
 import dev.ngb.backend.platform.TimelineVisibility;
 
-import dev.ngb.backend.platform.RetentionClass;
-import dev.ngb.backend.platform.SensitivityClass;
-import dev.ngb.backend.platform.TimelineVisibility;
-
-
 /**
  * One artifact linked to an incident, with a purpose and a custody record.
  *

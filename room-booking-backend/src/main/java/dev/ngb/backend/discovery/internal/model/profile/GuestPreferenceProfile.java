@@ -17,9 +17,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.review.types.DerivedProfileStatus;
 
-import dev.ngb.backend.review.types.DerivedProfileStatus;
-
-
 /**
  * One guest's derived preference profile, bounded by the evidence window it was built from.
  *

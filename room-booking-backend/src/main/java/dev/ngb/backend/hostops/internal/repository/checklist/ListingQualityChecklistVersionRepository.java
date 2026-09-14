@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.hostops.internal.model.checklist.ListingQualityChecklistVersion;
-import dev.ngb.backend.platform.GovernedRegistryStatus;
-
-
 /**
  * Reads the published sets of things a listing needs before it competes on equal terms.
  *

@@ -8,9 +8,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.discovery.internal.model.ranking.RankingExposure;
-
-
 /**
  * Writes what was shown, and reads it back for evaluation and diagnostics.
  *

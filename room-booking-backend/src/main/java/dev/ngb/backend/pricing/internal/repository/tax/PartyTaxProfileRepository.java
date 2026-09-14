@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.pricing.internal.model.tax.PartyTaxProfile;
-
-
 /**
  * Reads where parties stand for tax.
  *

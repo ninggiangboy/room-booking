@@ -15,10 +15,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.ActorType;
 import dev.ngb.backend.platform.TimelineVisibility;
 
-import dev.ngb.backend.platform.ActorType;
-import dev.ngb.backend.platform.TimelineVisibility;
-
-
 /**
  * One entry in an incident timeline.
  *

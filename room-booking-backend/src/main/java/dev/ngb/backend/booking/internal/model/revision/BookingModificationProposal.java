@@ -14,12 +14,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
-import dev.ngb.backend.pricing.internal.model.quote.Quote;
 
-import dev.ngb.backend.booking.internal.model.contract.Booking;
 import dev.ngb.backend.booking.types.BookingActorType;
-import dev.ngb.backend.pricing.internal.model.quote.Quote;
-
 
 /**
  * A proposed change to a live booking contract, waiting for the other party.

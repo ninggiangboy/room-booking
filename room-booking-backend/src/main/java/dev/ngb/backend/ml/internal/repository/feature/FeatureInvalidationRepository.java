@@ -9,10 +9,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.ml.internal.model.feature.FeatureInvalidation;
-import dev.ngb.backend.ml.internal.model.feature.FeatureInvalidationReason;
-
-
 /**
  * Reads the records that stop stored feature values being served.
  *

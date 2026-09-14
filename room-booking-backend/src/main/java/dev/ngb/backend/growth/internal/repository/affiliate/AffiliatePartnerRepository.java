@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.growth.internal.model.affiliate.AffiliatePartner;
-import dev.ngb.backend.growth.internal.model.affiliate.AffiliatePartnerStatus;
-
-
 /**
  * Reads the affiliate agreements and the terms each one pays under.
  *

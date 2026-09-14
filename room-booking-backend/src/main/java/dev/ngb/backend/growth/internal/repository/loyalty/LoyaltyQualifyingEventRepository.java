@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.growth.internal.model.loyalty.LoyaltyQualifyingEvent;
-
-
 /**
  * Reads what has counted toward a member's tier, and what has been taken back.
  *

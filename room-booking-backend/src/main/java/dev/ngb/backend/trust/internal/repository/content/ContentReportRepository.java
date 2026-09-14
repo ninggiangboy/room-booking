@@ -7,9 +7,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.trust.internal.model.content.ContentReport;
-
-
 /**
  * Reads allegations about content.
  *

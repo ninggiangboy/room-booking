@@ -15,9 +15,6 @@ import dev.ngb.backend.platform.ObservationSource;
 import dev.ngb.backend.platform.VerificationMethod;
 
 import dev.ngb.backend.payment.types.ReducerOutcome;
-import dev.ngb.backend.platform.ObservationSource;
-import dev.ngb.backend.platform.VerificationMethod;
-
 
 /**
  * One verified thing a provider said, kept forever.

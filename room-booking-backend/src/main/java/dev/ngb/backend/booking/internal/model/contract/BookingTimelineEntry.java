@@ -15,9 +15,6 @@ import dev.ngb.backend.platform.JsonDocument;
 import dev.ngb.backend.platform.TimelineVisibility;
 
 import dev.ngb.backend.booking.types.BookingActorType;
-import dev.ngb.backend.platform.JsonDocument;
-import dev.ngb.backend.platform.TimelineVisibility;
-
 
 /**
  * A human-readable entry in the account of a booking.

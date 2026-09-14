@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.support.internal.model.remedy.CaseRemedy;
-import dev.ngb.backend.support.internal.model.remedy.CaseRemedyState;
-
-
 /**
  * Reads and locks the remedies a decision authorized.
  *

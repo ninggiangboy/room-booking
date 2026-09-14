@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-import dev.ngb.backend.supply.internal.model.listing.ListingStatus;
-
-
 /**
  * Reads the public presentation of accommodation types.
  *

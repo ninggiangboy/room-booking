@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.growth.internal.model.referral.ReferralCode;
-
-
 /**
  * Reads the referral codes people share and earn from.
  *

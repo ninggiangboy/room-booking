@@ -8,9 +8,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.trust.internal.model.signal.RiskVelocityCounter;
-
-
 /**
  * Reads and locks velocity counters.
  *

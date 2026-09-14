@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.ml.internal.model.model.ModelApproval;
-import dev.ngb.backend.ml.internal.model.model.ModelApprovalRole;
-
-
 /**
  * Reads which functions have signed off on a model version.
  *

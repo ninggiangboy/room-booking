@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.supply.internal.model.SupplyLifecycle;
-import dev.ngb.backend.supply.internal.model.listing.RatePlan;
-
-
 /**
  * Reads the offers an accommodation type is sold under.
  *

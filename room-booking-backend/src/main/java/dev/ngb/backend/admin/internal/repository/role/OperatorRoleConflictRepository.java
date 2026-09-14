@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.admin.internal.model.role.OperatorRoleConflict;
-import dev.ngb.backend.admin.internal.model.role.RoleConflictBasis;
-
-
 /**
  * Reads the declared pairs of roles one person may not hold at once.
  *

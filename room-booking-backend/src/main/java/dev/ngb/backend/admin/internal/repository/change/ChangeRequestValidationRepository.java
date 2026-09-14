@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.admin.internal.model.change.ChangeRequestValidation;
-import dev.ngb.backend.admin.internal.model.change.ChangeValidationKind;
-
-
 /**
  * Reads the evidence a change was checked.
  *

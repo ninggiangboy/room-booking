@@ -9,9 +9,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.inventory.internal.model.resource.InventoryClaim;
-
-
 /**
  * Reads the claims that consume inventory.
  *

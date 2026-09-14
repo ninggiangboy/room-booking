@@ -13,10 +13,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
-import dev.ngb.backend.booking.internal.model.contract.Booking;
 import dev.ngb.backend.booking.types.BookingActorType;
-import dev.ngb.backend.messaging.internal.model.delivery.Message;
-
 
 /**
  * Whether one booking qualifies for an override programme.

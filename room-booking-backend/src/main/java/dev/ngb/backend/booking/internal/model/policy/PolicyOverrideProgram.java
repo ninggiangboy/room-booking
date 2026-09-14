@@ -15,12 +15,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.ConfigurationLifecycle;
-import dev.ngb.backend.market.internal.model.market.Market;
-
-import dev.ngb.backend.market.internal.model.market.Market;
-import dev.ngb.backend.messaging.internal.model.delivery.Message;
-import dev.ngb.backend.platform.ConfigurationLifecycle;
-
 
 /**
  * An approved reason for ignoring the policy a guest agreed to.

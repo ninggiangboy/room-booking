@@ -1,5 +1,4 @@
 package dev.ngb.backend.identity.internal.model;
-import dev.ngb.backend.identity.internal.model.account.User;
 
 /**
  * Authorities that control what a user may do in the platform.

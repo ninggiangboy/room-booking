@@ -1,9 +1,5 @@
 package dev.ngb.backend.trust.internal.model;
 
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-
 /**
  * The domain that owns the command a risk decision advises about.
  *

@@ -16,10 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.ConfigurationLifecycle;
 
-import dev.ngb.backend.messaging.internal.model.delivery.Message;
-import dev.ngb.backend.platform.ConfigurationLifecycle;
-
-
 /**
  * A cancellation policy family: a stable identity a host or a market can select.
  *

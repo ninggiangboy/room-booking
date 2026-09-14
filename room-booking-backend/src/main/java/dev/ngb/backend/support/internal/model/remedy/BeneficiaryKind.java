@@ -1,9 +1,5 @@
 package dev.ngb.backend.support.internal.model.remedy;
 
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-
 /**
  * The beneficiary kind of {@code case_offer_lines}.
  */

@@ -6,10 +6,6 @@ import org.springframework.data.repository.ListCrudRepository;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.review.internal.model.record_.PrivateFeedbackAudience;
-import dev.ngb.backend.review.internal.model.record_.ReviewPrivateFeedback;
-
-
 /**
  * Reads private feedback.
  *

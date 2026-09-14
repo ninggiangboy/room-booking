@@ -5,9 +5,6 @@ import org.springframework.data.repository.ListCrudRepository;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.trust.internal.model.decision.RiskPolicyApproval;
-
-
 /**
  * Reads who signed off on a policy version.
  *

@@ -15,8 +15,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
 
 import dev.ngb.backend.booking.internal.model.OverrideFundingParty;
-import dev.ngb.backend.platform.JsonDocument;
-
 
 /**
  * The scope and the funding of an override programme, frozen.

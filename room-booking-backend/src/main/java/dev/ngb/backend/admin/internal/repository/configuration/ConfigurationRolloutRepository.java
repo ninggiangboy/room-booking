@@ -8,9 +8,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.admin.internal.model.configuration.ConfigurationRollout;
-
-
 /**
  * Reads how an approved change actually reached production.
  *

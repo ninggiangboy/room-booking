@@ -11,10 +11,6 @@ import lombok.Setter;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
-import dev.ngb.backend.pricing.internal.model.quote.Quote;
-
-import dev.ngb.backend.pricing.internal.model.quote.Quote;
-
 
 /**
  * What a booking was worth at one revision.

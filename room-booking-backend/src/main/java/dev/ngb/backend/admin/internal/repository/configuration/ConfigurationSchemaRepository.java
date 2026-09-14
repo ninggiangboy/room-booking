@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.admin.internal.model.configuration.ConfigurationSchema;
-import dev.ngb.backend.platform.GovernedRegistryStatus;
-
-
 /**
  * Reads what each configurable thing is and how it may be changed.
  *

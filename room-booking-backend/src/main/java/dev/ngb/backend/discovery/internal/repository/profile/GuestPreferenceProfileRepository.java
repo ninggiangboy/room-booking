@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.discovery.internal.model.profile.GuestPreferenceProfile;
-import dev.ngb.backend.review.types.DerivedProfileStatus;
-
-
 /**
  * Reads one guest's derived preference profile.
  *

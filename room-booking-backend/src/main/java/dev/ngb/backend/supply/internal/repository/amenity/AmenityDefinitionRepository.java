@@ -6,9 +6,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.supply.internal.model.amenity.AmenityDefinition;
-
-
 /**
  * Reads the amenity terms available in a vocabulary version.
  *

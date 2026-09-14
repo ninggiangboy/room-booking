@@ -10,11 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.analytics.internal.model.DataContractStatus;
-import dev.ngb.backend.analytics.internal.model.metric.MetricDefinition;
-import dev.ngb.backend.analytics.internal.model.metric.MetricFamily;
-
-
 /**
  * Reads the governed definition behind a number.
  *

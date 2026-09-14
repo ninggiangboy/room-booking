@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.messaging.internal.model.notification.ScheduledCommunication;
-
-
 /**
  * Reads reminders that have not fired yet.
  *

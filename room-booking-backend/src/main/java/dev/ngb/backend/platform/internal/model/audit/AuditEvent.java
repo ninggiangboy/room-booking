@@ -12,12 +12,10 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
-import dev.ngb.backend.identity.internal.model.Role;
 import dev.ngb.backend.platform.ActorType;
 import dev.ngb.backend.platform.AuditOutcome;
 import dev.ngb.backend.platform.JsonDocument;
 import dev.ngb.backend.platform.RetentionClass;
-
 
 /**
  * Append-only evidence that a privileged action was attempted, and what came of it.

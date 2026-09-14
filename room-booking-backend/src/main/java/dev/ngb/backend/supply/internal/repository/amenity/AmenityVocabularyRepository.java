@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.supply.internal.model.amenity.AmenityVocabulary;
-
-
 /**
  * Reads versions of the controlled amenity vocabulary.
  *

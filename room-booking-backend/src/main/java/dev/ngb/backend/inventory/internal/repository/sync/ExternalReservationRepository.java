@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.inventory.internal.model.sync.ExternalReservation;
-
-
 /**
  * Reads stays that other channels report against this platform's inventory.
  *

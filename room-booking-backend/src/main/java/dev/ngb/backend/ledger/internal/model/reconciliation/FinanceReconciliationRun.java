@@ -16,9 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.payment.types.ReconciliationRunState;
 
-import dev.ngb.backend.payment.types.ReconciliationRunState;
-
-
 /**
  * One bounded comparison: one control layer, one account, one currency, one coverage interval.
  *

@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.discovery.internal.model.event.DiscoveryEvent;
-import dev.ngb.backend.discovery.internal.repository.personalization.PersonalizationErasureDirectiveRepository;
-
-
 /**
  * Ingests behavioural events and reads them back for derivation and retention.
  *

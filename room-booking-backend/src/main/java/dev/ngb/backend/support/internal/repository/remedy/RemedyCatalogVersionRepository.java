@@ -10,9 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.support.internal.model.remedy.RemedyCatalogVersion;
-
-
 /**
  * Reads the allowlist of remedies support may grant.
  *

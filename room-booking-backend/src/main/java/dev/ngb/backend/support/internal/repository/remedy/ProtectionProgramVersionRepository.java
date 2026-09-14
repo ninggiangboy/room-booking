@@ -8,9 +8,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.support.internal.model.remedy.ProtectionProgramVersion;
-
-
 /**
  * Reads the approved protection and insurance programmes.
  *

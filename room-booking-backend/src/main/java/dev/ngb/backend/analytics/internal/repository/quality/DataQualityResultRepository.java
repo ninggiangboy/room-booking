@@ -8,9 +8,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.analytics.internal.model.quality.DataQualityResult;
-
-
 /**
  * Reads what the checks found about a run.
  *

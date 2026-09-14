@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.payment.internal.model.operation.PaymentOperation;
-
-
 /**
  * Reads and claims the external actions requested of providers.
  *

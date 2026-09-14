@@ -10,10 +10,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.support.internal.model.case_.AgentSkillGrant;
-import dev.ngb.backend.support.internal.model.case_.SkillGrantState;
-
-
 /**
  * Reads what an individual agent currently holds.
  *

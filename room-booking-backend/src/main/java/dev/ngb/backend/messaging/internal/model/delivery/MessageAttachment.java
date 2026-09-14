@@ -17,10 +17,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.RetentionClass;
 import dev.ngb.backend.platform.SensitivityClass;
 
-import dev.ngb.backend.platform.RetentionClass;
-import dev.ngb.backend.platform.SensitivityClass;
-
-
 /**
  * One upload, from declaration through quarantine to the message that cites it.
  *

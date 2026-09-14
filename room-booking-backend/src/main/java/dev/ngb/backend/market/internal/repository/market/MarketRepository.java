@@ -7,8 +7,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import dev.ngb.backend.market.internal.model.market.Market;
-import dev.ngb.backend.platform.ConfigurationLifecycle;
-
 
 /**
  * Reads the markets whose rules govern supply, contracting, payment, and payout.

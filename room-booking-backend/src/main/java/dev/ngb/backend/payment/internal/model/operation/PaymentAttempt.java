@@ -16,9 +16,7 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.booking.types.BookingActorType;
 
-import dev.ngb.backend.booking.types.BookingActorType;
 import dev.ngb.backend.payment.internal.model.PaymentFailureCategory;
-
 
 /**
  * One guest journey toward satisfying an obligation: this method, this provider, this sequence of

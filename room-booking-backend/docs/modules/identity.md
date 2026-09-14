@@ -5,7 +5,8 @@
 Own the account holder, its credentials, its sessions, and what it is permitted to do — the single
 most FK-referenced concept in the schema — and carry forward, unmodified, the only substantial live
 application code that exists in this codebase today: registration, login, email verification,
-password reset, and refresh-token rotation.
+password reset, refresh-token rotation, and the legacy host-onboarding workflow that grants the
+`HOST` role.
 
 ## Forces that shaped it
 
@@ -17,9 +18,12 @@ password reset, and refresh-token rotation.
   `auth_tokens` has no `CREATE TABLE` of its own — changeset `008` renamed `007`'s original table —
   so it is the one entity in the entire 423-table schema assigned to a module by hand rather than by
   the mechanical lookup.
-- **This is one of only two modules (with [`hostverification`](hostverification.md)) that already
-  has running services**, out of four aggregates total that do (`User`, `UserRole`, `HostProfile`,
-  `AuthToken`). Its module document has to be accurate about real code, not just about schema.
+- **This is the only module with running services**, across all four aggregates that have one
+  (`User`, `UserRole`, `HostProfile`, `AuthToken`). `HostOnboardingService` looks like
+  [`hostverification`](hostverification.md)'s at a glance — same name, same onboarding subject — but
+  it operates on `host_profiles`, the legacy table migration `001` put here, not on
+  `hostverification`'s target-model `host_legal_profiles` from migration `015`. See "The legacy
+  host-onboarding workflow" below.
 
 ## What it owns
 
@@ -34,10 +38,25 @@ Live code moving here unchanged from the current flat packages, per Phase 3 of t
 `service/auth/*` (`AuthenticationService`, `AccessTokenService`, `RefreshTokenService`,
 `EmailVerificationService`, `PasswordResetService`, `AuthTokenFactory`, `UserRegistrationFactory`,
 `AuthEmailNotifier`), `service/account/UserAccountService`, `service/user/UserFinder`,
-`service/validation/PasswordPolicy`, `controller/AuthController`, `controller/UserController`,
-`event/EmailVerificationIssued`, `event/PasswordResetIssued`. These land under
-`identity.internal.service.{auth,account,user,validation}` and `identity.internal.web`, preserving
-the existing package-private visibility of `AuthTokenFactory` and `UserRegistrationFactory` exactly.
+`service/validation/PasswordPolicy`, `service/host/*` (see below), `controller/AuthController`,
+`controller/UserController`, `event/EmailVerificationIssued`, `event/PasswordResetIssued`. These
+land under `identity.internal.service.{auth,account,user,validation,host}` and
+`identity.internal.web`, preserving the existing package-private visibility of `AuthTokenFactory`,
+`UserRegistrationFactory`, and `HostProfileFactory` exactly.
+
+### The legacy host-onboarding workflow
+
+`service/host/HostOnboardingService` and its package-private `HostProfileFactory` were first drafted
+into [`hostverification`](hostverification.md), because "host onboarding" reads like that module's
+job. Building the move script's import graph proved otherwise: `HostOnboardingService` reads and
+writes `identity`'s own `User` and `user_roles` rows directly (`UserFinder`, `UserRoleRepository`),
+and returns `identity`'s `UserResponse`/`HostProfileResponse` DTOs. None of that is
+`hostverification`'s schema — `host_profiles` is migration `001`'s legacy table, a different thing
+from `hostverification`'s target-model `host_legal_profiles` (migration `015`), the same duality
+already named in "The open `users` versus `account_holders` question" below. Moving the service
+without moving the tables it touches would have turned direct, same-package field access into an
+illegal reach into another module's `internal`, so it stays here, in
+`identity.internal.service.host`, beside the tables it actually operates on.
 
 See [`../data-model/001-identity.md`](../data-model/001-identity.md),
 [`../data-model/014-identity-target-model.md`](../data-model/014-identity-target-model.md), and
@@ -53,9 +72,11 @@ each anchor a small satellite of their own.
 
 Whether an external module should be pointing at `users` or at `account_holders` for a given fact.
 That question is explicitly **not resolved by this migration** — see "The open `users` versus
-`account_holders` question" below. `identity` also does not own market-specific eligibility rules
-(`hostverification`) or the policies that decide what a risk-flagged account may do (`trust`); it
-owns only who someone is and what they are authenticated to do.
+`account_holders` question" below. `identity` also does not own the target-model verification a host
+must pass to be trusted with real supply and payouts (`hostverification`'s `host_legal_profiles`
+lifecycle, distinct from the legacy `host_profiles` onboarding this module still runs — see "The
+legacy host-onboarding workflow" above) or the policies that decide what a risk-flagged account may
+do (`trust`); it owns only who someone is and what they are authenticated to do.
 
 ## Public API
 
@@ -101,15 +122,20 @@ default for a new event between modules" — see
 
 ## Allowed dependencies
 
-Two kinds, both real today:
-
 - `market`: `identity`'s schema carries 2 foreign keys into `market`'s tables. No live code crosses
   this boundary yet.
-- `platform`: `service/mail/*` (`EmailSender`, `SmtpEmailSender`) is used by `AuthEmailNotifier` and
-  moves to `platform.internal.service.mail` per the plan; `identity`'s auth services depend on it the
-  same way they do today.
+- `platform`: `service/mail/*` moves to `platform.internal.service.mail`, with its port,
+  `EmailSender`, promoted to `platform`'s root — the same promotion `AccessTokenService` needed, for
+  the same reason: `AuthEmailNotifier` is a genuine external consumer, not an internal collaborator
+  of `platform`'s mail adapter. `identity`'s auth services depend on `platform`'s exception base
+  types and `util` the same way they always have.
+- `config`: `identity`'s own `ApiErrorResponse` usage points at `config`, which owns that DTO now
+  (see [`config.md`](config.md)) — the one dependency in this module that runs in the direction a
+  reader might not expect, since `config` is usually the dependent, not the dependency.
 
-No other module may be imported by anything under `identity.internal`.
+No other module may be imported by anything under `identity.internal`, and `hostverification` is not
+one of `identity`'s dependencies despite the historical proximity of their onboarding code — see "The
+legacy host-onboarding workflow" above.
 
 ## Data coupling `verify()` cannot see
 
@@ -141,10 +167,11 @@ whatever consumes them (`trust`, `admin`) is left to when that consuming code is
 - All 12 tables and their entities/repositories live under `dev.ngb.backend.identity.internal.model`
   / `.repository`, in the four clusters above; `auth_tokens` is placed here explicitly rather than
   derived.
-- `service/auth`, `service/account`, `service/user`, `service/validation`, the two auth controllers,
-  and the two auth events move into `identity.internal.service.*` / `.internal.web` / root, with
-  `AccessTokenService` promoted to the module root and every factory still package-private.
+- `service/auth`, `service/account`, `service/user`, `service/validation`, `service/host`, the two
+  auth controllers, and the two auth events move into `identity.internal.service.*` /
+  `.internal.web` / root, with `AccessTokenService` promoted to the module root and every factory
+  (`AuthTokenFactory`, `UserRegistrationFactory`, `HostProfileFactory`) still package-private.
 - `EmailVerificationIssued`/`PasswordResetIssued` remain on `@TransactionalEventListener`, documented
   as the named exception in `AuthEmailNotifier`'s Javadoc.
-- `ApplicationModules.verify()` passes with `identity`'s only declared dependency being `market` and
-  `platform`.
+- `ApplicationModules.verify()` passes with `identity`'s only declared dependencies being `market`,
+  `platform`, and `config`.

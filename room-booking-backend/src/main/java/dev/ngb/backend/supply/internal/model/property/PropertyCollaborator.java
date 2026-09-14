@@ -14,10 +14,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
-import dev.ngb.backend.identity.internal.model.account.User;
-
-import dev.ngb.backend.identity.internal.model.account.User;
-
 
 /**
  * Someone who works on a property they do not own.

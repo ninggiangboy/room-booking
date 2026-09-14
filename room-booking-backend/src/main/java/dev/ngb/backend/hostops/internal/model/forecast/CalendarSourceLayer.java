@@ -1,11 +1,5 @@
 package dev.ngb.backend.hostops.internal.model.forecast;
 
-import dev.ngb.backend.pricing.internal.model.promotion.Promotion;
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-import dev.ngb.backend.pricing.internal.model.promotion.Promotion;
-
 /**
  * The layers that can set a calendar value, from the rate plan underneath to the booking claim on
  * top. Which one won, and which one it beat, is what the host is owed when they ask why a night

@@ -13,11 +13,8 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
-import dev.ngb.backend.identity.internal.model.Role;
 
-import dev.ngb.backend.identity.internal.model.Role;
 import dev.ngb.backend.ml.internal.model.FeatureEntityKind;
-
 
 /**
  * One observed outcome for one example under one label definition.

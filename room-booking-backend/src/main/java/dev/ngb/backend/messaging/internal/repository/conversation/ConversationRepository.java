@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.messaging.internal.model.conversation.Conversation;
-
-
 /**
  * Reads conversation threads.
  *

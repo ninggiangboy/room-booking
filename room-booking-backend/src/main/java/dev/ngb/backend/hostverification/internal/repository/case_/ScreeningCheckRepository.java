@@ -8,9 +8,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.hostverification.internal.model.case_.ScreeningCheck;
-
-
 /**
  * Reads sanctions, PEP, watch-list, age, and market screening results.
  *

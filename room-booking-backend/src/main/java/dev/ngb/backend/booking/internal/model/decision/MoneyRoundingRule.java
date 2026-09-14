@@ -2,8 +2,6 @@ package dev.ngb.backend.booking.internal.model.decision;
 
 import dev.ngb.backend.pricing.internal.model.tax.TaxRoundingMode;
 
-import dev.ngb.backend.pricing.internal.model.tax.TaxRoundingMode;
-
 /**
  * How a split amount's remainder is disposed of.
  *

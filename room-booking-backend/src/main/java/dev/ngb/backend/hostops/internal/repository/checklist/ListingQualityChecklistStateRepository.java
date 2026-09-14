@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.hostops.internal.model.checklist.ListingQualityChecklistState;
-
-
 /**
  * Reads where one listing stands on each checklist item.
  *

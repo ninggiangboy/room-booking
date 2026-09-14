@@ -17,10 +17,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-import dev.ngb.backend.pricing.internal.model.quote.Quote;
-
-
 /**
  * One use of a promotion, and who paid for it.
  *

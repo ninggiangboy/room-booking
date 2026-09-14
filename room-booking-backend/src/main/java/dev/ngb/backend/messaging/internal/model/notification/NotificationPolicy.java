@@ -15,11 +15,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
-import dev.ngb.backend.market.internal.model.market.Market;
-
-import dev.ngb.backend.market.internal.model.market.Market;
-import dev.ngb.backend.platform.JsonDocument;
-
 
 /**
  * The rule that turns a committed domain fact into an intent to tell somebody.

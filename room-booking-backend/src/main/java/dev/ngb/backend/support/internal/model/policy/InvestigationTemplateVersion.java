@@ -16,11 +16,9 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.PolicyVersionStatus;
 
-import dev.ngb.backend.platform.PolicyVersionStatus;
 import dev.ngb.backend.support.internal.model.ApprovalTier;
 import dev.ngb.backend.support.internal.model.ProofStandard;
 import dev.ngb.backend.support.internal.model.SupportCaseType;
-
 
 /**
  * What a case type requires before anyone may conclude anything.

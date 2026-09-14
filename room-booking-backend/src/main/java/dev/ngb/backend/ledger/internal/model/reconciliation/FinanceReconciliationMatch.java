@@ -14,9 +14,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.ExceptionSeverity;
 
-import dev.ngb.backend.platform.ExceptionSeverity;
-
-
 /**
  * The verdict on one comparison, with both sides named.
  *

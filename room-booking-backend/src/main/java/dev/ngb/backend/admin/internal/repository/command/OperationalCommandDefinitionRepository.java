@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.admin.internal.model.command.OperationalCommandDefinition;
-import dev.ngb.backend.platform.GovernedRegistryStatus;
-
-
 /**
  * Reads the catalogue of what an operator may ask the marketplace to do.
  *

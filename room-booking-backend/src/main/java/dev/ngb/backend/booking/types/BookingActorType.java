@@ -2,8 +2,6 @@ package dev.ngb.backend.booking.types;
 
 import dev.ngb.backend.platform.ActorType;
 
-import dev.ngb.backend.platform.ActorType;
-
 /**
  * Kind of actor responsible for a booking transition or timeline entry.
  *

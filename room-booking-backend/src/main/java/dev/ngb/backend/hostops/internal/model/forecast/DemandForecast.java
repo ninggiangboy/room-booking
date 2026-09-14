@@ -17,8 +17,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.pricing.types.RecommendationConfidence;
 
 import dev.ngb.backend.hostops.internal.model.MetricEvidenceState;
-import dev.ngb.backend.pricing.types.RecommendationConfidence;
-
 
 /**
  * What the platform expects one night to do, with the interval around it.

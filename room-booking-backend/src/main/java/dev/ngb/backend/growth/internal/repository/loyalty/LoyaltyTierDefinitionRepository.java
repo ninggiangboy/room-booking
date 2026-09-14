@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.growth.internal.model.loyalty.LoyaltyTierDefinition;
-
-
 /**
  * Reads the tiers of a published loyalty programme version.
  *

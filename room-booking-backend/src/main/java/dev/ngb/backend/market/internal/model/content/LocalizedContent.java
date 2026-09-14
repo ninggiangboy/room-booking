@@ -12,9 +12,6 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
-import dev.ngb.backend.market.internal.model.market.Market;
-
-
 /**
  * One immutable, reviewed rendering of a semantic message in one locale.
  *

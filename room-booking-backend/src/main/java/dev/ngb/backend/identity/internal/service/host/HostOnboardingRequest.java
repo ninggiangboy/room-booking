@@ -1,4 +1,4 @@
-package dev.ngb.backend.hostverification;
+package dev.ngb.backend.identity.internal.service.host;
 
 import jakarta.validation.constraints.Size;
 import org.jspecify.annotations.Nullable;

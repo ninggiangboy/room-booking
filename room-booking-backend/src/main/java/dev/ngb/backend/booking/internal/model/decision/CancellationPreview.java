@@ -14,10 +14,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
 
-import dev.ngb.backend.booking.internal.model.contract.Booking;
 import dev.ngb.backend.booking.types.BookingActorType;
-import dev.ngb.backend.platform.JsonDocument;
-
 
 /**
  * The number a guest was shown before deciding whether to cancel.

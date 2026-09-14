@@ -1,9 +1,5 @@
 package dev.ngb.backend.hostops.internal.model.bulkedit;
 
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-
-import dev.ngb.backend.supply.internal.model.listing.Listing;
-
 /**
  * What a bulk edit changes.
  */

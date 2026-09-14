@@ -17,10 +17,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.ActorType;
 import dev.ngb.backend.platform.StayRange;
 
-import dev.ngb.backend.platform.ActorType;
-import dev.ngb.backend.platform.StayRange;
-
-
 /**
  * Why nights are unavailable when nobody has booked them.
  *

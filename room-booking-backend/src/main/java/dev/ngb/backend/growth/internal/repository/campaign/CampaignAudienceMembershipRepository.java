@@ -10,11 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.growth.internal.model.campaign.CampaignArm;
-import dev.ngb.backend.growth.internal.model.campaign.CampaignAudienceMembership;
-import dev.ngb.backend.growth.internal.model.campaign.CampaignMembershipState;
-
-
 /**
  * Reads who is in a campaign audience, in which arm, and under whose consent.
  *

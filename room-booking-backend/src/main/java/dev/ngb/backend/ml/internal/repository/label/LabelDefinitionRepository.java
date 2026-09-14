@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.ml.internal.model.DefinitionStatus;
-import dev.ngb.backend.ml.internal.model.label.LabelDefinition;
-
-
 /**
  * Reads the registry of prediction targets.
  *

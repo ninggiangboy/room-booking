@@ -3,8 +3,6 @@ package dev.ngb.backend.identity.internal.web;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-import dev.ngb.backend.identity.internal.service.validation.PasswordPolicy;
-
 /**
  * Immutable request that consumes a one-time token and replaces the account password.
  *

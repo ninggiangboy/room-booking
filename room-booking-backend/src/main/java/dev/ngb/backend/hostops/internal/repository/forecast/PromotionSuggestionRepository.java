@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.hostops.internal.model.forecast.PromotionSuggestion;
-import dev.ngb.backend.hostops.internal.model.forecast.SuggestionDecisionState;
-
-
 /**
  * Reads the promotions the platform thinks are worth running, with what they would add and cost.
  *

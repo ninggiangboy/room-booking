@@ -17,10 +17,7 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
 
 import dev.ngb.backend.booking.internal.model.OverrideFundingParty;
-import dev.ngb.backend.booking.internal.model.contract.Booking;
 import dev.ngb.backend.booking.types.BookingActorType;
-import dev.ngb.backend.platform.JsonDocument;
-
 
 /**
  * A guest with nowhere to sleep tonight.

@@ -7,9 +7,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.stay.internal.model.task.TaskEvidence;
-
-
 /**
  * Reads what was submitted in support of task attestations.
  *

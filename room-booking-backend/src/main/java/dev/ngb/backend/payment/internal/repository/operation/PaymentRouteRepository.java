@@ -8,9 +8,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.payment.internal.model.operation.PaymentRoute;
-
-
 /**
  * Reads the routing configuration for payment providers.
  *

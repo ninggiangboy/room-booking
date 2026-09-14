@@ -7,9 +7,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.review.internal.model.aspect.ReviewAspectMention;
-
-
 /**
  * Reads what reviews said about aspects.
  *

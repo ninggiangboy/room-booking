@@ -5,9 +5,6 @@ import org.springframework.data.repository.ListCrudRepository;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.support.internal.model.case_.CaseNote;
-
-
 /**
  * Reads the internal notes on a case.
  *

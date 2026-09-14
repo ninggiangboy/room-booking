@@ -10,9 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.hostops.internal.model.forecast.DemandForecast;
-
-
 /**
  * Reads what the platform expects one night to do.
  *

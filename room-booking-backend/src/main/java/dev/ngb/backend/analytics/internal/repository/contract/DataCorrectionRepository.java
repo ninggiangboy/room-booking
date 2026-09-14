@@ -9,10 +9,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.analytics.internal.model.contract.CorrectionApplicationState;
-import dev.ngb.backend.analytics.internal.model.contract.DataCorrection;
-
-
 /**
  * Reads the additive record that something published was wrong.
  *

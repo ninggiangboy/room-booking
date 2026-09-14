@@ -16,9 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.GovernedRegistryStatus;
 
-import dev.ngb.backend.platform.GovernedRegistryStatus;
-
-
 /**
  * A published set of things a listing needs before it competes on equal terms.
  * <p>Frozen once published, and its membership is frozen with it: appending a ninth item to a live

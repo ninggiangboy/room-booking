@@ -18,8 +18,6 @@ import dev.ngb.backend.platform.JsonDocument;
 
 import dev.ngb.backend.admin.internal.model.ChangeBlastRadius;
 import dev.ngb.backend.admin.internal.model.ChangeImpactClass;
-import dev.ngb.backend.platform.JsonDocument;
-
 
 /**
  * One proposed change, travelling the maker-checker path.

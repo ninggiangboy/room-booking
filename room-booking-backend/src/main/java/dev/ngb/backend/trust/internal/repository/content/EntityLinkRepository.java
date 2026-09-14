@@ -10,10 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.trust.internal.model.content.EntityLink;
-import dev.ngb.backend.trust.internal.model.content.EntityLinkRelation;
-
-
 /**
  * Reads relationships between subjects.
  *

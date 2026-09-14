@@ -8,11 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.review.internal.model.ReviewDirection;
-import dev.ngb.backend.review.internal.model.publication.AggregateSubjectType;
-import dev.ngb.backend.review.internal.model.publication.ReviewPublicAggregate;
-
-
 /**
  * Reads the transparent public averages.
  *

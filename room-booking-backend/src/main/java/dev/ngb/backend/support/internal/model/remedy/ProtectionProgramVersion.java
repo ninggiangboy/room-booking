@@ -16,9 +16,7 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.PolicyVersionStatus;
 
-import dev.ngb.backend.platform.PolicyVersionStatus;
 import dev.ngb.backend.support.internal.model.AdjudicationAuthority;
-
 
 /**
  * The approved terms of a protection or insurance product, and the role the platform plays in it.

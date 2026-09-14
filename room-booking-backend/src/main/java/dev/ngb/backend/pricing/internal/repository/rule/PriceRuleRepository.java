@@ -7,11 +7,6 @@ import org.springframework.data.repository.ListCrudRepository;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.pricing.internal.model.rule.PriceRule;
-import dev.ngb.backend.pricing.internal.model.rule.PriceRuleScope;
-import dev.ngb.backend.pricing.internal.model.rule.PriceRuleStatus;
-
-
 /**
  * Reads the identities of pricing rules.
  *

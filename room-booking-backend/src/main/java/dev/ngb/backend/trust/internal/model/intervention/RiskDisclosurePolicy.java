@@ -1,9 +1,5 @@
 package dev.ngb.backend.trust.internal.model.intervention;
 
-import dev.ngb.backend.identity.internal.model.account.User;
-
-import dev.ngb.backend.identity.internal.model.account.User;
-
 /**
  * How much of a decision its subject is told.
  *

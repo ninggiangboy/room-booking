@@ -18,9 +18,7 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
 
-import dev.ngb.backend.platform.JsonDocument;
 import dev.ngb.backend.pricing.types.RecommendationConfidence;
-
 
 /**
  * What the model proposed for one night, and the inputs that produced it.

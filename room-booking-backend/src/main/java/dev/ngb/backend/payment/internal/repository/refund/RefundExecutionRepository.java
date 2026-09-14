@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.payment.internal.model.refund.RefundExecution;
-
-
 /**
  * Reads the carrying-out of approved refunds.
  *

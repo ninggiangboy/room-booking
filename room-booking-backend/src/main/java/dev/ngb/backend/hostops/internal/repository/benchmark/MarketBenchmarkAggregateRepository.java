@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.hostops.internal.model.benchmark.MarketBenchmarkAggregate;
-
-
 /**
  * Reads what a cohort of hosts looked like over one period, or the recorded reason there is no
  * answer.

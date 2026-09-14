@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.trust.internal.model.content.ContentRevision;
-
-
 /**
  * Reads the exact versions moderation decides about.
  *

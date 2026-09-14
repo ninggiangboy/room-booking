@@ -7,9 +7,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.pricing.internal.model.promotion.PromotionRedemption;
-
-
 /**
  * Reads how much of a campaign has been spent, and by whom.
  *

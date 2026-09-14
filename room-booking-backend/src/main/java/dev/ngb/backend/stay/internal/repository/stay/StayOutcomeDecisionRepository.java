@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.stay.internal.model.stay.StayOutcomeDecision;
-import dev.ngb.backend.stay.internal.model.stay.StayOutcomeResult;
-
-
 /**
  * Reads what operations proposed about a stay.
  *

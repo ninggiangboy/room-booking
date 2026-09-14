@@ -9,9 +9,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.support.internal.model.queue.RoutingPolicyVersion;
-
-
 /**
  * Reads the deterministic routing rules a queue assignment is made under.
  *

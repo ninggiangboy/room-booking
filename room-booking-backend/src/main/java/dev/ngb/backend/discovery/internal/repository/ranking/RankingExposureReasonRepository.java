@@ -7,9 +7,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.discovery.internal.model.ranking.RankingExposureReason;
-
-
 /**
  * Writes the reasons shown for one result and reads them back.
  *

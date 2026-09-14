@@ -11,11 +11,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.discovery.internal.model.profile.ListingOutcomeAggregate;
-import dev.ngb.backend.discovery.internal.model.profile.OutcomeWindowKind;
-import dev.ngb.backend.review.types.DerivedProfileStatus;
-
-
 /**
  * Reads funnel counts for a listing beside the exposure conditions that produced them.
  *

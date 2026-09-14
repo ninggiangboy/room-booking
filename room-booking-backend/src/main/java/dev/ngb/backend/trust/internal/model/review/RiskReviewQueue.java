@@ -15,12 +15,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
-import dev.ngb.backend.market.internal.model.market.Market;
 
-import dev.ngb.backend.market.internal.model.market.Market;
-import dev.ngb.backend.platform.JsonDocument;
 import dev.ngb.backend.trust.internal.model.RiskActionTier;
-
 
 /**
  * Where human risk work waits, and who may take it.

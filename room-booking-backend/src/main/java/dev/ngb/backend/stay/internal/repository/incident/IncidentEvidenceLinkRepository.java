@@ -8,11 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.stay.internal.model.incident.EvidenceSourceDomain;
-import dev.ngb.backend.stay.internal.model.incident.EvidenceSourceType;
-import dev.ngb.backend.stay.internal.model.incident.IncidentEvidenceLink;
-
-
 /**
  * Reads the artifacts linked to incidents.
  *

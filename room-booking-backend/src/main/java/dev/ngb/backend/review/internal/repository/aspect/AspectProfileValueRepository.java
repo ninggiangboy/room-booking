@@ -7,9 +7,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.review.internal.model.aspect.AspectProfileValue;
-
-
 /**
  * Reads the per-aspect values of a profile.
  *

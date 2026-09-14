@@ -16,10 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.StayRange;
 
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-import dev.ngb.backend.platform.StayRange;
-
-
 /**
  * The single thing that consumes inventory.
  *

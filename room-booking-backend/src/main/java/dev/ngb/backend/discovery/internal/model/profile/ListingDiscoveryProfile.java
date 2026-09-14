@@ -18,8 +18,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.review.types.DerivedProfileStatus;
 
 import dev.ngb.backend.discovery.internal.model.PriorFallbackLevel;
-import dev.ngb.backend.review.types.DerivedProfileStatus;
-
 
 /**
  * The versioned, rebuildable read model discovery serves one listing from.

@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.messaging.internal.model.notification.NotificationIntent;
-
-
 /**
  * Reads the decisions to tell somebody something.
  *

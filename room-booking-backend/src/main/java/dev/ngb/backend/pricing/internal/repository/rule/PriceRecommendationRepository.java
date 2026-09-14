@@ -9,9 +9,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.pricing.internal.model.rule.PriceRecommendation;
-
-
 /**
  * Reads the optimizer's proposals.
  *

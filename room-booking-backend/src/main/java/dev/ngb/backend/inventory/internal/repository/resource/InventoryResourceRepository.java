@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.inventory.internal.model.resource.InventoryResource;
-
-
 /**
  * Reads the calendar identities that nights are sold from.
  *

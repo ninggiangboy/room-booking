@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.supply.internal.model.listing.ListingContent;
-
-
 /**
  * Reads a listing's wording in each language it exists in.
  *

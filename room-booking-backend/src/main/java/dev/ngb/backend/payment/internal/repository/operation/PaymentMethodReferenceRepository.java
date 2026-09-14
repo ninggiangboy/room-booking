@@ -7,10 +7,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.payment.internal.model.operation.PaymentMethodReference;
-import dev.ngb.backend.payment.internal.model.operation.PaymentMethodState;
-
-
 /**
  * Reads the opaque instrument tokens a guest has stored.
  *

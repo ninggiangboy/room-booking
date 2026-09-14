@@ -18,10 +18,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
 import dev.ngb.backend.messaging.types.NotificationChannel;
 
-import dev.ngb.backend.messaging.types.NotificationChannel;
-import dev.ngb.backend.platform.JsonDocument;
-
-
 /**
  * One campaign: an audience, a channel, a cap and a holdout.
  *

@@ -9,9 +9,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.support.internal.model.policy.InvestigationTemplateVersion;
-
-
 /**
  * Reads the investigation templates a case type is worked under.
  *

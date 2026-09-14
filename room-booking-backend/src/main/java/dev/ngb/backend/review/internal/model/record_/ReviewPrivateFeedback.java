@@ -15,10 +15,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.ConsentLegalBasis;
 import dev.ngb.backend.platform.RetentionClass;
 
-import dev.ngb.backend.platform.ConsentLegalBasis;
-import dev.ngb.backend.platform.RetentionClass;
-
-
 /**
  * What one party said privately, to the other or to the platform.
  *

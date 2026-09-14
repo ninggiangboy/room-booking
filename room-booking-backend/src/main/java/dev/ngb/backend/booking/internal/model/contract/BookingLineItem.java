@@ -13,22 +13,12 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
-import dev.ngb.backend.pricing.internal.model.quote.Quote;
 import dev.ngb.backend.pricing.types.LineDirection;
 import dev.ngb.backend.pricing.types.LineTaxTreatment;
 import dev.ngb.backend.pricing.types.MoneyPartyRole;
 import dev.ngb.backend.pricing.types.QuoteLineType;
 import dev.ngb.backend.pricing.types.Refundability;
 import dev.ngb.backend.pricing.types.SupplyRole;
-
-import dev.ngb.backend.pricing.internal.model.quote.Quote;
-import dev.ngb.backend.pricing.types.LineDirection;
-import dev.ngb.backend.pricing.types.LineTaxTreatment;
-import dev.ngb.backend.pricing.types.MoneyPartyRole;
-import dev.ngb.backend.pricing.types.QuoteLineType;
-import dev.ngb.backend.pricing.types.Refundability;
-import dev.ngb.backend.pricing.types.SupplyRole;
-
 
 /**
  * One money line of a booking at one revision.

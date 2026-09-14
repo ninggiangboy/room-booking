@@ -14,9 +14,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.pricing.types.RecommendationConfidence;
 
-import dev.ngb.backend.pricing.types.RecommendationConfidence;
-
-
 /**
  * One thing a listing may be asked to do, with the effect the host should expect from doing it.
  * <p>An item that blocks publication is a requirement, and a requirement the host may dismiss is

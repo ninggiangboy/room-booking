@@ -17,13 +17,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.StayRange;
-import dev.ngb.backend.pricing.internal.model.quote.Quote;
 
-import dev.ngb.backend.booking.internal.model.contract.Booking;
 import dev.ngb.backend.booking.types.BookingActorType;
-import dev.ngb.backend.platform.StayRange;
-import dev.ngb.backend.pricing.internal.model.quote.Quote;
-
 
 /**
  * What a booking contract said, at one point in its life.

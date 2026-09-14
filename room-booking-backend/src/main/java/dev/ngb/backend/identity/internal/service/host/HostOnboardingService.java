@@ -1,4 +1,4 @@
-package dev.ngb.backend.hostverification;
+package dev.ngb.backend.identity.internal.service.host;
 
 import dev.ngb.backend.identity.internal.model.capability.HostProfile;
 import dev.ngb.backend.identity.internal.model.Role;

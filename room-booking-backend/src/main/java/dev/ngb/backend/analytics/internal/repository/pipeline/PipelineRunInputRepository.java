@@ -5,9 +5,6 @@ import org.springframework.data.repository.ListCrudRepository;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.analytics.internal.model.pipeline.PipelineRunInput;
-
-
 /**
  * Reads the upstream snapshots a run actually read.
  *

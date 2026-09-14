@@ -14,9 +14,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.payment.types.ReducerOutcome;
 
-import dev.ngb.backend.payment.types.ReducerOutcome;
-
-
 /**
  * What the provider or the bank actually said about a transfer, kept verbatim.
  *

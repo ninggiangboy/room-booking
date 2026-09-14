@@ -6,9 +6,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.supply.internal.model.property.PropertySafetyItem;
-
-
 /**
  * Reads what safety equipment a property declares.
  *

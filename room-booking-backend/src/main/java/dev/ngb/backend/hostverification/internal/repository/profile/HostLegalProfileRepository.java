@@ -7,10 +7,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.hostverification.internal.model.profile.HostLegalProfile;
-import dev.ngb.backend.hostverification.internal.model.profile.HostProfileLifecycle;
-
-
 /**
  * Reads and stores the legal identity of selling hosts.
  *

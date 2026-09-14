@@ -7,9 +7,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.booking.internal.model.decision.CancellationDecisionLine;
-
-
 /**
  * Reads the line-by-line arithmetic of a cancellation decision.
  *

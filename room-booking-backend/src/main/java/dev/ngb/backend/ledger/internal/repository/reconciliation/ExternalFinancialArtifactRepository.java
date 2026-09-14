@@ -9,10 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.ledger.internal.model.reconciliation.ExternalArtifactSource;
-import dev.ngb.backend.ledger.internal.model.reconciliation.ExternalFinancialArtifact;
-
-
 /**
  * Reads the external evidence reconciliation runs against.
  *

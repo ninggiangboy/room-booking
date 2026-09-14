@@ -13,12 +13,8 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
-import dev.ngb.backend.booking.internal.model.contract.Booking;
 
-import dev.ngb.backend.booking.internal.model.contract.Booking;
 import dev.ngb.backend.ledger.internal.model.PostingDirection;
-import dev.ngb.backend.messaging.internal.model.delivery.Message;
-
 
 /**
  * One line of a host statement, tracing to the fact that produced it.

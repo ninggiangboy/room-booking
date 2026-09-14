@@ -14,13 +14,6 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
-import dev.ngb.backend.market.internal.model.market.Market;
-
-import dev.ngb.backend.market.internal.model.market.Market;
-import dev.ngb.backend.booking.internal.model.contract.Booking;
-import dev.ngb.backend.platform.JsonDocument;
-import dev.ngb.backend.pricing.internal.model.quote.Quote;
-
 
 /**
  * One complete tax determination, with the inputs that produced it.

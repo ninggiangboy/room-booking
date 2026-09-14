@@ -9,10 +9,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 
-import dev.ngb.backend.supply.internal.model.property.PropertyAreaAssignment;
-import dev.ngb.backend.supply.internal.model.property.PropertyAreaAssignmentId;
-
-
 /**
  * Reads and maintains which destinations a property appears under.
  *

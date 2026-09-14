@@ -18,9 +18,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.review.types.DerivedProfileStatus;
 
-import dev.ngb.backend.review.types.DerivedProfileStatus;
-
-
 /**
  * Funnel counts for one listing over one window, beside the exposure conditions that produced them.
  *

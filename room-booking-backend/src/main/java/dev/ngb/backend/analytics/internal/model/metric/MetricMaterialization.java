@@ -16,8 +16,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
 
 import dev.ngb.backend.analytics.internal.model.DataQualityState;
-import dev.ngb.backend.platform.JsonDocument;
-
 
 /**
  * One computed value of one metric for one slice and window.

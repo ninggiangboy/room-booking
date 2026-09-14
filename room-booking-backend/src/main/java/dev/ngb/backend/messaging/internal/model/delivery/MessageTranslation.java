@@ -15,9 +15,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.TranslationSource;
 
-import dev.ngb.backend.platform.TranslationSource;
-
-
 /**
  * A machine or human translation of one message, kept beside the original.
  *

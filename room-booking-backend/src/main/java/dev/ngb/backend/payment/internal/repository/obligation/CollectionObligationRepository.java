@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.payment.internal.model.obligation.CollectionObligation;
-
-
 /**
  * Reads and locks what guests owe.
  *

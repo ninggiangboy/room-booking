@@ -16,9 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.GovernedRegistryStatus;
 
-import dev.ngb.backend.platform.GovernedRegistryStatus;
-
-
 /**
  * One thing an operator is allowed to ask the marketplace to do.
  * <p>Names the permission that opens it, whether it moves money, whether it can be undone and what

@@ -8,11 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.trust.internal.model.content.ContentItem;
-import dev.ngb.backend.trust.internal.model.content.ContentOwningDomain;
-import dev.ngb.backend.trust.internal.model.content.ModeratedContentType;
-
-
 /**
  * Reads the stable handles moderation decisions attach to.
  *

@@ -19,8 +19,6 @@ import dev.ngb.backend.platform.DataPrivacyClass;
 import dev.ngb.backend.analytics.internal.model.DataContractStatus;
 import dev.ngb.backend.analytics.internal.model.RestatementPolicy;
 import dev.ngb.backend.analytics.types.DeletionBehaviour;
-import dev.ngb.backend.platform.DataPrivacyClass;
-
 
 /**
  * One governed version of one analytical dataset.

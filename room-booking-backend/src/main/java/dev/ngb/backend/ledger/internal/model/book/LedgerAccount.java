@@ -17,8 +17,6 @@ import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.JsonDocument;
 
 import dev.ngb.backend.ledger.internal.model.PostingDirection;
-import dev.ngb.backend.platform.JsonDocument;
-
 
 /**
  * One account in the chart of accounts, with the policy the posting engine enforces against it.

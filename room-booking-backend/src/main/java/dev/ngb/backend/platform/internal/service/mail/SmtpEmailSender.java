@@ -1,5 +1,6 @@
 package dev.ngb.backend.platform.internal.service.mail;
 
+import dev.ngb.backend.platform.EmailSender;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;

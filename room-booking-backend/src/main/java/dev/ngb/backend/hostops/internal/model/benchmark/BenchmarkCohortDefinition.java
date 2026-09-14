@@ -16,13 +16,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.GovernedRegistryStatus;
-import dev.ngb.backend.market.internal.model.market.Market;
 import dev.ngb.backend.supply.types.PropertyType;
-
-import dev.ngb.backend.market.internal.model.market.Market;
-import dev.ngb.backend.platform.GovernedRegistryStatus;
-import dev.ngb.backend.supply.types.PropertyType;
-
 
 /**
  * How a peer set is drawn, and the privacy floor below which nothing about it is published.

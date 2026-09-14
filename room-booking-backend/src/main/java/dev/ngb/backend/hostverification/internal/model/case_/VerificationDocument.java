@@ -17,9 +17,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.DocumentScanState;
 
-import dev.ngb.backend.platform.DocumentScanState;
-
-
 /**
  * A document submitted as verification evidence, held by reference rather than by value.
  *

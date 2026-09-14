@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.analytics.internal.model.experiment.ExperimentAssignment;
-
-
 /**
  * Reads and writes the record that a unit was bucketed into an arm.
  *

@@ -9,9 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import dev.ngb.backend.booking.internal.model.revision.BookingModificationProposal;
-
-
 /**
  * Reads proposed changes to live booking contracts.
  *

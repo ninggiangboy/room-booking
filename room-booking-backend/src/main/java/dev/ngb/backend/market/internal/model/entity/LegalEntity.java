@@ -16,9 +16,6 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 import dev.ngb.backend.platform.ConfigurationLifecycle;
 
-import dev.ngb.backend.platform.ConfigurationLifecycle;
-
-
 /**
  * A platform entity that is accountable for operating in one or more markets.
  *
