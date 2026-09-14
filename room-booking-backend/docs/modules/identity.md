@@ -25,7 +25,7 @@ password reset, and refresh-token rotation.
 
 - **`account` cluster** — `users` (aggregate root, in-module in-degree 10), `account_holders`,
   `organization_members`, `contact_channels`.
-- **`credential` cluster** — `auth_credentials`, `email_verification_tokens`.
+- **`credential` cluster** — `auth_credentials`.
 - **`session` cluster** — `auth_sessions`, `auth_tokens` (hand-assigned, see above), `auth_attempts`.
 - **`capability` cluster** — `capability_grants`, `capability_restrictions`, `user_roles`,
   `host_profiles`.

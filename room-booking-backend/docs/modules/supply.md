@@ -25,9 +25,9 @@ there," distinct from `inventory`'s "what is sellable right now."
   `property_area_assignments`, `property_collaborators`, `property_house_rules`,
   `property_safety_items`, `property_poi_distances`.
 - **`accommodation` cluster** — `accommodation_types` (root), `accommodation_type_amenities`.
-- **`listing` cluster** — `listings` (root), `listing_contents`, `listing_images`, `listing_media`,
-  `listing_amenities`, `listing_change_history`, `rate_plans`.
-- **`amenity` cluster** — `amenity_definitions` (root), `amenities`, `amenity_translations`,
+- **`listing` cluster** — `listings` (root), `listing_contents`, `listing_media`,
+  `listing_change_history`, `rate_plans`.
+- **`amenity` cluster** — `amenity_definitions` (root), `amenity_translations`,
   `amenity_vocabularies`, `accessibility_claims`.
 - **`geo` cluster** — `geo_areas` (root), `geo_area_names`, `geo_area_search_profiles`,
   `geocoding_results`, `points_of_interest`.

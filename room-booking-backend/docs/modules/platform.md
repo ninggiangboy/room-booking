@@ -81,8 +81,11 @@ correctly for the next type that looks like a candidate.
 - **R0 — recompute after module merges before applying anything else.** A type that looked
   shared-across-modules when counted by migration number is often single-owner once migrations are
   grouped into modules. `PaymentFailureCategory` and `PaymentMethodFamily` (migrations `005` + `021`)
-  are both `payment` now; `RefundExecutionState` (`021` + `023`) and `BookingFlowType` (`004` + `020`)
-  are single-owner the same way. None of these move to `platform`.
+  are both `payment` now, and `BookingFlowType` (`004` + `020`) is single-owner the same way — all
+  three stay with their module, none move to `platform`. `RefundExecutionState` (`021` + `023`) is
+  the opposite lesson: it looked like this same pattern, but `023` merged into `booking`, not
+  `payment`, so the type is genuinely used by two modules (`booking`, `payment`) that reference
+  each other — R0 does not resolve every candidate, and this one falls through to R2.
 - **R1 — a value type whose meaning is "the shape of a PostgreSQL column," not a business concept.**
   `JsonDocument`, `StayRange`, `BucketRange`. `BucketRange` is included even though only
   `ExperimentVariant` (in `analytics`) uses it today, because leaving it in `analytics` would make
@@ -90,18 +93,28 @@ correctly for the next type that looks like a candidate.
   graph. `time/`, `util/`, and `exception/base/` are the package-level version of this rule.
 - **R2 — used by three or more modules with no natural single owner.** `ActorType`, `RetentionClass`,
   `SensitivityClass`, `TranslationSource`, `ObservationSource`, `ConfigurationLifecycle`,
-  `MoneyPartyRole`, `AssuranceLevel`, `GovernedRegistryStatus`, `TimelineVisibility`,
-  `DataPrivacyClass`, `ExceptionSeverity`, `EvidenceScanState`. These move to `platform` because no
+  `AssuranceLevel`, `GovernedRegistryStatus`, `TimelineVisibility`, `DataPrivacyClass`,
+  `ExceptionSeverity`, `EvidenceScanState`, plus four more with no clear direction between their
+  two or three consumers once Phase 2's assignment pass ran (`PolicyVersionStatus`,
+  `DocumentScanState`, `AuditOutcome`, `ExternalReferenceLifecycle`, `ConsentLegalBasis`,
+  `VerificationMethod`, `RefundExecutionState` — the last because `booking` and `payment`
+  reference each other, so neither is upstream of the other). These move to `platform` because no
   module in the reference list is more "the owner" than any other.
 - **R3 — stays with its natural owner and is exposed through a `@NamedInterface`, when every
   consumer is already downstream of that owner.** `QuoteLineType`, `LineDirection`,
-  `LineTaxTreatment`, `Refundability`, `SupplyRole` stay in `pricing.types` (`booking` already
-  depends on `pricing`). `ReconciliationRunState` and `ReducerOutcome` stay in `payment.types`
-  (`ledger` already depends on `payment`). **`BookingActorType` is the rule's clearest exception
-  case**: five modules use it (`payment`, `ledger`, `stay`, `review`, `booking`'s own cancellation
-  slice), which would satisfy R2's "≥3 modules" test, but all five are downstream of `booking`, so it
-  stays in `booking.types` instead of moving here. Direction of dependency is the deciding signal,
-  not the count of consumers.
+  `LineTaxTreatment`, `Refundability`, `SupplyRole`, `MoneyPartyRole`, `RecommendationConfidence`
+  stay in `pricing.types` (`booking` and `hostops` already depend on `pricing`).
+  `ReconciliationRunState` and `ReducerOutcome` stay in `payment.types` (`ledger` already depends
+  on `payment`). `DeletionBehaviour` stays in `analytics.types` (`ml` depends on `analytics`).
+  `DerivedProfileStatus` stays in `review.types` (`discovery` depends on `review`).
+  `NotificationChannel` stays in `messaging.types` (`growth` depends on `messaging`).
+  `PropertyType` stays in `supply.types` (`hostops` depends on `supply`). **`BookingActorType` is
+  the rule's clearest exception case**: it is used by `payment` and `stay` too, which would satisfy
+  R2's "≥3 modules" test, but both are downstream of `booking`, so it stays in `booking.types`
+  instead of moving here. Direction of dependency is the deciding signal, not the count of
+  consumers. `MoneyPartyRole` corrects an earlier pass of this rule, which placed it under R2 by
+  assuming three consumers it no longer has now that `booking` absorbed migrations `004`/`023`;
+  it is used by exactly `booking` and `pricing` today, one-way, which is R3, not R2.
 
 The exact, exhaustive list of which of the ~39 candidate types resolved to `platform` versus stayed
 with a natural owner is recorded in `../architecture/module-map.md` once Phase 2's assignment pass

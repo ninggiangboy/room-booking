@@ -27,15 +27,15 @@ moderation workflow and from `support`'s case-driven dispute resolution.
 - **`feature` cluster** — `risk_feature_definitions` (root), `risk_feature_snapshots`,
   `risk_model_predictions`.
 - **`decision` cluster** — `risk_decisions` (root), `risk_decision_rule_hits`,
-  `risk_decision_enforcements`, `risk_policies`, `risk_policy_approvals`.
+  `risk_decision_enforcements`, `risk_policies`, `risk_policy_approvals`,
+  `moderation_decisions`, `moderation_assessments` (general content moderation, grouped here
+  because both resolve against the same policy machinery as a risk decision).
 - **`intervention` cluster** — `risk_restrictions` (root), `risk_challenges`,
   `risk_challenge_attempts`, `risk_protected_actions`, `risk_appeals`, `risk_access_audit`.
 - **`review` cluster** — `risk_review_tasks` (root), `risk_review_queues`, `risk_review_actions`.
 - **`content` cluster** — `content_items` (root), `content_revisions`, `content_reports`,
   `entity_links`.
 - **`label` cluster** — `risk_labels` (root), `risk_label_taxonomy_versions`.
-- **`moderation` (general)** — `moderation_decisions`, `moderation_assessments`. These are grouped
-  with the `decision` cluster in practice since they resolve against the same policy machinery.
 
 See [`../data-model/027-trust-safety-and-moderation.md`](../data-model/027-trust-safety-and-moderation.md)
 and [`../features/trust-safety-fraud-and-moderation.md`](../features/trust-safety-fraud-and-moderation.md).

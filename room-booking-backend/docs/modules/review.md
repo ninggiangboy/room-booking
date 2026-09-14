@@ -21,7 +21,7 @@ and reputation intelligence built on top of it, as one module distinct from the 
 
 ## What it owns
 
-- **`right` cluster** — `review_rights` (root), `review_cycles`.
+- **`right` cluster** — `review_rights` (root), `review_cycles`, `review_policy_versions`.
 - **`record` cluster** — `review_records` (root), `review_revisions`, `review_category_values`,
   `review_media`, `review_translations`, `review_private_feedback`, `review_helpful_votes`,
   `review_interaction_events`, `review_moderation_applications`.
