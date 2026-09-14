@@ -103,3 +103,6 @@ databaseChangeLog:
   - include:
       file: changes/033-host-operations.sql
       relativeToChangelogFile: true
+  - include:
+      file: changes/034-growth-and-loyalty.sql
+      relativeToChangelogFile: true
