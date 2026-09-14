@@ -20,8 +20,8 @@ The repository is the backend of a room-booking platform. The Java application c
 The database contains much more than that. Migrations `012`-`034` built the full target
 marketplace schema -- supply, inventory, pricing, booking, payment, ledger, cancellation,
 messaging, stay operations, reviews, trust and safety, disputes, discovery, analytics, machine
-learning, governance, host operations, and growth -- 423 tables, 421 of which have a Spring Data
-JDBC aggregate and repository. None of it has a service or an HTTP endpoint. Do not assume that a
+learning, governance, host operations, and growth -- 423 tables, each with a Spring Data JDBC
+aggregate and repository. None of it has a service or an HTTP endpoint. Do not assume that a
 table means a target capability is complete; section 11 explains what the schema does and does
 not prove.
 
@@ -703,10 +703,16 @@ note before the SQL; the SQL is long and the note says what matters.
 ### What the schema does not mean
 
 The schema is complete; the application is not. Only identity, authentication, and host onboarding
-have services behind them. In particular, migration `014` created the target identity model but the
-running code still reads and writes `users`, `user_roles`, `host_profiles`, and `auth_tokens` -- its
-backfill changeset has never been exercised against real rows. See
-`docs/data-model/README.md` for the current state of that cutover before touching identity code.
+have services behind them.
+
+The one place this matters before you write any code is identity. Migration `014` created
+`account_holders` beside `users` rather than replacing it, and the running code still uses
+`users`, `user_roles`, `host_profiles`, and `auth_tokens`. The rest of the schema does not: 223
+foreign keys point at `account_holders` and 13 at `users`. An account registered today can log
+in and do nothing else, because nothing else has a row to reference. Which of the two becomes
+the root of identity is an open decision, recorded in `docs/data-model/README.md`; read it
+before touching identity code, and do not assume `users` is the answer just because it is what
+the current services use.
 
 Important data conventions are documented in `docs/data-model/README.md`: money uses integer minor
 units, stay ranges are half-open, timestamps use timezone-aware values, and deletion is normally

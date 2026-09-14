@@ -162,12 +162,21 @@ Counted against a database with `000`-`034` applied:
 | Deferrable constraints | 31 |
 | Project-owned `plpgsql` functions | 177 |
 | Triggers | 299 |
-| Spring Data JDBC aggregates and their repositories | 421 each |
-| Enums mirroring a `CHECK` vocabulary | 841 |
+| Spring Data JDBC aggregates and their repositories | 423 each |
+| Enums mirroring a `CHECK` vocabulary | 843 |
 
-Two tables carry no Java aggregate: `geo_areas` and `geo_area_names`, created by `010` and
-deliberately reused rather than rebuilt by `017`, whose data-model note explains why the model was
-already correct.
+Every table has an aggregate. `geo_areas` and `geo_area_names` were the last two without one:
+created by `010` and deliberately reused rather than rebuilt by `017`, they fell through the gap
+between "old table" and "new table" and were missed when the `012`-`034` aggregates were written.
+They are not peripheral -- twelve tables across `016`, `017`, `029`, `033` and `034` carry a
+foreign key into `geo_areas`, `properties.geo_area_id` among them -- so until `GeoArea` and
+`GeoAreaName` existed, code could write a `geo_area_id` it had no way to read back.
+
+Two columns remain deliberately unmapped: `geo_areas.center` and `geo_areas.boundary`. Both are
+PostGIS types, both are nullable, and both are written by the catalog import and read through
+spatial predicates such as `ST_DWithin` and `ST_Contains`. `Property` and `PointOfInterest` omit
+their geography columns for the same reason. A mapped field would invite a caller to compare
+positions in Java, where the answer comes out in degrees rather than metres.
 
 ## What the schema does not yet prove
 
@@ -176,13 +185,18 @@ A schema is not a running system, and these three gaps are the ones most easily 
 - **The services are not written.** The application still exposes only identity, authentication and
   host onboarding, across two controllers and fourteen endpoints. Every other table is reachable
   only through its repository.
-- **The `014` identity cutover has not happened.** `014-10-backfill-identity-from-users` is written
-  and applied, but it ran against an empty `users` table, so it has never been exercised against
-  real rows. The running services still read and write `users`, `user_roles`, `host_profiles` and
-  `auth_tokens`; nothing dual-writes `account_holders`, `contact_channels`, `auth_credentials` or
-  `capability_grants`. An account registered today has no row in the target identity model. Steps 3
-  to 5 of the cutover staged in `014`'s file comment - backfill, reconcile, switch reads - remain to
-  be done, and the backfill must be re-run after dual-writing starts.
+- **Which table is the root of identity is still an open decision.** `014` created
+  `account_holders` beside `users` rather than replacing it, and the running services still read and
+  write `users`, `user_roles`, `host_profiles` and `auth_tokens`. The schema has already voted the
+  other way: 223 foreign keys point at `account_holders` and 13 at `users`, eleven of those from
+  `014`/`015`'s own identity tables. So an account registered today can be authenticated and
+  nothing else -- it has no `account_holders` row for the rest of the schema to reference.
+
+  There is no data to migrate. `014-10-backfill-identity-from-users` ran against an empty table and
+  exists for a production cutover this project has never needed, which makes the cheaper option the
+  live one: move authentication onto the target model and retire `users`, rather than dual-write and
+  reconcile. Deferred deliberately while there is only one service; it gets more expensive with the
+  second.
 - **Constraint coverage is not the same as workflow coverage.** The invariants below the tables were
   probed scenario by scenario per migration, but no end-to-end journey has been executed against
   them.

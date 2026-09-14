@@ -58,7 +58,7 @@ document. Migrations `012`-`034` were written against the feature designs and th
 each carries a note in `data-model/` explaining what it makes true. Counted against a database with
 `000`-`034` applied: 35 migration files, 554 changesets, 423 tables, 3552 `CHECK` constraints, 1285
 foreign keys, 16 exclusion constraints, 177 project-owned `plpgsql` functions and 299 triggers,
-with 421 Spring Data JDBC aggregates and 421 repositories over them. D23 introduced no tables of its
+with 423 Spring Data JDBC aggregates and 423 repositories over them. D23 introduced no tables of its
 own, as planned: it rests on the outbox, inbox and audit primitives in `012`.
 
 The listing-centric foundation this section used to describe is gone. Changeset
@@ -78,10 +78,12 @@ workflow that records it.
 Three consequences are worth stating plainly, because a complete-looking schema invites the opposite
 assumption:
 
-- **The `014` identity cutover has not happened.** Its backfill changeset is written and applied but
-  ran against an empty `users` table, so it has never moved a real row. The running code still reads
-  and writes `users`, `user_roles`, `host_profiles` and `auth_tokens`, and nothing dual-writes the
-  target identity tables. An account registered today has no `account_holders` row.
+- **Which table is the root of identity is undecided.** `014` created `account_holders` beside
+  `users` rather than replacing it, and the running code still uses `users`, `user_roles`,
+  `host_profiles` and `auth_tokens`. The schema points the other way: 223 foreign keys target
+  `account_holders`, 13 target `users`. An account registered today has no `account_holders`
+  row, so it can authenticate and take part in no other domain. There is no data to migrate,
+  which makes this a design decision rather than a cutover.
 - **Constraints were probed, journeys were not.** Each migration's invariants were exercised
   scenario by scenario against a live database, but no end-to-end booking, payment, or settlement
   flow has been run.
@@ -184,8 +186,17 @@ breadth for Vietnam, but it may not downgrade a required domain invariant, recov
 journey.
 
 D17 is schema-complete ahead of its classification: migration `034` built it because full target
-scope was requested. Its classification as a designed extension is unchanged -- the release gate
-does not wait on it.
+scope was requested. The classification is unchanged, and the reason it can stay unchanged is
+that the dependency runs one way, and measurably so: the 28 tables of migration `034` carry 66
+foreign keys into 21 tables owned by other domains -- `account_holders` (16), `bookings` (7),
+`markets` (6), `communication_consents` (5), `ledger_transactions` (5), `notification_intents`
+(5), `quotes` (3), and others -- while no table outside `034` carries a single foreign key back
+into them.
+So the whole of D17 can be left unbuilt without any required domain losing an invariant, while
+the reverse is not true: a referral cannot qualify before bookings exist, credit cannot be
+granted before the ledger does, and a campaign cannot contact anyone before consent does.
+Neither reading of the schema is safe on its own -- the tables do not make D17 required, and
+the classification does not make them optional to respect once rows exist in them.
 
 ## 4. Platform-wide invariants
 
