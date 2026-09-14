@@ -75,4 +75,13 @@ public class AuthCredential {
     public boolean isActive() {
         return disabledAt == null;
     }
+
+    /**
+     * Disables the credential, recording when it stopped being usable.
+     *
+     * @param instant the command's decision instant
+     */
+    public void disable(Instant instant) {
+        this.disabledAt = instant;
+    }
 }

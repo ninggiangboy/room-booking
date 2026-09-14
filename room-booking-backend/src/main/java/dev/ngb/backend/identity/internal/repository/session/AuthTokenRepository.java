@@ -100,4 +100,24 @@ public interface AuthTokenRepository extends ListCrudRepository<AuthToken, UUID>
             UUID userId,
             AuthTokenType type,
             Instant earliestCreatedAt);
+
+    /**
+     * Finds every token issued under one session, for session-wide revocation.
+     *
+     * <p>Spring derives {@code WHERE session_id = ?}.</p>
+     *
+     * @param sessionId owning session
+     * @return possibly empty list of tokens issued under that session
+     */
+    List<AuthToken> findAllBySessionId(UUID sessionId);
+
+    /**
+     * Finds every unconsumed token under one session, for session-wide revocation.
+     *
+     * <p>Spring derives {@code WHERE session_id = ? AND consumed_at IS NULL}.</p>
+     *
+     * @param sessionId owning session
+     * @return possibly empty list of unconsumed tokens issued under that session
+     */
+    List<AuthToken> findAllBySessionIdAndConsumedAtIsNull(UUID sessionId);
 }

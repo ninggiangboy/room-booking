@@ -75,4 +75,19 @@ public class ContactChannel {
     public boolean isVerified() {
         return verifiedAt != null;
     }
+
+    /**
+     * Marks the channel verified, recording how it was proven.
+     *
+     * <p>The instant and method are set together, the same discipline {@link
+     * dev.ngb.backend.identity.internal.model.session.AuthToken#consume} uses, so a caller cannot
+     * record a verification instant without saying how it was proven.</p>
+     *
+     * @param instant the command's decision instant
+     * @param method stable label for how control was proven
+     */
+    public void markVerified(Instant instant, String method) {
+        this.verifiedAt = instant;
+        this.verificationMethod = method;
+    }
 }

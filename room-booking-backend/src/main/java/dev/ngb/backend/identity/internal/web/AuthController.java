@@ -20,8 +20,8 @@ import java.util.UUID;
 
 import dev.ngb.backend.config.ApiErrorResponse;
 import dev.ngb.backend.identity.internal.service.auth.AuthenticationService;
-import dev.ngb.backend.identity.internal.service.auth.EmailVerificationService;
-import dev.ngb.backend.identity.internal.service.auth.PasswordResetService;
+import dev.ngb.backend.identity.internal.service.auth.verification.EmailVerificationService;
+import dev.ngb.backend.identity.internal.service.auth.passwordreset.PasswordResetService;
 
 
 

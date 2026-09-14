@@ -42,8 +42,6 @@ public class User {
     private String email;
     /** Optional phone number reserved for phone identity features. */
     private @Nullable String phoneNumber;
-    /** One-way encoded password; raw passwords must never be assigned here. */
-    private String passwordHash;
     /** Public name shown to other users. */
     private String displayName;
     /** Optional location of the user's avatar. */
@@ -51,10 +49,6 @@ public class User {
     /** Soft lifecycle state; deleted accounts remain for historical references. */
     @Builder.Default
     private UserStatus status = UserStatus.ACTIVE;
-    /** UTC instant of successful email verification, or {@code null}. */
-    private @Nullable Instant emailVerifiedAt;
-    /** UTC instant of successful phone verification, or {@code null}. */
-    private @Nullable Instant phoneVerifiedAt;
     /** Creation time maintained by Spring Data JDBC auditing. */
     @CreatedDate
     private Instant createdAt;

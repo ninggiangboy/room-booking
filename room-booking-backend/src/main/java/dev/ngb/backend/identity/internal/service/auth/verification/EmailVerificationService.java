@@ -1,17 +1,23 @@
-package dev.ngb.backend.identity.internal.service.auth;
+package dev.ngb.backend.identity.internal.service.auth.verification;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import dev.ngb.backend.identity.internal.model.account.AccountHolder;
+import dev.ngb.backend.identity.internal.model.account.AccountHolderType;
+import dev.ngb.backend.identity.internal.model.account.ContactChannel;
+import dev.ngb.backend.identity.internal.model.account.ContactChannelType;
 import dev.ngb.backend.identity.internal.model.session.AuthToken;
 import dev.ngb.backend.identity.internal.model.session.AuthTokenType;
 import dev.ngb.backend.identity.internal.model.session.TokenConsumptionReason;
 import dev.ngb.backend.identity.internal.model.account.User;
+import dev.ngb.backend.identity.internal.repository.account.AccountHolderRepository;
+import dev.ngb.backend.identity.internal.repository.account.ContactChannelRepository;
 import dev.ngb.backend.identity.internal.repository.session.AuthTokenRepository;
-import dev.ngb.backend.identity.internal.repository.account.UserRepository;
 import dev.ngb.backend.identity.internal.repository.capability.UserRoleRepository;
+import dev.ngb.backend.identity.internal.service.auth.AuthTokenFactory;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,8 +49,11 @@ import dev.ngb.backend.platform.util.HashUtils;
 @RequiredArgsConstructor
 public class EmailVerificationService {
 
+    private static final String VERIFICATION_METHOD = "EMAIL_TOKEN";
+
     private final AuthTokenRepository authTokenRepository;
-    private final UserRepository userRepository;
+    private final ContactChannelRepository contactChannelRepository;
+    private final AccountHolderRepository accountHolderRepository;
     private final UserRoleRepository userRoleRepository;
     private final AuthTokenFactory authTokenFactory;
     private final UserFinder userFinder;
@@ -77,8 +86,8 @@ public class EmailVerificationService {
         }
     }
 
-    private void issue(User user) {
-        if (user.getEmailVerifiedAt() != null) {
+    private void issue(User user, ContactChannel emailChannel) {
+        if (emailChannel.isVerified()) {
             throw new EmailAlreadyVerifiedException(user);
         }
 
@@ -114,8 +123,12 @@ public class EmailVerificationService {
     @Transactional
     public void requestVerification(UUID userId) {
         User user = userFinder.findActiveByIdForUpdate(userId);
+        ContactChannel emailChannel = contactChannelRepository
+                .findCurrentPrimary(userId, ContactChannelType.EMAIL.name())
+                .orElseThrow(() -> new IllegalStateException(
+                        "registration must create a primary email channel"));
         enforceRequestLimits(userId);
-        issue(user);
+        issue(user, emailChannel);
     }
 
     /**
@@ -130,13 +143,21 @@ public class EmailVerificationService {
         UUID userId = consume(request.token());
         User user = userFinder.findActiveById(userId);
 
-        if (user.getEmailVerifiedAt() == null) {
-            Instant now = clock.instant();
-            user.setEmailVerifiedAt(now);
-            user = userRepository.save(user);
+        ContactChannel emailChannel = contactChannelRepository
+                .findCurrentPrimary(userId, ContactChannelType.EMAIL.name())
+                .orElseThrow(() -> new IllegalStateException(
+                        "registration must create a primary email channel"));
+        if (!emailChannel.isVerified()) {
+            emailChannel.markVerified(clock.instant(), VERIFICATION_METHOD);
+            emailChannel = contactChannelRepository.save(emailChannel);
         }
 
-        return UserResponse.from(user, userRoleRepository.findRolesByUserId(userId));
+        UUID accountHolderId = accountHolderRepository
+                .findByUserIdAndHolderType(userId, AccountHolderType.PERSON)
+                .map(AccountHolder::getId)
+                .orElse(null);
+        return UserResponse.from(
+                user, emailChannel, accountHolderId, userRoleRepository.findRolesByUserId(userId));
     }
 
     private UUID consume(String rawToken) {

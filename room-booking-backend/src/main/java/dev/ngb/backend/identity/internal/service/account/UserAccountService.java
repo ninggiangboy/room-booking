@@ -4,13 +4,25 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import dev.ngb.backend.identity.internal.model.account.AccountHolder;
+import dev.ngb.backend.identity.internal.model.account.AccountHolderStatus;
+import dev.ngb.backend.identity.internal.model.account.AccountHolderType;
+import dev.ngb.backend.identity.internal.model.account.ContactChannel;
+import dev.ngb.backend.identity.internal.model.account.ContactChannelType;
+import dev.ngb.backend.identity.internal.model.credential.AuthCredential;
+import dev.ngb.backend.identity.internal.model.credential.CredentialType;
 import dev.ngb.backend.identity.internal.model.session.AuthToken;
 import dev.ngb.backend.identity.internal.model.session.TokenConsumptionReason;
 import dev.ngb.backend.identity.internal.model.account.User;
 import dev.ngb.backend.identity.internal.model.account.UserStatus;
+import dev.ngb.backend.identity.internal.repository.account.AccountHolderRepository;
+import dev.ngb.backend.identity.internal.repository.account.ContactChannelRepository;
+import dev.ngb.backend.identity.internal.repository.credential.AuthCredentialRepository;
 import dev.ngb.backend.identity.internal.repository.session.AuthTokenRepository;
 import dev.ngb.backend.identity.internal.repository.account.UserRepository;
 import dev.ngb.backend.identity.internal.repository.capability.UserRoleRepository;
+import dev.ngb.backend.identity.internal.service.auth.passwordreset.PasswordCredentialRotator;
+import dev.ngb.backend.identity.internal.service.auth.session.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -39,7 +51,12 @@ public class UserAccountService {
 
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
+    private final AccountHolderRepository accountHolderRepository;
+    private final ContactChannelRepository contactChannelRepository;
+    private final AuthCredentialRepository authCredentialRepository;
     private final AuthTokenRepository authTokenRepository;
+    private final PasswordCredentialRotator passwordCredentialRotator;
+    private final RefreshTokenService refreshTokenService;
     private final UserFinder userFinder;
     private final PasswordEncoder passwordEncoder;
     private final PasswordPolicy passwordPolicy;
@@ -57,7 +74,15 @@ public class UserAccountService {
     @Transactional(readOnly = true)
     public UserResponse getUser(UUID userId) {
         User user = userFinder.findById(userId);
-        return UserResponse.from(user, userRoleRepository.findRolesByUserId(userId));
+        ContactChannel emailChannel = contactChannelRepository
+                .findCurrentPrimary(userId, ContactChannelType.EMAIL.name())
+                .orElse(null);
+        UUID accountHolderId = accountHolderRepository
+                .findByUserIdAndHolderType(userId, AccountHolderType.PERSON)
+                .map(AccountHolder::getId)
+                .orElse(null);
+        return UserResponse.from(
+                user, emailChannel, accountHolderId, userRoleRepository.findRolesByUserId(userId));
     }
 
     /**
@@ -73,7 +98,7 @@ public class UserAccountService {
     }
 
     /**
-     * Verifies the old password and persists a newly encoded, different password.
+     * Verifies the old password and enrolls a newly encoded, different password.
      *
      * @param userId authenticated account identifier
      * @param request current and replacement raw passwords
@@ -84,15 +109,22 @@ public class UserAccountService {
     public void changePassword(UUID userId, ChangePasswordRequest request) {
         passwordPolicy.validate("newPassword", request.newPassword());
 
-        User user = userFinder.findActiveById(userId);
-        validatePasswordChange(request.currentPassword(), request.newPassword(), user.getPasswordHash());
+        userFinder.findActiveById(userId);
+        AuthCredential currentCredential = authCredentialRepository
+                .findActive(userId, CredentialType.PASSWORD.name())
+                .orElseThrow(InvalidCredentialsException::new);
+        validatePasswordChange(
+                request.currentPassword(), request.newPassword(), currentCredential.getVerifierDigest());
 
-        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
-        userRepository.save(user);
+        PasswordCredentialRotator.Rotation rotation = passwordCredentialRotator.rotate(
+                currentCredential, request.newPassword(), clock.instant());
+        authCredentialRepository.save(rotation.disabledOld());
+        authCredentialRepository.save(rotation.enrolledNew());
     }
 
     /**
-     * Soft-deletes the authenticated account and revokes all outstanding opaque tokens.
+     * Soft-deletes the authenticated account, closes its account holder, and revokes every
+     * outstanding session and opaque token.
      *
      * @param userId authenticated account identifier
      */
@@ -105,11 +137,11 @@ public class UserAccountService {
     private void validatePasswordChange(
             String currentPassword,
             String newPassword,
-            String passwordHash) {
-        if (!passwordEncoder.matches(currentPassword, passwordHash)) {
+            String verifierDigest) {
+        if (!passwordEncoder.matches(currentPassword, verifierDigest)) {
             throw new InvalidCredentialsException();
         }
-        if (passwordEncoder.matches(newPassword, passwordHash)) {
+        if (passwordEncoder.matches(newPassword, verifierDigest)) {
             throw new ValidationException(
                     "newPassword",
                     "new password must be different from current password");
@@ -123,7 +155,17 @@ public class UserAccountService {
         Instant now = clock.instant();
         user.setStatus(status);
         userRepository.save(user);
+
+        if (status == UserStatus.DELETED) {
+            accountHolderRepository.findByUserIdAndHolderType(user.getId(), AccountHolderType.PERSON)
+                    .filter(holder -> holder.getStatus() != AccountHolderStatus.CLOSED)
+                    .ifPresent(holder -> {
+                        holder.setStatus(AccountHolderStatus.CLOSED);
+                        accountHolderRepository.save(holder);
+                    });
+        }
         if (status != UserStatus.ACTIVE) {
+            refreshTokenService.revokeAllSessionsForUser(user.getId(), now, "ACCOUNT_DELETED");
             revokeOutstandingTokens(user.getId(), now);
         }
     }

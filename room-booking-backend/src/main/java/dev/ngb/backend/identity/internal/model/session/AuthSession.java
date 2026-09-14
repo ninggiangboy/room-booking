@@ -93,4 +93,17 @@ public class AuthSession {
                 && idleExpiresAt.isAfter(instant)
                 && absoluteExpiresAt.isAfter(instant);
     }
+
+    /**
+     * Revokes the session, recording why and, when known, who revoked it.
+     *
+     * @param instant the command's decision instant
+     * @param reason stable reason for the revocation
+     * @param revokedBy principal that revoked the session, or {@code null} when the owner did
+     */
+    public void revoke(Instant instant, String reason, @Nullable UUID revokedBy) {
+        this.revokedAt = instant;
+        this.revocationReason = reason;
+        this.revokedBy = revokedBy;
+    }
 }

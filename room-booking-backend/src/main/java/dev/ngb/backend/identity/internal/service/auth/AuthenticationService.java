@@ -1,11 +1,25 @@
 package dev.ngb.backend.identity.internal.service.auth;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import dev.ngb.backend.identity.internal.model.Role;
+import dev.ngb.backend.identity.internal.model.account.AccountHolder;
+import dev.ngb.backend.identity.internal.model.account.AccountHolderType;
+import dev.ngb.backend.identity.internal.model.account.ContactChannel;
+import dev.ngb.backend.identity.internal.model.account.ContactChannelType;
 import dev.ngb.backend.identity.internal.model.account.User;
+import dev.ngb.backend.identity.internal.model.credential.AuthCredential;
+import dev.ngb.backend.identity.internal.model.credential.CredentialType;
+import dev.ngb.backend.identity.internal.model.session.AuthenticationMethod;
+import dev.ngb.backend.identity.internal.repository.account.AccountHolderRepository;
+import dev.ngb.backend.identity.internal.repository.account.ContactChannelRepository;
 import dev.ngb.backend.identity.internal.repository.account.UserRepository;
 import dev.ngb.backend.identity.internal.repository.capability.UserRoleRepository;
+import dev.ngb.backend.identity.internal.repository.credential.AuthCredentialRepository;
+import dev.ngb.backend.identity.internal.service.auth.session.RefreshTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import dev.ngb.backend.identity.AccessTokenService;
 import dev.ngb.backend.identity.internal.exception.EmailAlreadyRegisteredException;
 import dev.ngb.backend.identity.internal.exception.InvalidCredentialsException;
+import dev.ngb.backend.identity.internal.exception.InvalidRefreshTokenException;
 import dev.ngb.backend.identity.internal.exception.UserAccountDisabledException;
 import dev.ngb.backend.identity.internal.service.user.UserFinder;
 import dev.ngb.backend.identity.internal.service.validation.PasswordPolicy;
@@ -24,6 +39,7 @@ import dev.ngb.backend.identity.internal.web.LogoutRequest;
 import dev.ngb.backend.identity.internal.web.RefreshTokenRequest;
 import dev.ngb.backend.identity.internal.web.RegisterRequest;
 import dev.ngb.backend.identity.internal.web.UserResponse;
+import dev.ngb.backend.platform.AssuranceLevel;
 import dev.ngb.backend.platform.util.StringUtils;
 
 
@@ -40,12 +56,16 @@ public class AuthenticationService {
 
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
+    private final AccountHolderRepository accountHolderRepository;
+    private final ContactChannelRepository contactChannelRepository;
+    private final AuthCredentialRepository authCredentialRepository;
     private final PasswordEncoder passwordEncoder;
     private final AccessTokenService accessTokenService;
     private final RefreshTokenService refreshTokenService;
     private final PasswordPolicy passwordPolicy;
     private final UserFinder userFinder;
     private final UserRegistrationFactory userRegistrationFactory;
+    private final Clock clock;
 
     /**
      * Validates credentials and issues a fresh access/refresh token pair.
@@ -66,28 +86,44 @@ public class AuthenticationService {
         User user = userFinder.findActiveByEmail(
                 normalizedEmail, InvalidCredentialsException::new);
 
-        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+        AuthCredential credential = authCredentialRepository
+                .findActive(user.getId(), CredentialType.PASSWORD.name())
+                .orElseThrow(InvalidCredentialsException::new);
+        if (!passwordEncoder.matches(request.password(), credential.getVerifierDigest())) {
             throw new InvalidCredentialsException();
         }
-        return createAuthResponse(user, userRoleRepository.findRolesByUserId(user.getId()));
+
+        return createAuthResponse(
+                user, userRoleRepository.findRolesByUserId(user.getId()),
+                AuthenticationMethod.PASSWORD, AssuranceLevel.AAL1);
     }
 
     /**
-     * Consumes a one-time refresh token and rotates it into a new token pair.
+     * Consumes a refresh token and rotates it into a new token pair.
      *
      * @param request DTO containing the raw refresh token
      * @return replacement access token, refresh token, and user projection
-     * @throws dev.ngb.backend.identity.internal.exception.InvalidRefreshTokenException when the token is unusable
+     * @throws InvalidRefreshTokenException when the token is unusable, or reuse is detected
      */
     @Transactional
     public AuthResponse refresh(RefreshTokenRequest request) {
-        var userId = refreshTokenService.consume(request.refreshToken());
-        User user = userFinder.findActiveById(userId, InvalidCredentialsException::new);
-        return createAuthResponse(user, userRoleRepository.findRolesByUserId(userId));
+        RefreshTokenService.Rotated rotated = refreshTokenService.consume(request.refreshToken());
+        if (rotated.rawRefreshToken() == null) {
+            // The presented token predates sessions and cannot be rotated into a session-backed
+            // successor; the caller must log in again to obtain one.
+            throw new InvalidRefreshTokenException();
+        }
+
+        User user = userFinder.findActiveById(rotated.userId(), InvalidCredentialsException::new);
+        List<Role> roles = userRoleRepository.findRolesByUserId(user.getId());
+        String accessToken = accessTokenService.generateAccessToken(
+                user.getId(), accessTokenClaims(user, roles));
+        return new AuthResponse(
+                accessToken, rotated.rawRefreshToken(), buildUserResponse(user, roles));
     }
 
     /**
-     * Revokes a refresh token if it exists and has not already been consumed.
+     * Revokes a refresh token's session if it exists and has not already been revoked.
      *
      * @param request DTO identifying the session token to revoke
      */
@@ -117,11 +153,14 @@ public class AuthenticationService {
             throw new EmailAlreadyRegisteredException(normalizedEmail);
         }
 
-        UserRegistrationFactory.NewUser newUser = userRegistrationFactory.create(
+        Instant issuedAt = clock.instant();
+        UserRegistrationFactory.NewAccount newAccount = userRegistrationFactory.create(
+                request.email(),
                 normalizedEmail,
                 request.password(),
-                normalizedDisplayName);
-        User user = newUser.user();
+                normalizedDisplayName,
+                issuedAt);
+        User user = newAccount.user();
 
         try {
             user = userRepository.save(user);
@@ -130,22 +169,50 @@ public class AuthenticationService {
             throw new EmailAlreadyRegisteredException(normalizedEmail, exception);
         }
 
+        accountHolderRepository.save(newAccount.accountHolder());
+        ContactChannel emailChannel = contactChannelRepository.save(newAccount.emailChannel());
+        authCredentialRepository.save(newAccount.passwordCredential());
+
         // Reuse the user's audited createdAt as the role's grant instant so both rows share
         // registration's single decision instant instead of a second, later clock read.
         userRoleRepository.grantRole(
                 user.getId(),
-                newUser.initialRole().getId().getRole().name(),
+                newAccount.initialRole().getId().getRole().name(),
                 user.getCreatedAt());
-        return createAuthResponse(user, List.of(Role.GUEST));
+
+        List<Role> roles = List.of(Role.GUEST);
+        String accessToken = accessTokenService.generateAccessToken(
+                user.getId(), accessTokenClaims(user, roles));
+        String refreshToken = refreshTokenService.issue(
+                user, AuthenticationMethod.PASSWORD, AssuranceLevel.AAL1);
+        UserResponse userResponse = UserResponse.from(
+                user, emailChannel, newAccount.accountHolder().getId(), roles);
+        return new AuthResponse(accessToken, refreshToken, userResponse);
     }
 
-    private AuthResponse createAuthResponse(User user, List<Role> roles) {
-        // Access tokens are signed JWTs; refresh tokens are opaque and stored only as hashes.
+    private AuthResponse createAuthResponse(
+            User user, List<Role> roles, AuthenticationMethod method, AssuranceLevel assuranceLevel) {
+        String accessToken = accessTokenService.generateAccessToken(
+                user.getId(), accessTokenClaims(user, roles));
+        // Refresh tokens are opaque, session-backed, and stored only as hashes.
+        String refreshToken = refreshTokenService.issue(user, method, assuranceLevel);
+        return new AuthResponse(accessToken, refreshToken, buildUserResponse(user, roles));
+    }
+
+    private Map<String, ?> accessTokenClaims(User user, List<Role> roles) {
         List<String> roleNames = roles.stream().map(Role::name).toList();
-        Map<String, ?> claims = Map.of("email", user.getEmail(), "roles", roleNames);
-        String accessToken = accessTokenService.generateAccessToken(user.getId(), claims);
-        String refreshToken = refreshTokenService.issue(user);
-        return new AuthResponse(accessToken, refreshToken, UserResponse.from(user, roles));
+        return Map.of("email", user.getEmail(), "roles", roleNames);
+    }
+
+    private UserResponse buildUserResponse(User user, List<Role> roles) {
+        ContactChannel emailChannel = contactChannelRepository
+                .findCurrentPrimary(user.getId(), ContactChannelType.EMAIL.name())
+                .orElse(null);
+        UUID accountHolderId = accountHolderRepository
+                .findByUserIdAndHolderType(user.getId(), AccountHolderType.PERSON)
+                .map(AccountHolder::getId)
+                .orElse(null);
+        return UserResponse.from(user, emailChannel, accountHolderId, roles);
     }
 
 }

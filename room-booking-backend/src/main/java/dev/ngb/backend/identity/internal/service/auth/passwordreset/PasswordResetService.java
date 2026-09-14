@@ -1,12 +1,17 @@
-package dev.ngb.backend.identity.internal.service.auth;
+package dev.ngb.backend.identity.internal.service.auth.passwordreset;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import dev.ngb.backend.identity.internal.model.account.ContactChannelType;
+import dev.ngb.backend.identity.internal.model.credential.AuthCredential;
+import dev.ngb.backend.identity.internal.model.credential.CredentialType;
 import dev.ngb.backend.identity.internal.model.session.AuthToken;
 import dev.ngb.backend.identity.internal.model.session.AuthTokenType;
 import dev.ngb.backend.identity.internal.model.session.TokenConsumptionReason;
 import dev.ngb.backend.identity.internal.model.account.User;
+import dev.ngb.backend.identity.internal.repository.account.ContactChannelRepository;
+import dev.ngb.backend.identity.internal.repository.credential.AuthCredentialRepository;
 import dev.ngb.backend.identity.internal.repository.session.AuthTokenRepository;
 import dev.ngb.backend.identity.internal.repository.account.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import dev.ngb.backend.identity.PasswordResetIssued;
 import dev.ngb.backend.identity.internal.exception.InvalidPasswordResetTokenException;
+import dev.ngb.backend.identity.internal.service.auth.AuthTokenFactory;
+import dev.ngb.backend.identity.internal.service.auth.session.RefreshTokenService;
 import dev.ngb.backend.identity.internal.service.user.UserFinder;
 import dev.ngb.backend.identity.internal.service.validation.PasswordPolicy;
 import dev.ngb.backend.identity.internal.web.ForgotPasswordRequest;
@@ -32,14 +39,21 @@ import dev.ngb.backend.platform.util.StringUtils;
  *
  * <p>{@code @Service} registers the workflow. An explicit constructor validates the
  * {@code @Value}-injected TTL and makes every dependency mandatory. Public methods use
- * {@code @Transactional} so token/user changes either commit together or roll back together.</p>
+ * {@code @Transactional} so token/credential/session changes either commit together or roll back
+ * together.</p>
  */
 @Service
 public class PasswordResetService {
 
+    private static final String EMAIL_VERIFICATION_METHOD = "PASSWORD_RESET_POSSESSION";
+
     private final AuthTokenRepository authTokenRepository;
     private final AuthTokenFactory authTokenFactory;
     private final UserRepository userRepository;
+    private final AuthCredentialRepository authCredentialRepository;
+    private final ContactChannelRepository contactChannelRepository;
+    private final PasswordCredentialRotator passwordCredentialRotator;
+    private final RefreshTokenService refreshTokenService;
     private final UserFinder userFinder;
     private final PasswordEncoder passwordEncoder;
     private final PasswordPolicy passwordPolicy;
@@ -50,9 +64,13 @@ public class PasswordResetService {
     /**
      * Creates a password-reset workflow with a validated token lifetime.
      *
-     * @param authTokenRepository persistence gateway for reset and refresh tokens
+     * @param authTokenRepository persistence gateway for reset tokens
      * @param authTokenFactory builder of token records and their raw secrets
      * @param userRepository persistence gateway for accounts
+     * @param authCredentialRepository persistence gateway for password credentials
+     * @param contactChannelRepository persistence gateway for contact channels
+     * @param passwordCredentialRotator builder of the disabled-old/enrolled-new credential pair
+     * @param refreshTokenService revokes outstanding sessions after a credential recovery
      * @param userFinder shared user lookup and account-status gateway
      * @param passwordEncoder verifies and hashes passwords
      * @param passwordPolicy enforces password strength and BCrypt limits
@@ -64,6 +82,10 @@ public class PasswordResetService {
             AuthTokenRepository authTokenRepository,
             AuthTokenFactory authTokenFactory,
             UserRepository userRepository,
+            AuthCredentialRepository authCredentialRepository,
+            ContactChannelRepository contactChannelRepository,
+            PasswordCredentialRotator passwordCredentialRotator,
+            RefreshTokenService refreshTokenService,
             UserFinder userFinder,
             PasswordEncoder passwordEncoder,
             PasswordPolicy passwordPolicy,
@@ -73,6 +95,10 @@ public class PasswordResetService {
         this.authTokenRepository = authTokenRepository;
         this.authTokenFactory = authTokenFactory;
         this.userRepository = userRepository;
+        this.authCredentialRepository = authCredentialRepository;
+        this.contactChannelRepository = contactChannelRepository;
+        this.passwordCredentialRotator = passwordCredentialRotator;
+        this.refreshTokenService = refreshTokenService;
         this.userFinder = userFinder;
         this.passwordEncoder = passwordEncoder;
         this.passwordPolicy = passwordPolicy;
@@ -97,9 +123,9 @@ public class PasswordResetService {
 
     /**
      * Replaces the password, confirms control of the email address, consumes the reset token, and
-     * revokes every active refresh token.
+     * revokes every live session.
      *
-     * <p>Revoking refresh tokens signs the user out of existing renewable sessions after a
+     * <p>Revoking sessions signs the user out of every existing renewable session after a
      * credential recovery. Existing short-lived JWT access tokens naturally expire.</p>
      *
      * @param request one-time reset token and proposed new raw password
@@ -121,7 +147,10 @@ public class PasswordResetService {
         User user = userRepository.findById(resetToken.getUserId())
                 .filter(User::isActive)
                 .orElseThrow(InvalidPasswordResetTokenException::new);
-        if (passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
+        AuthCredential currentCredential = authCredentialRepository
+                .findActive(user.getId(), CredentialType.PASSWORD.name())
+                .orElseThrow(InvalidPasswordResetTokenException::new);
+        if (passwordEncoder.matches(request.newPassword(), currentCredential.getVerifierDigest())) {
             throw new ValidationException(
                     "newPassword", "new password must be different from current password");
         }
@@ -129,18 +158,22 @@ public class PasswordResetService {
         resetToken.consume(now, TokenConsumptionReason.USED);
         authTokenRepository.save(resetToken);
 
-        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
-        if (user.getEmailVerifiedAt() == null) {
-            user.setEmailVerifiedAt(now);
-        }
-        userRepository.save(user);
+        PasswordCredentialRotator.Rotation rotation = passwordCredentialRotator.rotate(
+                currentCredential, request.newPassword(), now);
+        authCredentialRepository.save(rotation.disabledOld());
+        authCredentialRepository.save(rotation.enrolledNew());
 
-        authTokenRepository.findAllByUserIdAndTypeAndConsumedAtIsNull(
-                        user.getId(), AuthTokenType.REFRESH_TOKEN)
-                .forEach(token -> {
-                    token.consume(now, TokenConsumptionReason.REVOKED);
-                    authTokenRepository.save(token);
+        // Possessing the reset link proves control of the email address, the same way an explicit
+        // verification token does.
+        contactChannelRepository
+                .findCurrentPrimary(user.getId(), ContactChannelType.EMAIL.name())
+                .filter(channel -> !channel.isVerified())
+                .ifPresent(channel -> {
+                    channel.markVerified(now, EMAIL_VERIFICATION_METHOD);
+                    contactChannelRepository.save(channel);
                 });
+
+        refreshTokenService.revokeAllSessionsForUser(user.getId(), now, "PASSWORD_RESET");
     }
 
     private void issue(User user) {

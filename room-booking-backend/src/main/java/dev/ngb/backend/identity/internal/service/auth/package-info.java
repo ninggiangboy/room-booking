@@ -1,10 +1,13 @@
 /**
- * Authentication, JWT, refresh-token, registration, email-verification, and password-recovery
- * workflows.
+ * Registration and credential-login orchestration, and the token-construction factory shared by
+ * this package's three workflow subpackages.
  *
- * <p>Package-private methods and classes intentionally limit sensitive token operations to trusted
- * collaborators in this package: {@code AuthTokenFactory} and {@code UserRegistrationFactory} are
- * package-private, so a raw token secret or a partially constructed user can never escape here.</p>
+ * <p>{@code auth.session} (refresh-token rotation and reuse detection), {@code auth.verification}
+ * (email verification), and {@code auth.passwordreset} (password reset) each own one live
+ * workflow. {@code AuthTokenFactory} lives here, one level up from all three, because every one of
+ * them needs to build a token row; it is {@code public} for that reason. {@code
+ * UserRegistrationFactory} stays package-private: only {@link AuthenticationService}, in this same
+ * package, ever constructs a new account.</p>
  */
 @org.jspecify.annotations.NullMarked
 package dev.ngb.backend.identity.internal.service.auth;

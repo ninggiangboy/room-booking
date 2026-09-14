@@ -54,7 +54,7 @@ public class HostOnboardingService {
         userRoleRepository.grantRole(userId, Role.HOST.name(), now);
         List<Role> roles = userRoleRepository.findRolesByUserId(userId);
         return new HostOnboardingResponse(
-                UserResponse.from(user, roles),
+                UserResponse.from(user, null, roles),
                 HostProfileResponse.from(profile));
     }
 

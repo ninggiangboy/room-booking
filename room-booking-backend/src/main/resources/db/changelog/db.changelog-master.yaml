@@ -109,3 +109,6 @@ databaseChangeLog:
   - include:
       file: changes/035-event-publication.sql
       relativeToChangelogFile: true
+  - include:
+      file: changes/036-identity-drop-legacy-user-credential-fields.sql
+      relativeToChangelogFile: true
