@@ -3,9 +3,9 @@ package dev.ngb.backend.config;
 import java.sql.SQLException;
 import java.time.Duration;
 
-import dev.ngb.backend.model.BucketRange;
-import dev.ngb.backend.model.JsonDocument;
-import dev.ngb.backend.model.StayRange;
+import dev.ngb.backend.platform.BucketRange;
+import dev.ngb.backend.platform.JsonDocument;
+import dev.ngb.backend.platform.StayRange;
 import org.postgresql.util.PGInterval;
 import org.postgresql.util.PGobject;
 import org.jspecify.annotations.Nullable;
