@@ -1,6 +1,6 @@
 package dev.ngb.backend.config;
 
-import dev.ngb.backend.dto.ApiErrorResponse;
+import dev.ngb.backend.config.ApiErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

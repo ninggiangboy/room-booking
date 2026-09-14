@@ -29,11 +29,19 @@ authorities.
   `screening_checks`, `regulatory_registrations`.
 - **`eligibility` cluster** — `host_eligibility_decisions`, `payout_destination_claims`.
 
-Live code moving here unchanged, per Phase 3 of the migration:
-`service/host/HostOnboardingService` and the package-private `HostProfileFactory`, into
-`hostverification.internal.service.host` — the sub-package is kept exactly as it is today rather
-than flattened, specifically so `HostProfileFactory` stays package-private and does not have to
-widen to `public` just to survive the move.
+Live code moving here per Phase 3 of the migration: `service/host/HostOnboardingService` and
+the package-private `HostProfileFactory`. `HostOnboardingService` is promoted to this module's
+root package, not `internal/service/host` — the same fix `identity`'s `AccessTokenService` needed
+and for the same reason: `identity`'s `UserController` calls `HostOnboardingService.onboard(...)`
+directly today, so leaving it `internal` would make that call a violation the moment real module
+boundaries exist. `HostProfileFactory` moves to this module's root alongside `HostOnboardingService`, not
+`internal/service/host` as first drafted here -- Java package-private visibility is scoped to
+the package, and once `HostOnboardingService` moves to the root package to be reachable from
+`identity`, a factory in a different (`internal`) package is no longer visible to it at all. The
+factory keeps its package-private modifier; only its package changes, from `internal.service.host`
+to the module root, so it stays invisible to every package except this one. `HostOnboardingRequest` and `HostOnboardingResponse` — the parameter and return type of that
+one public method — move with it to this module's root, out of `dto/`, because they are the
+contract of a cross-module call, not a web-layer concern `identity`'s controller owns.
 
 See [`../data-model/015-host-verification.md`](../data-model/015-host-verification.md) and
 [`../features/identity-accounts-and-access.md`](../features/identity-accounts-and-access.md) (host
@@ -55,9 +63,11 @@ is approved here).
 
 ## Public API
 
-`HostOnboardingService`'s public methods are the module's API surface today, in the same shape they
-have now. No `@NamedInterface` or cross-module record type exists yet because no other module
-consumes this module's internals in code today — only `ledger`'s schema references it (see below).
+`HostOnboardingService` (module root, not `internal/`) and its two request/response records,
+`HostOnboardingRequest`/`HostOnboardingResponse`. This is the one method call in the whole
+codebase, as of this migration, that crosses a module boundary in real Java code rather than only
+in the schema — `identity`'s `UserController` calls it directly. No `@NamedInterface` is needed at
+this scale (one method, two DTOs); promoting the whole triple to the module root is sufficient.
 
 ## Allowed dependencies
 
@@ -85,7 +95,8 @@ is left for when either consumer gets its own service.
 
 - All 10 tables and their entities/repositories live under
   `dev.ngb.backend.hostverification.internal.model` / `.repository`, in the three clusters above.
-- `service/host/*` moves into `hostverification.internal.service.host` with `HostProfileFactory`
-  still package-private and `HostOnboardingService` the only public entry point.
+- `service/host/*` moves into `hostverification`, with `HostOnboardingService`, its two DTOs, and
+  `HostProfileFactory` all at the module root -- the factory keeps its package-private modifier,
+  invisible to every other package including this module's own `internal`.
 - `ApplicationModules.verify()` passes with `hostverification`'s only declared dependencies being
   `identity` and `market`.

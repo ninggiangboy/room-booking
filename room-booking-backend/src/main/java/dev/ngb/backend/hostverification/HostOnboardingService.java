@@ -1,0 +1,65 @@
+package dev.ngb.backend.hostverification;
+
+import dev.ngb.backend.identity.internal.model.capability.HostProfile;
+import dev.ngb.backend.identity.internal.model.Role;
+import dev.ngb.backend.identity.internal.model.account.User;
+import dev.ngb.backend.identity.internal.repository.capability.HostProfileRepository;
+import dev.ngb.backend.identity.internal.repository.capability.UserRoleRepository;
+import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
+import dev.ngb.backend.identity.internal.exception.UserNotFoundException;
+import dev.ngb.backend.identity.internal.service.user.UserFinder;
+import dev.ngb.backend.identity.internal.web.HostProfileResponse;
+import dev.ngb.backend.identity.internal.web.UserResponse;
+import dev.ngb.backend.platform.util.StringUtils;
+
+
+/** Owns the single workflow that promotes an active guest account to a host account. */
+@Service
+@RequiredArgsConstructor
+public class HostOnboardingService {
+
+    private final UserRoleRepository userRoleRepository;
+    private final HostProfileRepository hostProfileRepository;
+    private final HostProfileFactory hostProfileFactory;
+    private final UserFinder userFinder;
+    private final Clock clock;
+
+    /**
+     * Creates the caller's host profile and grants {@link Role#HOST} in one transaction.
+     * Repeating the request returns the existing profile and repairs a missing role assignment.
+     *
+     * @param userId authenticated account identifier
+     * @param request optional public profile information
+     * @return account roles and host profile after onboarding
+     * @throws dev.ngb.backend.identity.internal.exception.UserAccountDisabledException when the account is inactive
+     * @throws UserNotFoundException when the account does not exist
+     */
+    @Transactional
+    public HostOnboardingResponse onboard(UUID userId, HostOnboardingRequest request) {
+        User user = userFinder.findActiveByIdForUpdate(userId);
+
+        Instant now = clock.instant();
+        HostProfile profile = hostProfileRepository.findById(userId).orElseGet(() ->
+                hostProfileRepository.save(
+                        hostProfileFactory.create(userId, normalizeOptional(request.bio()))));
+
+        userRoleRepository.grantRole(userId, Role.HOST.name(), now);
+        List<Role> roles = userRoleRepository.findRolesByUserId(userId);
+        return new HostOnboardingResponse(
+                UserResponse.from(user, roles),
+                HostProfileResponse.from(profile));
+    }
+
+    private static @Nullable String normalizeOptional(@Nullable String value) {
+        String normalized = StringUtils.normalize(value);
+        return normalized == null || normalized.isEmpty() ? null : normalized;
+    }
+}
