@@ -4,14 +4,23 @@ import java.util.TimeZone;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
  * Starts the Room Booking backend and anchors component scanning at {@code dev.ngb.backend}.
  *
  * <p>{@code @SpringBootApplication} combines configuration registration, sensible Spring Boot
- * auto-configuration, and component scanning of this package and all descendants.</p>
+ * auto-configuration, and component scanning of this package and all descendants. Every direct
+ * sub-package is a Spring Modulith module; see {@code docs/architecture/modular-monolith.md}.</p>
+ *
+ * <p>{@code @EnableAsync} is required for {@code @ApplicationModuleListener} (the default mechanism
+ * for cross-module, post-commit events): the annotation composes {@code @Async}, and without
+ * asynchronous method execution enabled it silently runs synchronously instead, which would defeat
+ * the isolation it exists to provide. See
+ * {@code docs/architecture/event-publication-registry.md}.</p>
  */
 @SpringBootApplication
+@EnableAsync
 public class RoomBookingBackendApplication {
 
     /**

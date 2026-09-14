@@ -19,6 +19,13 @@ repositories {
     mavenCentral()
 }
 
+// Spring Boot's own dependency-management does not know about Spring Modulith, so its BOM is
+// imported explicitly. 2.1.1 is pinned because its POM declares spring-boot-starter:4.1.1, an exact
+// match for this project; the 2.2 line already targets Boot 4.2 milestones.
+dependencyManagement {
+    imports { mavenBom 'org.springframework.modulith:spring-modulith-bom:2.1.1' }
+}
+
 dependencies {
     // Runtime application capabilities: HTTP, security, persistence, migrations, health, and email.
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
@@ -28,6 +35,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    // Module boundaries, the ArchUnit-backed verification test, and the event publication registry
+    // that backs @ApplicationModuleListener. JDBC (not JPA) because this application already runs
+    // on Spring Data JDBC; it also pulls in spring-modulith-moments, disabled explicitly below.
+    implementation 'org.springframework.modulith:spring-modulith-starter-jdbc'
     // Springdoc generates the OpenAPI contract and serves Swagger UI for the MVC API.
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0'
     implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
@@ -47,6 +58,10 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-liquibase-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    // ApplicationModules, the JUnit support that loads it once, and the Documenter that renders the
+    // verified module graph as C4/PlantUML.
+    testImplementation 'org.springframework.modulith:spring-modulith-starter-test'
+    testImplementation 'org.springframework.modulith:spring-modulith-docs'
     testCompileOnly 'org.projectlombok:lombok'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testAnnotationProcessor 'org.projectlombok:lombok'

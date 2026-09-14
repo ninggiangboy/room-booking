@@ -18,6 +18,18 @@ import org.springframework.web.util.UriComponentsBuilder;
  * logger used when SMTP fails. Constructor {@code @Value} parameters inject separate frontend URLs
  * for verification and reset flows. Package-private visibility keeps this adapter internal to the
  * authentication package.</p>
+ *
+ * <p><b>Deliberately not {@code @ApplicationModuleListener}.</b> That annotation is the default for
+ * an event handled across module boundaries, but it routes the event through Spring Modulith's event
+ * publication registry, which persists the event's serialized payload in the {@code event_publication}
+ * table — indefinitely, under the default {@code completion-mode=update}. Both
+ * {@link EmailVerificationIssued} and {@link PasswordResetIssued} carry a raw, unhashed token, and
+ * every other token in this application is stored as a digest, never as a raw value. Registering
+ * either event with the registry would persist the one raw secret this system otherwise never
+ * writes to a table with no retention policy of its own. These two listeners stay on a bare
+ * {@link TransactionalEventListener}, which only ever holds the event in memory, until the
+ * corresponding tokens can be encrypted at rest (a decision tracked separately, outside this
+ * migration). See {@code docs/architecture/event-publication-registry.md}.</p>
  */
 @Slf4j
 @Component

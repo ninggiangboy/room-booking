@@ -106,3 +106,6 @@ databaseChangeLog:
   - include:
       file: changes/034-growth-and-loyalty.sql
       relativeToChangelogFile: true
+  - include:
+      file: changes/035-event-publication.sql
+      relativeToChangelogFile: true
