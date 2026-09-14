@@ -72,6 +72,11 @@ configuration provenance, and second-market compatibility boundary are documente
 | 004 | Booking | `004-booking.sql` | Superseded: retired by `016`, replaced by `020` booking lifecycle |
 | 005 | Payment | `005-payment.sql` | Superseded: retired by `016`, replaced by `021` payment orchestration |
 | 006 | Trust and engagement | `006-trust-engagement.sql` | Superseded: retired by `016`, replaced by `026` reviews and `029` saved listings |
+| 007 | Email verification | `007-email-verification.sql` | Created `email_verification_tokens`; renamed to `auth_tokens` by `008` |
+| 008 | Authentication tokens | `008-auth-tokens.sql` | One token table carries verification and refresh tokens, keyed by `type` |
+| 009 | Password reset | `009-password-reset.sql` | `PASSWORD_RESET` added to the token-type constraint |
+| 010 | Location search | `010-location-search.sql` | Geographic areas and localized aliases; retained and reused by `017` |
+| 011 | Application-owned timestamps | `011-application-owned-timestamps.sql` | The shared UTC application clock is the only writer of audit timestamps |
 | 012 | Shared platform primitives | `012-platform-primitives.sql` | Commands are retry-safe, facts publish once, audit is append-only |
 | 013 | Market configuration | `013-market-configuration.sql` | Every decision can name the market, entity, and policy version that governed it |
 | 014 | Identity target model | `014-identity-target-model.sql` | Authority is scoped to resources, sessions own token lineage, contacts are verified |
@@ -99,7 +104,9 @@ configuration provenance, and second-market compatibility boundary are documente
 ## Shared conventions
 
 - Target vocabulary separates `property`, `accommodation_type`, optional `physical_unit`, public
-  `listing`, and `rate_plan`. Existing listing-centric tables are historical foundations.
+  `listing`, and `rate_plan`. The listing-centric tables of `002`-`006` no longer exist: changeset
+  `016-01-retire-historical-listing-stack` dropped all twelve of them in one statement group,
+  because their foreign keys would not let them be retired separately.
 - Unique rentals use accommodation-type capacity one; hotel room types use pooled per-date quantity.
 - Stay ranges are half-open: `[check_in, check_out)`. A checkout date can be another booking's check-in date.
 - Stay dates use PostgreSQL `date`; events use `timestamptz`; each listing stores its IANA timezone.
@@ -132,33 +139,56 @@ The critical booking transaction for either inventory mode is:
 Unique rentals retain an exclusion constraint; pooled types use locked per-date counters plus
 database checks preventing sold/held quantity from exceeding capacity.
 
+## Target-release schema coverage
+
+Migrations `012`-`034` delivered the forward migrations this document used to list as outstanding.
+Every domain in [`../marketplace-problem-breakdown.md`](../marketplace-problem-breakdown.md) now has
+a target-state schema representation. D23 (reliability, observability, performance, scale) needed no
+tables of its own: it is satisfied by the outbox, inbox, dead-letter and audit primitives in `012`
+plus runtime configuration.
+
+Counted against a database with `000`-`034` applied:
+
+| Measure | Count |
+| --- | --- |
+| Migration files, all included in `db.changelog-master.yaml` | 35 |
+| Changesets applied | 554 |
+| Tables, excluding Liquibase and PostGIS bookkeeping | 423 |
+| Tables created, then retired by `016` | 435, then 12 |
+| `CHECK` constraints | 3552 |
+| Foreign keys | 1285 |
+| Unique constraints | 330 |
+| Exclusion constraints | 16 |
+| Deferrable constraints | 31 |
+| Project-owned `plpgsql` functions | 177 |
+| Triggers | 299 |
+| Spring Data JDBC aggregates and their repositories | 421 each |
+| Enums mirroring a `CHECK` vocabulary | 841 |
+
+Two tables carry no Java aggregate: `geo_areas` and `geo_area_names`, created by `010` and
+deliberately reused rather than rebuilt by `017`, whose data-model note explains why the model was
+already correct.
+
+## What the schema does not yet prove
+
+A schema is not a running system, and these three gaps are the ones most easily misread:
+
+- **The services are not written.** The application still exposes only identity, authentication and
+  host onboarding, across two controllers and fourteen endpoints. Every other table is reachable
+  only through its repository.
+- **The `014` identity cutover has not happened.** `014-10-backfill-identity-from-users` is written
+  and applied, but it ran against an empty `users` table, so it has never been exercised against
+  real rows. The running services still read and write `users`, `user_roles`, `host_profiles` and
+  `auth_tokens`; nothing dual-writes `account_holders`, `contact_channels`, `auth_credentials` or
+  `capability_grants`. An account registered today has no row in the target identity model. Steps 3
+  to 5 of the cutover staged in `014`'s file comment - backfill, reconcile, switch reads - remain to
+  be done, and the backfill must be re-run after dual-writing starts.
+- **Constraint coverage is not the same as workflow coverage.** The invariants below the tables were
+  probed scenario by scenario per migration, but no end-to-end journey has been executed against
+  them.
+
 ## Deployment rule
 
-Liquibase runs files through `db.changelog-master.yaml`. Never edit an applied changeset; add a new forward migration. Test both an empty-database migration and an upgrade from the latest production snapshot before release.
-
-## Forward migrations required for the target release
-
-- Account holders, organizations and membership, contact channels, durable sessions, credentials,
-  capability grants and scoped restrictions, authentication-attempt evidence, and identity audit,
-  following the target identity design above.
-- Property, accommodation type, physical unit, public listing, rate plan, and both inventory modes.
-- Market-keyed configuration and immutable Vietnam policy/provider/tax/invoice provenance.
-- Messaging, notifications, check-in, access, and stay operations, following the target design above.
-- Trust, safety, fraud prevention, content moderation, risk review, and appeals, following the target
-  design above.
-- Promotion/coupon rules.
-- Host payout ledger and marketplace reconciliation, following the target finance design above.
-- iCal import/export.
-- Disputes, damage claims, protection/insurance integration, and support cases, following the target
-  design above.
-- Review cycles, double-blind publication, exact-revision moderation, rebuildable rating/aspect
-  projections, and contextual reputation, following the target review design above.
-- Shared command idempotency, durable outbox/inbox, append-only audit, and compatible deployment
-  primitives, following the target platform-foundation design above.
-- Governed event taxonomy, analytical products and metrics, deterministic experiments, point-in-time
-  ML data, model lifecycle, bounded prediction serving, and model-artifact lineage, following the
-  target data/ML design above.
-
-These are cumulative target gaps, not optional product phases. Their migration order follows foreign
-keys, backfill safety, and compatibility requirements; the release is incomplete until every
-required domain design has a verified target-state representation.
+Liquibase runs files through `db.changelog-master.yaml`. Never edit an applied changeset; add a new
+forward migration. Test both an empty-database migration and an upgrade from the latest production
+snapshot before release.

@@ -1,6 +1,6 @@
 # Room Booking
 
-Backend for a room-booking platform, built with Java and Spring Boot. The application currently focuses on identity and authentication; the database schema also prepares the foundation for listings, availability, bookings, payments, reviews, and favorites.
+Backend for a room-booking platform, built with Java and Spring Boot. The application currently exposes identity, authentication, and host onboarding. The database carries the full target marketplace schema — 423 tables across 35 Liquibase migrations, covering supply, inventory, pricing, booking, payment, ledger, cancellation, messaging, stay operations, reviews, trust and safety, disputes, discovery, analytics, machine learning, governance, host operations, and growth — with matching Spring Data JDBC aggregates and repositories, but no services on top of it yet.
 
 ## Current features
 
@@ -17,7 +17,8 @@ Backend for a room-booking platform, built with Java and Spring Boot. The applic
 - Consistent JSON error responses
 - Liquibase-managed PostgreSQL and PostGIS schema
 
-> The listing, calendar, booking, payment, review, and favorite schemas are present, but their Java APIs are not implemented yet.
+> Everything beyond the list above is schema and persistence only. The tables, constraints, triggers, aggregates, and repositories exist; the services and HTTP endpoints that would drive them do not. Migration `014` also created a target identity model that the running authentication code has not yet been moved onto — see
+> [the data-model README](room-booking-backend/docs/data-model/README.md) before changing identity code.
 
 ## Tech stack
 
@@ -148,8 +149,13 @@ room-booking-backend/
 │   ├── time/         # Calendar primitives and IANA time-zone validation
 │   └── util/         # Shared normalization, duration, hashing, and token helpers
 ├── src/main/resources/
-│   └── db/changelog/ # Liquibase migrations
-├── docs/data-model/  # Data-model documentation
+│   └── db/changelog/ # Liquibase migrations, 000-034
+├── docs/
+│   ├── conventions/  # The binding rule set for code changes
+│   ├── data-model/   # One note per migration, plus the schema overview
+│   ├── features/     # Authoritative feature designs
+│   ├── learning/     # Background notes
+│   └── templates/    # Document prompts
 └── compose.local.yaml
 ```
 
@@ -168,7 +174,7 @@ cd room-booking-backend
 - [Beginner's guide](room-booking-backend/GUIDE.md)
 - [Marketplace target state and implementation dependencies](room-booking-backend/docs/marketplace-problem-breakdown.md)
 - [Standard feature-design document prompt](room-booking-backend/docs/templates/feature-design-document-prompt.md)
-- [Data model](room-booking-backend/docs/data-model/README.md)
+- [Data model — migration history, schema coverage, and what the schema does not yet prove](room-booking-backend/docs/data-model/README.md)
 - [Platform foundation design](room-booking-backend/docs/features/platform-foundation.md)
 - [Date, time, and time-zone handling design](room-booking-backend/docs/features/date-time-and-time-zone-handling.md)
 - [Identity, accounts, and access design](room-booking-backend/docs/features/identity-accounts-and-access.md)
@@ -185,7 +191,6 @@ cd room-booking-backend
 - [Reviews, aspect intelligence, and reputation design](room-booking-backend/docs/features/review-reputation-and-aspect-intelligence.md)
 - [Data, experimentation, and machine-learning platform design](room-booking-backend/docs/features/data-experimentation-and-ml-platform.md)
 - [Vietnam market readiness and internationalization design](room-booking-backend/docs/features/multi-market-compliance-and-localization.md)
-- [Location-search schema](room-booking-backend/docs/data-model/010-location-search.md)
 - [Comment and documentation maintenance](room-booking-backend/GUIDE.md#18-maintaining-comments-and-documentation)
 - [Commit code guide](room-booking-backend/GUIDE.md#19-committing-code)
 

@@ -48,23 +48,45 @@ dependency, priority, and integration view.
 
 ## 2. Status and current baseline
 
-This is the target architecture and product definition as of 2026-09-07. It is not a description of a
-fully implemented system.
+This is the target architecture and product definition. It is not a description of a fully
+implemented system.
 
-The repository currently has database foundations for:
+### The schema exists
 
-- users, authentication, roles, and host profile state;
-- listing catalog, images, amenities, addresses, and publication state;
-- one inventory unit per listing and one availability row per local stay date;
-- booking and immutable nightly snapshots with overlap protection;
-- payment attempts, refunds, and a webhook inbox;
-- completed-stay reviews and favorites;
-- PostGIS-backed geographic areas and listing coordinates.
+As of 2026-09-14 the repository carries a target-state database schema for every domain in this
+document. Migrations `012`-`034` were written against the feature designs and this breakdown, and
+each carries a note in `data-model/` explaining what it makes true. Counted against a database with
+`000`-`034` applied: 35 migration files, 554 changesets, 423 tables, 3552 `CHECK` constraints, 1285
+foreign keys, 16 exclusion constraints, 177 project-owned `plpgsql` functions and 299 triggers,
+with 421 Spring Data JDBC aggregates and 421 repositories over them. D23 introduced no tables of its
+own, as planned: it rests on the outbox, inbox and audit primitives in `012`.
 
-The Java application currently exposes identity, authentication, and host-onboarding behavior. Most
-listing, calendar, search, booking, payment, review, finance, and operations services described in
-this document are not implemented yet. Existing migrations are foundations, not proof that their
-full product workflows exist.
+The listing-centric foundation this section used to describe is gone. Changeset
+`016-01-retire-historical-listing-stack` dropped its twelve tables -- `listings`, `listing_images`,
+`amenities`, `listing_amenities`, `availability_days`, `bookings`, `booking_nights`,
+`payment_attempts`, `refunds`, `payment_webhook_events`, `reviews` and `favorites` -- and migrations
+`016` through `029` recreated their target-state successors under the target vocabulary.
+
+### The services do not
+
+The Java application exposes identity, authentication, and host-onboarding behavior: two controllers
+and fourteen endpoints. Every other domain named in this document -- listing, calendar, search,
+booking, payment, finance, operations, review, trust, support, discovery, analytics -- has tables and
+repositories and no service. A schema is a set of rules about what may be recorded; it is not the
+workflow that records it.
+
+Three consequences are worth stating plainly, because a complete-looking schema invites the opposite
+assumption:
+
+- **The `014` identity cutover has not happened.** Its backfill changeset is written and applied but
+  ran against an empty `users` table, so it has never moved a real row. The running code still reads
+  and writes `users`, `user_roles`, `host_profiles` and `auth_tokens`, and nothing dual-writes the
+  target identity tables. An account registered today has no `account_holders` row.
+- **Constraints were probed, journeys were not.** Each migration's invariants were exercised
+  scenario by scenario against a live database, but no end-to-end booking, payment, or settlement
+  flow has been run.
+- **A table is not a capability.** The completion matrix below classifies domains by what the target
+  release requires, not by what the schema can store.
 
 All future schema changes must use new forward-only Liquibase migrations. Never modify an applied
 changeset merely to make it match this target design.
@@ -160,6 +182,10 @@ correctness, supported journeys, recovery, or a capability declared required by 
 The matrix is exhaustive for the target release. A feature document may narrow provider or method
 breadth for Vietnam, but it may not downgrade a required domain invariant, recovery path, or supported
 journey.
+
+D17 is schema-complete ahead of its classification: migration `034` built it because full target
+scope was requested. Its classification as a designed extension is unchanged -- the release gate
+does not wait on it.
 
 ## 4. Platform-wide invariants
 
@@ -447,9 +473,12 @@ operations, safety, and the booking contract.
 
 #### Current and future boundary
 
-The current schema supports the basic catalog, media, amenities, address, and state. Service APIs,
-media processing, moderation, accessibility evidence, quality evaluation, and change approval remain
-future work.
+Migration `016` replaced the old listing-centric catalog with the target vocabulary: `properties`,
+`accommodation_types`, optional `physical_units`, public `listings`, and `rate_plans`, alongside
+versioned amenity vocabularies, localized listing content, media, house rules, safety items,
+accessibility claims, publication state, and change history. Service APIs, media processing,
+moderation workflows, accessibility evidence collection, quality evaluation, and change approval
+remain future work: the tables record these things, nothing yet performs them.
 
 ### D04 — Location, destination, and geographic intelligence
 
@@ -1715,12 +1744,13 @@ Machine-learning Platform**, and **Vietnam Market Readiness and Internationaliza
   semantics, historical provenance, activation gates, and non-breaking second-market boundary.
 
 Implementation follows the dependency map above while all domain designs converge on the same
-release gate. Existing single-listing inventory and coarse payment/review migrations are historical
-foundations and require forward migrations for property/accommodation type/physical unit, pooled
-quantity, rate plans, market context, durable events, complete money movement, and governed ML.
-Provider, policy, privacy, tax, review, and model decisions may be resolved in parallel, but no
-reduced vertical slice is relabeled as the finished product. The D22 design now covers multi-market
-compliance and localization, linked to D02, D07, D21, and the Vietnam launch decisions.
+release gate. The forward migrations this section once called for have been written: migrations
+`012`-`034` deliver property/accommodation type/physical unit, pooled quantity, rate plans, market
+context, durable events, complete money movement, and governed ML, and section 2 counts what that
+amounts to. The remaining gap is the service layer, not the schema. Provider, policy, privacy,
+tax, review, and model decisions may be resolved in parallel, but no reduced vertical slice is
+relabeled as the finished product. The D22 design now covers multi-market compliance and
+localization, linked to D02, D07, D21, and the Vietnam launch decisions.
 
 ## 16. Decisions that must be made explicitly
 

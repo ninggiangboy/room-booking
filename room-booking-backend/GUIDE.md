@@ -17,10 +17,13 @@ The repository is the backend of a room-booking platform. The Java application c
 - administrator-controlled suspension/reactivation and terminal self-service soft deletion;
 - consistent JSON errors.
 
-The database also contains historical schema foundations for listings, availability, bookings,
-payments, reviews, and favorites. Their Java controllers and services are not implemented, and the
-target property/hotel, market, finance, operations, and ML models require forward migrations. Do not
-assume that a table automatically means a target capability is complete.
+The database contains much more than that. Migrations `012`-`034` built the full target
+marketplace schema -- supply, inventory, pricing, booking, payment, ledger, cancellation,
+messaging, stay operations, reviews, trust and safety, disputes, discovery, analytics, machine
+learning, governance, host operations, and growth -- 423 tables, 421 of which have a Spring Data
+JDBC aggregate and repository. None of it has a service or an HTTP endpoint. Do not assume that a
+table means a target capability is complete; section 11 explains what the schema does and does
+not prove.
 
 ## 2. Prerequisites
 
@@ -633,24 +636,82 @@ Swagger UI documents the following common error codes at the operations where th
 
 ## 11. Database migration map
 
-The existing numbered SQL files are historical, ordered changesets:
+The numbered SQL files are historical, ordered changesets. Reading them top to bottom shows how the
+schema arrived where it is, not a plan of phases. Files `000`-`011` built a small listing-centric
+foundation; files `012`-`034` replaced it with the target marketplace schema.
+
+An applied changeset is never edited. That rule is why the history reads the way it does: the tables
+of `002`-`006` were not reshaped into their successors, they were dropped and recreated under new
+names by later migrations, and the original files still stand unchanged.
+
+### Foundation, `000`-`011`
 
 | Migration | Historical result |
 | --- | --- |
 | `000` | PostgreSQL extensions for UUIDs, case-insensitive text, and range constraints |
 | `001` | Users, user roles, and host profiles |
-| `002` | Listings, images, amenities, and search indexes |
-| `003` | Per-day availability and pricing |
-| `004` | Bookings, immutable nightly snapshots, and overlap protection |
-| `005` | Payment attempts, refunds, and idempotent webhook events |
-| `006` | Reviews and favorites |
+| `002` | Listings, images, amenities, and search indexes -- retired by `016` |
+| `003` | Per-day availability and pricing -- retired by `016` |
+| `004` | Bookings, immutable nightly snapshots, and overlap protection -- retired by `016` |
+| `005` | Payment attempts, refunds, and idempotent webhook events -- retired by `016` |
+| `006` | Reviews and favorites -- retired by `016` |
 | `007` | Initial email-verification tokens |
 | `008` | Generalized authentication tokens, including refresh tokens |
 | `009` | Password-reset token type added to the authentication-token constraint |
 | `010` | Global geographic catalog, localized aliases, and PostGIS map/radius indexes |
 | `011` | Removed `DEFAULT now()` from application-owned audit timestamps so the shared clock is the only writer |
 
-Important data conventions are documented in `docs/data-model/README.md`: money uses integer minor units, stay ranges are half-open, timestamps use timezone-aware values, and deletion is normally represented by status rather than removing historical rows. Date and time-zone semantics are owned by `docs/features/date-time-and-time-zone-handling.md`.
+Twelve tables were retired, all of them in a single changeset,
+`016-01-retire-historical-listing-stack`: `listings`, `listing_images`, `amenities`,
+`listing_amenities`, `availability_days`, `bookings`, `booking_nights`, `payment_attempts`,
+`refunds`, `payment_webhook_events`, `reviews` and `favorites`. They went together because their
+foreign keys would not let them go separately. `geo_areas` and `geo_area_names` from `010` were the
+exception: `017` kept them and built around them, because the model was already right.
+
+### Target marketplace schema, `012`-`034`
+
+| Migration | What it made true |
+| --- | --- |
+| `012` | Commands are retry-safe, facts publish once, audit is append-only |
+| `013` | Every decision can name the market, legal entity, and policy version that governed it |
+| `014` | Authority is scoped to resources, sessions own token lineage, contacts are verified |
+| `015` | A seller's identity, eligibility, and payout destination are established before publication |
+| `016` | Property, accommodation type, unit, listing, and rate plan replace the listing-centric model |
+| `017` | Properties resolve to destinations, landmarks, and explainable coordinates |
+| `018` | Overselling is impossible under concurrency, for both unique and pooled supply |
+| `019` | Every price shown can be explained afterwards |
+| `020` | The booking contract survives what happens to it |
+| `021` | What happens after money leaves the platform's control stays provable |
+| `022` | A balanced, immutable journal says what the platform owns and owes |
+| `023` | A cancellation is a recalculation somebody must be able to explain |
+| `024` | What the platform said to somebody, kept apart from the facts that caused it |
+| `025` | What happened in the building, with custody |
+| `026` | A completed stay earns a bounded right to speak, not a rating |
+| `027` | Observation, decision, and enforcement are three separable rows |
+| `028` | An allegation, a finding, a decision, and a movement of money are four different rows |
+| `029` | Discovery reads and never decides |
+| `030` | Analytics observes and never repairs |
+| `031` | A model advises and never decides |
+| `032` | An administrative action is a named command, never a database edit |
+| `033` | Host-facing advice carries its evidence, its uncertainty, and its cost |
+| `034` | Every incentive names whose money it is |
+
+Each of these has a companion note in `docs/data-model/` explaining why it exists, what it
+supersedes, and which invariants live below the tables rather than in application code. Read that
+note before the SQL; the SQL is long and the note says what matters.
+
+### What the schema does not mean
+
+The schema is complete; the application is not. Only identity, authentication, and host onboarding
+have services behind them. In particular, migration `014` created the target identity model but the
+running code still reads and writes `users`, `user_roles`, `host_profiles`, and `auth_tokens` -- its
+backfill changeset has never been exercised against real rows. See
+`docs/data-model/README.md` for the current state of that cutover before touching identity code.
+
+Important data conventions are documented in `docs/data-model/README.md`: money uses integer minor
+units, stay ranges are half-open, timestamps use timezone-aware values, and deletion is normally
+represented by status rather than removing historical rows. Date and time-zone semantics are owned by
+`docs/features/date-time-and-time-zone-handling.md`.
 
 ## 12. Recommended reading order
 
@@ -662,8 +723,8 @@ Important data conventions are documented in `docs/data-model/README.md`: money 
 6. `EmailVerificationService`, `PasswordResetService`, and `AuthEmailNotifier` to see reusable token utilities, transactions, and post-commit events.
 7. `UserFinder` to see shared user lookup and active-account behavior extracted from workflows.
 8. `ApiExceptionHandler` and the exception package to understand failures.
-9. The Liquibase master file and `docs/data-model/README.md` to distinguish migration history from
-   target-state gaps.
+9. The Liquibase master file and `docs/data-model/README.md` to see the whole schema at once and to
+   read what it does not yet prove.
 
 Use the IDE's “Go to declaration” action whenever an annotation, method, or type is unfamiliar.
 
