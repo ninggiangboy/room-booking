@@ -1,7 +1,9 @@
 /**
- * {@code types}-clustered types for the {@code pricing} module. See
- * {@code docs/modules/pricing.md} for what this package owns and why it is a
- * separate cluster from its siblings.
+ * Enums used by another module that already depends on {@code pricing} in every other respect — the R3
+ * shared-type rule in {@code docs/modules/platform.md}: a type stays with its natural owner, exposed
+ * through a named interface, when moving it to the shared kernel would only hide a real, existing
+ * dependency direction. See {@code docs/modules/pricing.md} for which enum lives here and why.
  */
+@org.springframework.modulith.NamedInterface("types")
 @org.jspecify.annotations.NullMarked
 package dev.ngb.backend.pricing.types;

@@ -11,5 +11,6 @@
  * {@code account_holders} question this migration deliberately leaves unresolved, and why
  * {@code AccessTokenService} in particular is promoted here rather than kept internal.</p>
  */
+@org.springframework.modulith.ApplicationModule(allowedDependencies = {"config", "platform", "platform :: exception.base", "platform :: util"})
 @org.jspecify.annotations.NullMarked
 package dev.ngb.backend.identity;

@@ -1,11 +1,9 @@
 package dev.ngb.backend.booking.internal.model.decision;
 
-import dev.ngb.backend.pricing.internal.model.tax.TaxRoundingMode;
-
 /**
  * How a split amount's remainder is disposed of.
  *
- * <p>Deliberately separate from {@link TaxRoundingMode}, which serves tax arithmetic and answers to a
+ * <p>Deliberately separate from {@code TaxRoundingMode}, which serves tax arithmetic and answers to a
  * tax authority. This one governs allocating one amount across several lines, where the question is
  * not "what is correct" but "who gets the odd unit" -- and the answer must be reproducible.</p>
  */

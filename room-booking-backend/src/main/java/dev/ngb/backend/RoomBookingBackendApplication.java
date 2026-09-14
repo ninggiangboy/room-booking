@@ -4,6 +4,7 @@ import java.util.TimeZone;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.modulith.Modulithic;
 import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
@@ -13,6 +14,11 @@ import org.springframework.scheduling.annotation.EnableAsync;
  * auto-configuration, and component scanning of this package and all descendants. Every direct
  * sub-package is a Spring Modulith module; see {@code docs/architecture/modular-monolith.md}.</p>
  *
+ * <p>{@code @Modulithic} names {@code platform} and {@code config} as {@code sharedModules}: every
+ * other module depends on one or both of them in practice, so an {@code @ApplicationModuleTest}
+ * slice for any business module bootstraps them automatically instead of every test declaring the
+ * same two modules by hand.</p>
+ *
  * <p>{@code @EnableAsync} is required for {@code @ApplicationModuleListener} (the default mechanism
  * for cross-module, post-commit events): the annotation composes {@code @Async}, and without
  * asynchronous method execution enabled it silently runs synchronously instead, which would defeat
@@ -20,6 +26,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
  * {@code docs/architecture/event-publication-registry.md}.</p>
  */
 @SpringBootApplication
+@Modulithic(sharedModules = {"platform", "config"})
 @EnableAsync
 public class RoomBookingBackendApplication {
 

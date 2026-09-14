@@ -14,5 +14,6 @@
  *
  * <p>Reference: {@code docs/features/date-time-and-time-zone-handling.md}.</p>
  */
+@org.springframework.modulith.NamedInterface("time")
 @org.jspecify.annotations.NullMarked
 package dev.ngb.backend.platform.time;

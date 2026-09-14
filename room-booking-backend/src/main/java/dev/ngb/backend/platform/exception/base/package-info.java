@@ -10,5 +10,6 @@
  * module-owned exception, which is what lets {@code config} stay a dependency-free translation layer
  * instead of importing every module's own exception types.</p>
  */
+@org.springframework.modulith.NamedInterface("exception.base")
 @org.jspecify.annotations.NullMarked
 package dev.ngb.backend.platform.exception.base;

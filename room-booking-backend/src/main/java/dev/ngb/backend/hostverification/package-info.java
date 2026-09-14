@@ -10,5 +10,6 @@
  * application module; everything under {@code internal} is invisible to every other module. See
  * {@code docs/modules/hostverification.md} for the profile/case/eligibility cluster map.</p>
  */
+@org.springframework.modulith.ApplicationModule(allowedDependencies = {"platform"})
 @org.jspecify.annotations.NullMarked
 package dev.ngb.backend.hostverification;
