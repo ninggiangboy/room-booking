@@ -20,6 +20,10 @@ import dev.ngb.backend.identity.internal.repository.account.UserRepository;
 import dev.ngb.backend.identity.internal.repository.capability.UserRoleRepository;
 import dev.ngb.backend.identity.internal.repository.credential.AuthCredentialRepository;
 import dev.ngb.backend.identity.internal.service.auth.session.RefreshTokenService;
+import dev.ngb.backend.identity.internal.model.capability.GrantSource;
+import dev.ngb.backend.identity.internal.model.capability.PrincipalType;
+import dev.ngb.backend.identity.internal.service.authz.CapabilityGrantService;
+import dev.ngb.backend.identity.internal.service.authz.RoleBundle;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -65,6 +69,7 @@ public class AuthenticationService {
     private final PasswordPolicy passwordPolicy;
     private final UserFinder userFinder;
     private final UserRegistrationFactory userRegistrationFactory;
+    private final CapabilityGrantService capabilityGrantService;
     private final Clock clock;
 
     /**
@@ -173,11 +178,20 @@ public class AuthenticationService {
         ContactChannel emailChannel = contactChannelRepository.save(newAccount.emailChannel());
         authCredentialRepository.save(newAccount.passwordCredential());
 
-        // Reuse the user's audited createdAt as the role's grant instant so both rows share
-        // registration's single decision instant instead of a second, later clock read.
-        userRoleRepository.grantRole(
+        // Reuse the user's audited createdAt as the grant instant so every row from this
+        // registration shares one decision instant instead of a second, later clock read.
+        //
+        // user_roles is still written here too: authorization decisions (the JWT filter,
+        // SecurityConfig) now flow entirely through capability_grants, but the role table remains
+        // the compatibility surface until migration 037 retires it, which is what keeps this
+        // change revertible without a database migration.
+        userRoleRepository.grantRole(user.getId(), Role.GUEST.name(), user.getCreatedAt());
+        capabilityGrantService.issueRoleGrant(
+                PrincipalType.USER,
                 user.getId(),
-                newAccount.initialRole().getId().getRole().name(),
+                RoleBundle.GUEST,
+                GrantSource.SELF_SERVICE,
+                "SELF_SERVICE_REGISTRATION",
                 user.getCreatedAt());
 
         List<Role> roles = List.of(Role.GUEST);

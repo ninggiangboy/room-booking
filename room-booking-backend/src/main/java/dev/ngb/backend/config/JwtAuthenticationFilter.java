@@ -15,19 +15,27 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
 import dev.ngb.backend.identity.AccessTokenService;
+import dev.ngb.backend.identity.IdentityFacts;
 
 
 /**
- * Reads a bearer access token once per request and places the authenticated user in Spring Security.
+ * Reads a bearer access token once per request and places the authenticated principal in Spring
+ * Security, after reloading its current status and capabilities from PostgreSQL.
  *
  * <p>{@code @Component} makes the filter discoverable by Spring. Lombok's
- * {@code @RequiredArgsConstructor} creates a constructor for the final token service. Extending
- * {@link OncePerRequestFilter} guarantees one execution per request dispatch.</p>
+ * {@code @RequiredArgsConstructor} creates a constructor for the two final collaborators.
+ * Extending {@link OncePerRequestFilter} guarantees one execution per request dispatch.</p>
+ *
+ * <p>Authorities used to be built purely from the JWT's own {@code roles} claim, so a suspended
+ * or deleted account kept full access until its access token naturally expired. Calling {@link
+ * IdentityFacts} here, per request, is what closes that gap: the token still proves *who* is
+ * asking, but {@code IdentityFacts} decides, right now, whether they may still act and what they
+ * may do. Authorities carry raw capability names with no {@code ROLE_} prefix, since authority is
+ * now a capability rather than a role.</p>
  */
 @Component
 @RequiredArgsConstructor
@@ -36,6 +44,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final AccessTokenService accessTokenService;
+    private final IdentityFacts identityFacts;
 
     /**
      * Attempts bearer authentication, then always continues to the next filter.
@@ -66,28 +75,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private void authenticate(String token, HttpServletRequest request) {
         try {
             Claims claims = accessTokenService.extractClaims(token);
-            UUID userId = UUID.fromString(claims.getSubject());
-            List<SimpleGrantedAuthority> authorities = extractRoles(claims).stream()
-                    // Spring Security's hasRole checks expect authorities to use the ROLE_ prefix.
-                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+            UUID subjectId = UUID.fromString(claims.getSubject());
+
+            IdentityFacts.AuthenticatedPrincipal principal = identityFacts.resolve(subjectId);
+            if (!principal.active()) {
+                // A structurally valid, unexpired token belonging to a suspended or deleted
+                // account remains anonymous rather than authenticated; this is the reload the
+                // stateless JWT filter previously skipped.
+                return;
+            }
+
+            List<SimpleGrantedAuthority> authorities = principal.capabilities().stream()
+                    .map(SimpleGrantedAuthority::new)
                     .toList();
             var authentication = new UsernamePasswordAuthenticationToken(
-                    userId, null, authorities);
+                    subjectId, null, authorities);
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
         } catch (JwtException | IllegalArgumentException _) {
             // Invalid access tokens remain anonymous and are handled by Spring Security.
         }
-    }
-
-    private static List<String> extractRoles(Claims claims) {
-        Object roles = claims.get("roles");
-        if (!(roles instanceof Collection<?> collection)) {
-            return List.of();
-        }
-        return collection.stream()
-                .filter(String.class::isInstance)
-                .map(String.class::cast)
-                .toList();
     }
 }
