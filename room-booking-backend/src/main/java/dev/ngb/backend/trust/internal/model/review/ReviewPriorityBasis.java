@@ -14,5 +14,5 @@ public enum ReviewPriorityBasis {
     /** Money or inventory at stake. */
     EXPOSURE,
     /** A model score ordering comparable tasks. */
-    MODEL_ASSISTED;
+    MODEL_ASSISTED
 }

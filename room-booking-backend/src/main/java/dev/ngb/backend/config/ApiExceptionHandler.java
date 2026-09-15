@@ -73,7 +73,6 @@ public class ApiExceptionHandler {
     /**
      * Hides parser internals and reports malformed JSON or missing parameters as validation errors.
      *
-     * @param exception framework parsing or parameter exception
      * @param request servlet request used to report the failed path
      * @return generic {@code 400 Bad Request} response
      */
@@ -81,8 +80,7 @@ public class ApiExceptionHandler {
             HttpMessageNotReadableException.class,
             MissingServletRequestParameterException.class
     })
-    public ResponseEntity<ApiErrorResponse> handleMalformedRequest(
-            Exception exception, HttpServletRequest request) {
+    public ResponseEntity<ApiErrorResponse> handleMalformedRequest(HttpServletRequest request) {
         HttpStatus status = HttpStatus.BAD_REQUEST;
         return ResponseEntity.status(status).body(new ApiErrorResponse(
                 clock.instant(),

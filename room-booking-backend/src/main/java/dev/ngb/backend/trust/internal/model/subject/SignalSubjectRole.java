@@ -16,5 +16,5 @@ public enum SignalSubjectRole {
     /** The instrument or destination involved. */
     INSTRUMENT,
     /** Contextual, such as the network the action came from. */
-    CONTEXT;
+    CONTEXT
 }

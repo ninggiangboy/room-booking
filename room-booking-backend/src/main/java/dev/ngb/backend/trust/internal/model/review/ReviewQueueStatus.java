@@ -9,5 +9,5 @@ public enum ReviewQueueStatus {
     /** Holding work without dispatching it. */
     PAUSED,
     /** Closed; existing work was moved elsewhere. */
-    RETIRED;
+    RETIRED
 }

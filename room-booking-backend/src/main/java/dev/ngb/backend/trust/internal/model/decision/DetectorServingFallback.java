@@ -16,5 +16,5 @@ public enum DetectorServingFallback {
     /** It could not be reached. */
     UNAVAILABLE,
     /** It does not cover this language. */
-    UNSUPPORTED_LANGUAGE;
+    UNSUPPORTED_LANGUAGE
 }

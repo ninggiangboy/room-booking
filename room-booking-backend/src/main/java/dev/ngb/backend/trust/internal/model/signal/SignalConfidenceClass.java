@@ -20,5 +20,5 @@ public enum SignalConfidenceClass {
     /** Asserted but not checked. */
     UNVERIFIED,
     /** Not established either way. */
-    UNKNOWN;
+    UNKNOWN
 }

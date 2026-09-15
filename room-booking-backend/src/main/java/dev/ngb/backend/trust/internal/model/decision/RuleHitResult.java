@@ -16,5 +16,5 @@ public enum RuleHitResult {
     /** Evaluation failed. */
     ERRORED,
     /** Required inputs were unavailable. */
-    INPUTS_MISSING;
+    INPUTS_MISSING
 }

@@ -97,7 +97,7 @@ public class AccessTokenService {
      * @throws io.jsonwebtoken.JwtException when signature, structure, or expiry is invalid
      * @throws IllegalArgumentException when the token or subject is not usable
      */
-    public UUID extractUserId(String token) {
+    public UUID extractUserId(@Nullable String token) {
         return UUID.fromString(extractClaims(token).getSubject());
     }
 
@@ -120,7 +120,7 @@ public class AccessTokenService {
      * @param token compact signed JWT
      * @return verified claims payload
      */
-    public Claims extractClaims(String token) {
+    public Claims extractClaims(@Nullable String token) {
         requireToken(token);
         return jwtParser.parseSignedClaims(token).getPayload();
     }

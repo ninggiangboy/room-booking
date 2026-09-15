@@ -1,6 +1,8 @@
 package dev.ngb.backend.messaging.internal.repository.notification;
 
+import dev.ngb.backend.messaging.internal.model.notification.NotificationArtifactStatus;
 import dev.ngb.backend.messaging.internal.model.notification.NotificationTemplate;
+import dev.ngb.backend.messaging.types.NotificationChannel;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.ListCrudRepository;
 import org.springframework.data.repository.query.Param;
@@ -29,7 +31,8 @@ public interface NotificationTemplateRepository extends ListCrudRepository<Notif
      * @return the template, when one exists
      */
     Optional<NotificationTemplate> findByTemplateFamilyAndChannelAndLocaleAndStatus(
-            String templateFamily, String channel, String locale, String status);
+            String templateFamily, NotificationChannel channel, String locale,
+            NotificationArtifactStatus status);
 
     /**
      * Returns every locale an active family can be rendered in on a channel.
@@ -59,5 +62,5 @@ public interface NotificationTemplateRepository extends ListCrudRepository<Notif
             ORDER BY locale
             """)
     List<NotificationTemplate> findActiveLocales(@Param("templateFamily") String templateFamily,
-                                                 @Param("channel") String channel);
+                                                 @Param("channel") NotificationChannel channel);
 }

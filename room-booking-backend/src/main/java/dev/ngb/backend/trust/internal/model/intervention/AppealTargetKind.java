@@ -12,5 +12,5 @@ public enum AppealTargetKind {
     /** One restriction. */
     RISK_RESTRICTION,
     /** One moderation decision. */
-    MODERATION_DECISION;
+    MODERATION_DECISION
 }

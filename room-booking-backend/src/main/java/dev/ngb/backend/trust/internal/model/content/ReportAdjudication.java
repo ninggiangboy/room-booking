@@ -16,5 +16,5 @@ public enum ReportAdjudication {
     /** The same complaint was already being handled. */
     DUPLICATE,
     /** The report itself was an abuse of the reporting path. */
-    ABUSIVE_REPORT;
+    ABUSIVE_REPORT
 }

@@ -11,5 +11,5 @@ public enum AppellantAuthority {
     /** Somebody acting with the subject's authority. */
     AUTHORIZED_AGENT,
     /** A legal guardian. */
-    LEGAL_GUARDIAN;
+    LEGAL_GUARDIAN
 }

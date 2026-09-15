@@ -12,5 +12,5 @@ public enum PolicyApprovalDecision {
     /** Refused, with a rationale. */
     REJECTED,
     /** Declined to decide. */
-    ABSTAINED;
+    ABSTAINED
 }

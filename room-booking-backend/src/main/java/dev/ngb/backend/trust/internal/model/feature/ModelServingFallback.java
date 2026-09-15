@@ -18,5 +18,5 @@ public enum ModelServingFallback {
     /** The serving path was down. */
     UNAVAILABLE,
     /** Evaluated in shadow and deliberately not scored for this decision. */
-    SHADOW_ONLY;
+    SHADOW_ONLY
 }

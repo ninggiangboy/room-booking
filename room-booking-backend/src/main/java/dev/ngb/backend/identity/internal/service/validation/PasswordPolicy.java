@@ -46,7 +46,7 @@ public class PasswordPolicy {
                 || password.codePoints().noneMatch(PasswordPolicy::isSpecialCharacter)) {
             throw new ValidationException(field, STRENGTH_MESSAGE);
         }
-        // BCrypt truncates input after 72 bytes, so count encoded bytes rather than Java characters.
+        // Bcrypt truncates input after 72 bytes, so count encoded bytes rather than Java characters.
         if (password.getBytes(StandardCharsets.UTF_8).length > MAX_BCRYPT_PASSWORD_BYTES) {
             throw new ValidationException(field, "password must not exceed 72 UTF-8 bytes");
         }

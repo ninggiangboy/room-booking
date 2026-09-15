@@ -13,5 +13,5 @@ public enum EntityLinkEvidenceClass {
     /** Deterministically derived. */
     DERIVED,
     /** Inferred, and on its own not enough for an adverse decision. */
-    INFERRED;
+    INFERRED
 }

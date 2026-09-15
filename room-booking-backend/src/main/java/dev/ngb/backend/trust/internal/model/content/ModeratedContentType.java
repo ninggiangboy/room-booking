@@ -25,5 +25,5 @@ public enum ModeratedContentType {
     /** A note on a support case. */
     SUPPORT_NOTE,
     /** Something reported during a stay. */
-    INCIDENT_REPORT;
+    INCIDENT_REPORT
 }

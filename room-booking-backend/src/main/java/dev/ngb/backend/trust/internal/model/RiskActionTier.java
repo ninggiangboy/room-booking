@@ -18,5 +18,5 @@ public enum RiskActionTier {
     /** Money or privilege, such as a capture, refund or payout destination change. */
     T3,
     /** Urgent safety, which never silently fails. */
-    T4;
+    T4
 }

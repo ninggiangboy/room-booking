@@ -13,6 +13,7 @@ import dev.ngb.backend.identity.internal.model.session.TokenConsumptionReason;
 import dev.ngb.backend.identity.internal.repository.session.AuthSessionRepository;
 import dev.ngb.backend.identity.internal.repository.session.AuthTokenRepository;
 import dev.ngb.backend.identity.internal.service.auth.AuthTokenFactory;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -222,6 +223,6 @@ public class RefreshTokenService {
      * @param rawRefreshToken raw secret of the successor token, or {@code null} for a token
      *     predating sessions, which is consumed without issuing a linked successor
      */
-    public record Rotated(UUID userId, String rawRefreshToken) {
+    public record Rotated(UUID userId, @Nullable String rawRefreshToken) {
     }
 }

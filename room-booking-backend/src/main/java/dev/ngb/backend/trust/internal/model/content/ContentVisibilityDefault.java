@@ -14,5 +14,5 @@ public enum ContentVisibilityDefault {
     /** Withheld because validation or scanning has not passed. */
     QUARANTINED,
     /** Not shown. */
-    HIDDEN;
+    HIDDEN
 }

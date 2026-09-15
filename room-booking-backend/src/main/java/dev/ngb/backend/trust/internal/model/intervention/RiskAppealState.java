@@ -18,5 +18,5 @@ public enum RiskAppealState {
     /** Withdrawn by the appellant. */
     WITHDRAWN,
     /** The window closed without a decision. */
-    EXPIRED;
+    EXPIRED
 }

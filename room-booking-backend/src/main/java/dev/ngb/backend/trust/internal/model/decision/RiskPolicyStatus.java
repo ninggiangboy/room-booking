@@ -19,5 +19,5 @@ public enum RiskPolicyStatus {
     /** Replaced by a later version. */
     SUPERSEDED,
     /** Withdrawn. */
-    RETIRED;
+    RETIRED
 }

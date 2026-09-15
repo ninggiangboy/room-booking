@@ -1,6 +1,7 @@
 package dev.ngb.backend.messaging.internal.repository.delivery;
 
 import dev.ngb.backend.messaging.internal.model.delivery.ContactDeliveryHealth;
+import dev.ngb.backend.messaging.types.NotificationChannel;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.ListCrudRepository;
 import org.springframework.data.repository.query.Param;
@@ -28,7 +29,7 @@ public interface ContactDeliveryHealthRepository extends ListCrudRepository<Cont
      * @return the health record, when one exists
      */
     Optional<ContactDeliveryHealth> findByContactChannelIdAndContactChannelVersionAndChannel(
-            UUID contactChannelId, long contactChannelVersion, String channel);
+            UUID contactChannelId, long contactChannelVersion, NotificationChannel channel);
 
     /**
      * Returns suppressed destinations waiting for a human look.

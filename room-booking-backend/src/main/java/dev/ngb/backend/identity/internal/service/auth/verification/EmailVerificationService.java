@@ -72,13 +72,13 @@ public class EmailVerificationService {
     /** Ensures invalid request-limit configuration fails during application startup. */
     @PostConstruct
     void validateConfiguration() {
-        if (tokenTtl == null || tokenTtl.isNegative() || tokenTtl.isZero()) {
+        if (tokenTtl.isNegative() || tokenTtl.isZero()) {
             throw new IllegalStateException("email verification token TTL must be positive");
         }
-        if (requestCooldown == null || requestCooldown.isNegative() || requestCooldown.isZero()) {
+        if (requestCooldown.isNegative() || requestCooldown.isZero()) {
             throw new IllegalStateException("email verification request cooldown must be positive");
         }
-        if (rateLimitWindow == null || rateLimitWindow.isNegative() || rateLimitWindow.isZero()) {
+        if (rateLimitWindow.isNegative() || rateLimitWindow.isZero()) {
             throw new IllegalStateException("email verification rate-limit window must be positive");
         }
         if (rateLimitMaxRequests < 1) {

@@ -12,5 +12,5 @@ public enum ModerationDeciderType {
     /** An authorized reviewer. */
     REVIEWER,
     /** An appeal reviewer. */
-    APPEAL;
+    APPEAL
 }

@@ -21,5 +21,5 @@ public enum ModerationOutcome {
     /** A previously visible revision is hidden. */
     REMOVE,
     /** Routed to the urgent safety workflow; visibility is decided separately. */
-    ESCALATE_SAFETY;
+    ESCALATE_SAFETY
 }

@@ -17,5 +17,5 @@ public enum FeatureValueType {
     /** An elapsed time. */
     DURATION,
     /** A derived score. */
-    SCORE;
+    SCORE
 }

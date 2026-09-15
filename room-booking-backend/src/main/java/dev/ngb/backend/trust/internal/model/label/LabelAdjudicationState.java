@@ -16,5 +16,5 @@ public enum LabelAdjudicationState {
     /** Withdrawn in favour of a corrected label. */
     REVERSED,
     /** Too old to represent current behaviour. */
-    EXPIRED_FOR_TRAINING;
+    EXPIRED_FOR_TRAINING
 }

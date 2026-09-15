@@ -16,5 +16,5 @@ public enum RiskDisclosurePolicy {
     /** Withheld because disclosure would create a safety hazard. */
     WITHHELD_SAFETY,
     /** Withheld because disclosure is legally prohibited. */
-    WITHHELD_LEGAL;
+    WITHHELD_LEGAL
 }

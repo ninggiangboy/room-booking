@@ -13,5 +13,5 @@ public enum RestrictionEnforcementMode {
     /** Nothing is blocked; the effect is measured. */
     SHADOW_MONITOR,
     /** The subject is told, and nothing is blocked. */
-    DISCLOSURE_ONLY;
+    DISCLOSURE_ONLY
 }

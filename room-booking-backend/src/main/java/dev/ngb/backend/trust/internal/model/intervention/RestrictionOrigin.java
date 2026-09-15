@@ -17,5 +17,5 @@ public enum RestrictionOrigin {
     /** Required by a legal instruction. */
     LEGAL_ORDER,
     /** Backfilled from a historical account status, with no policy behind it. */
-    LEGACY_STATUS;
+    LEGACY_STATUS
 }

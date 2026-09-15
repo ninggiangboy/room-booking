@@ -15,5 +15,5 @@ public enum RiskAppealOutcome {
     /** Part of the original decision is replaced. */
     PARTIALLY_GRANTED,
     /** Not a matter this appeal path decides. */
-    OUT_OF_SCOPE;
+    OUT_OF_SCOPE
 }

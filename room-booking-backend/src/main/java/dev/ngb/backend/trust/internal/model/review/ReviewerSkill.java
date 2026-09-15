@@ -19,5 +19,5 @@ public enum ReviewerSkill {
     /** Sampling and reviewer quality. */
     QUALITY_ASSURANCE,
     /** Hearing appeals. */
-    APPEALS;
+    APPEALS
 }

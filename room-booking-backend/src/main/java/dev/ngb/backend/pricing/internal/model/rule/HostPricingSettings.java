@@ -2,7 +2,6 @@ package dev.ngb.backend.pricing.internal.model.rule;
 
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

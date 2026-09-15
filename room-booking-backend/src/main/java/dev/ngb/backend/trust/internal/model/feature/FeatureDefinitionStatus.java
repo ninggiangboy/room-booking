@@ -14,5 +14,5 @@ public enum FeatureDefinitionStatus {
     /** Still readable for replay, not used for new evaluations. */
     DEPRECATED,
     /** No longer computed. */
-    RETIRED;
+    RETIRED
 }

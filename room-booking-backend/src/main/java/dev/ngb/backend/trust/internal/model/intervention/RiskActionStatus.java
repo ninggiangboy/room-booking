@@ -12,5 +12,5 @@ public enum RiskActionStatus {
     /** Open for evaluation. */
     ACTIVE,
     /** No longer evaluated; historical decisions keep their meaning. */
-    RETIRED;
+    RETIRED
 }

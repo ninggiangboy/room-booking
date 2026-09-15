@@ -34,5 +34,5 @@ public enum RiskSignalSourceDomain {
     /** Platform-derived telemetry. */
     PLATFORM,
     /** Something a person alleged. */
-    USER_REPORT;
+    USER_REPORT
 }

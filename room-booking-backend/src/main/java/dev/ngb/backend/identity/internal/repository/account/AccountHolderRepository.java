@@ -1,5 +1,6 @@
 package dev.ngb.backend.identity.internal.repository.account;
 
+import dev.ngb.backend.identity.internal.model.account.MarketContextState;
 import org.springframework.data.repository.ListCrudRepository;
 import java.util.List;
 import java.util.Optional;
@@ -51,5 +52,5 @@ public interface AccountHolderRepository extends ListCrudRepository<AccountHolde
      * @return possibly empty list of holders awaiting reconciliation, oldest first
      */
     List<AccountHolder> findAllByContextStateOrderByCreatedAtAsc(
-            dev.ngb.backend.identity.internal.model.account.MarketContextState contextState);
+            MarketContextState contextState);
 }

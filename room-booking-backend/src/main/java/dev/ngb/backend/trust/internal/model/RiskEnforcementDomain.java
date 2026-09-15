@@ -30,5 +30,5 @@ public enum RiskEnforcementDomain {
     /** Access, tasks and incidents during a stay. */
     STAY_OPERATIONS,
     /** Administrative and governance commands. */
-    ADMIN;
+    ADMIN
 }

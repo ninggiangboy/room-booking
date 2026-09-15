@@ -13,5 +13,5 @@ public enum PolicyApprovalRole {
     /** Safety review. */
     SAFETY,
     /** Engineering review of the rule document. */
-    ENGINEERING;
+    ENGINEERING
 }

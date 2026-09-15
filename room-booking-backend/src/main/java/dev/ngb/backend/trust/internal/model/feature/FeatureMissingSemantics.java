@@ -12,5 +12,5 @@ public enum FeatureMissingSemantics {
     /** A registered fallback value applies. */
     POLICY_FALLBACK,
     /** The evaluation cannot proceed without it. */
-    BLOCK_EVALUATION;
+    BLOCK_EVALUATION
 }

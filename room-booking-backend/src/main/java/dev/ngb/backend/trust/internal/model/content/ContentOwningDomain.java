@@ -18,5 +18,5 @@ public enum ContentOwningDomain {
     /** Support notes. */
     SUPPORT,
     /** Incident reports. */
-    STAY_OPERATIONS;
+    STAY_OPERATIONS
 }

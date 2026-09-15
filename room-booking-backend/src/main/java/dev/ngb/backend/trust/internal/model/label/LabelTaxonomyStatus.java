@@ -14,5 +14,5 @@ public enum LabelTaxonomyStatus {
     /** Readable for replay, not used for new labels. */
     DEPRECATED,
     /** Withdrawn. */
-    RETIRED;
+    RETIRED
 }

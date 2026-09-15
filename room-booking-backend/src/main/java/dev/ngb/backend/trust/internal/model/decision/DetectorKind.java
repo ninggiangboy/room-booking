@@ -13,5 +13,5 @@ public enum DetectorKind {
     /** A link canonicalization and reputation check. */
     LINK_CHECK,
     /** A person reading the content. */
-    HUMAN;
+    HUMAN
 }

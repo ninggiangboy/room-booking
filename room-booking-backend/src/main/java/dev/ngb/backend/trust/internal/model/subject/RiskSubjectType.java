@@ -33,5 +33,5 @@ public enum RiskSubjectType {
     /** One conversation between parties. */
     CONVERSATION,
     /** A review record. */
-    REVIEW;
+    REVIEW
 }

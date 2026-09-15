@@ -21,5 +21,5 @@ public enum EnforcementResult {
     /** Facts had changed and a new decision was asked for. */
     REEVALUATION_REQUESTED,
     /** Something other than the decision happened, with a reason. */
-    DIVERGED;
+    DIVERGED
 }

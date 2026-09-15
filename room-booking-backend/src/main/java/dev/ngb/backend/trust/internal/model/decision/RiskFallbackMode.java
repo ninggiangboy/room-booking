@@ -14,5 +14,5 @@ public enum RiskFallbackMode {
     /** Model contribution was switched off. */
     MODEL_DISABLED,
     /** A provider on the critical path did not answer. */
-    PROVIDER_TIMEOUT;
+    PROVIDER_TIMEOUT
 }

@@ -19,5 +19,5 @@ public enum RestrictionState {
     /** Lifted, with a reason and a named revoker. */
     REVOKED,
     /** Replaced by another restriction naming it. */
-    SUPERSEDED;
+    SUPERSEDED
 }

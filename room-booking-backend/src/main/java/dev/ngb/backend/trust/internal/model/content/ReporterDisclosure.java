@@ -12,5 +12,5 @@ public enum ReporterDisclosure {
     /** Identifiable to a public authority under an authorization. */
     AUTHORITY_ONLY,
     /** Disclosed under a recorded authorization. */
-    DISCLOSED;
+    DISCLOSED
 }

@@ -12,5 +12,5 @@ public enum RiskFailureMode {
     /** The action proceeds under monitoring; permitted only for low-tier reversible actions. */
     FAIL_OPEN,
     /** A named fallback outcome applies, itself drawn from the permitted set. */
-    REGISTERED_FALLBACK;
+    REGISTERED_FALLBACK
 }

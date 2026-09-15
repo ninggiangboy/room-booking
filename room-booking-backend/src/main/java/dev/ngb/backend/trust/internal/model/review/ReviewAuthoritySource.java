@@ -13,5 +13,5 @@ public enum ReviewAuthoritySource {
     /** An appeal panel. */
     APPEAL_PANEL,
     /** A quality sampling authority. */
-    QUALITY_ASSURANCE;
+    QUALITY_ASSURANCE
 }

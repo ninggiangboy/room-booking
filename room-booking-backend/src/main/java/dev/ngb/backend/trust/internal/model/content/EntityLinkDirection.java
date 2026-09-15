@@ -12,5 +12,5 @@ public enum EntityLinkDirection {
     /** From the first endpoint to the second. */
     A_TO_B,
     /** From the second endpoint to the first. */
-    B_TO_A;
+    B_TO_A
 }

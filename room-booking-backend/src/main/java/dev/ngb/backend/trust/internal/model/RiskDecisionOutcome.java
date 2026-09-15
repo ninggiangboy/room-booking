@@ -19,5 +19,5 @@ public enum RiskDecisionOutcome {
     /** Permitted only within a stated scope, rate or amount. */
     LIMIT,
     /** Prohibited under the applied policy, with a stable reason family and an appeal path. */
-    DENY;
+    DENY
 }

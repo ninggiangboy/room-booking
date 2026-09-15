@@ -13,5 +13,5 @@ public enum RuleClass {
     /** May influence the outcome within policy. */
     ADVISORY,
     /** Recorded for explanation; contributes nothing. */
-    EXPLANATION_ONLY;
+    EXPLANATION_ONLY
 }

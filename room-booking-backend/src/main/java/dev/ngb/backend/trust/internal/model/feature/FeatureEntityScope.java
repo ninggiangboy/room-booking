@@ -21,5 +21,5 @@ public enum FeatureEntityScope {
     /** One content item. */
     CONTENT,
     /** One protected action request. */
-    ACTION;
+    ACTION
 }

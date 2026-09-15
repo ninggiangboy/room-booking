@@ -11,5 +11,5 @@ public enum RiskDecider {
     /** An appeal reviewer. */
     APPEAL,
     /** The registered fallback, because evaluation could not complete. */
-    SYSTEM_FALLBACK;
+    SYSTEM_FALLBACK
 }

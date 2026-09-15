@@ -19,5 +19,5 @@ public enum SignalProvenance {
     /** A calibrated model inference. */
     MODEL_INFERENCE,
     /** One party's unverified account of something. */
-    USER_ALLEGATION;
+    USER_ALLEGATION
 }

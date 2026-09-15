@@ -12,5 +12,5 @@ public enum ModerationDecisionState {
     /** Its window closed. */
     EXPIRED,
     /** A later decision replaced it. */
-    SUPERSEDED;
+    SUPERSEDED
 }

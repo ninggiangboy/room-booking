@@ -14,5 +14,5 @@ public enum RiskAccessKind {
     /** A record was written. */
     CHANGE,
     /** A search was run across records. */
-    QUERY;
+    QUERY
 }

@@ -17,5 +17,5 @@ public enum LabelSourceKind {
     /** The platform's own decision; never training ground truth. */
     AUTOMATED_DECISION,
     /** Somebody's allegation; never training ground truth. */
-    USER_REPORT;
+    USER_REPORT
 }

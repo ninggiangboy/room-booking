@@ -18,5 +18,5 @@ public enum ReviewTaskState {
     /** Passed to another queue. */
     ESCALATED,
     /** Closed without a decision. */
-    CANCELLED;
+    CANCELLED
 }

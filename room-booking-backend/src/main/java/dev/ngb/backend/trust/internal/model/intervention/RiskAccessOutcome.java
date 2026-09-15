@@ -11,5 +11,5 @@ public enum RiskAccessOutcome {
     /** Allowed in part. */
     PARTIAL,
     /** Could not be completed. */
-    ERRORED;
+    ERRORED
 }

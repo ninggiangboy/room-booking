@@ -20,5 +20,5 @@ public enum RiskRetentionClass {
     /** Kept as evidence in a safety matter. */
     SAFETY_EVIDENCE,
     /** Held under a scoped, authorized legal hold. */
-    LEGAL_HOLD;
+    LEGAL_HOLD
 }

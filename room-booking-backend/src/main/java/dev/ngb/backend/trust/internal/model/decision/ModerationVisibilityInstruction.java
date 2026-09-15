@@ -18,5 +18,5 @@ public enum ModerationVisibilityInstruction {
     /** Never make it visible. */
     NOT_PUBLISHED,
     /** Leave visibility exactly as it is. */
-    UNCHANGED;
+    UNCHANGED
 }

@@ -20,5 +20,5 @@ public enum ReporterRelationship {
     /** A public authority. */
     AUTHORITY,
     /** Platform staff or automation. */
-    PLATFORM;
+    PLATFORM
 }

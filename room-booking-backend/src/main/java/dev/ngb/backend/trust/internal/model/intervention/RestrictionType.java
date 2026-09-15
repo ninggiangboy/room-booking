@@ -34,5 +34,5 @@ public enum RestrictionType {
     /** Content is withheld pending a decision. */
     CONTENT_QUARANTINED,
     /** The account is suspended. */
-    ACCOUNT_SUSPENDED;
+    ACCOUNT_SUSPENDED
 }

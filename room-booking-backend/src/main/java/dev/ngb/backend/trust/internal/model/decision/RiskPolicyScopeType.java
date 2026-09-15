@@ -13,5 +13,5 @@ public enum RiskPolicyScopeType {
     /** One listing. */
     LISTING,
     /** A defined population segment. */
-    SEGMENT;
+    SEGMENT
 }

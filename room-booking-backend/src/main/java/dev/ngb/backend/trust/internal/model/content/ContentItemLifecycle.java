@@ -14,5 +14,5 @@ public enum ContentItemLifecycle {
     /** Deleted at the author's request. */
     DELETED_BY_OWNER,
     /** Kept under a purpose that outlives the author's deletion. */
-    RETAINED_EVIDENCE;
+    RETAINED_EVIDENCE
 }

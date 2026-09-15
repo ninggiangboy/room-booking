@@ -15,5 +15,5 @@ public enum ModerationRouting {
     /** Route to the urgent safety path. */
     URGENT_SAFETY,
     /** Hold until a policy question is settled. */
-    HOLD_FOR_POLICY;
+    HOLD_FOR_POLICY
 }

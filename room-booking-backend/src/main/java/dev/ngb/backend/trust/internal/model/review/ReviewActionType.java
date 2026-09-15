@@ -24,5 +24,5 @@ public enum ReviewActionType {
     /** The task was closed without a decision. */
     CANCEL,
     /** A note was added and nothing changed. */
-    ANNOTATE;
+    ANNOTATE
 }

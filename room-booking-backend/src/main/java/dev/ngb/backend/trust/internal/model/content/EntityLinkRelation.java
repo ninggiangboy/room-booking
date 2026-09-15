@@ -31,5 +31,5 @@ public enum EntityLinkRelation {
     /** Membership of the same organization. */
     ORGANIZATION_MEMBER,
     /** They may be the same party. */
-    SUSPECTED_DUPLICATE;
+    SUSPECTED_DUPLICATE
 }

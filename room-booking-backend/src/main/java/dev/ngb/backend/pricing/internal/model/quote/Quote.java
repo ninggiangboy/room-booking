@@ -1,8 +1,6 @@
 package dev.ngb.backend.pricing.internal.model.quote;
 
-import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

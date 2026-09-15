@@ -11,5 +11,5 @@ public enum ChallengeAttemptOutcome {
     /** The subject did not finish. */
     ABANDONED,
     /** The attempt could not be assessed. */
-    ERRORED;
+    ERRORED
 }

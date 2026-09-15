@@ -14,5 +14,5 @@ public enum ReportSeverityBand {
     /** The ordinary case. */
     STANDARD,
     /** Minor or informational. */
-    LOW;
+    LOW
 }

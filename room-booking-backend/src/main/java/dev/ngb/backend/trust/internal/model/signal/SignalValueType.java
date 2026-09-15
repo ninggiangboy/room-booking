@@ -18,5 +18,5 @@ public enum SignalValueType {
     /** A pointer to protected detail held elsewhere. */
     REFERENCE,
     /** The observation exists but carries no value. */
-    ABSENT;
+    ABSENT
 }

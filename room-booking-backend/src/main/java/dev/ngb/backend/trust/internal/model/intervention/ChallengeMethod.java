@@ -24,5 +24,5 @@ public enum ChallengeMethod {
     /** Issuer authentication of a card payment. */
     THREE_D_SECURE,
     /** Evidence assessed by a person. */
-    MANUAL_PROOF;
+    MANUAL_PROOF
 }

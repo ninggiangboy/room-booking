@@ -16,5 +16,5 @@ public enum ContentAttachmentScanState {
     /** The file type cannot be validated. */
     UNSUPPORTED,
     /** The scan could not complete. */
-    FAILED;
+    FAILED
 }

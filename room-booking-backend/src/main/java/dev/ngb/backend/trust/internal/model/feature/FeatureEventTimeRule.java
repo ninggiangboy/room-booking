@@ -12,5 +12,5 @@ public enum FeatureEventTimeRule {
     /** When the platform learned of it. */
     INGESTION_TIME,
     /** The instant the evaluation was made. */
-    DECISION_TIME;
+    DECISION_TIME
 }

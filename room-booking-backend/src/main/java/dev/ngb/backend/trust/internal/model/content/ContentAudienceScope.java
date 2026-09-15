@@ -16,5 +16,5 @@ public enum ContentAudienceScope {
     /** The author alone. */
     PRIVATE,
     /** Platform staff. */
-    INTERNAL;
+    INTERNAL
 }
