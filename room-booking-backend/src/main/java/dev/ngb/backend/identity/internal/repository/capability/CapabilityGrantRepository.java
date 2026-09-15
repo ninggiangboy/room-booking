@@ -6,6 +6,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 
 import dev.ngb.backend.identity.internal.model.capability.CapabilityGrant;
 
@@ -41,7 +42,10 @@ public interface CapabilityGrantRepository extends ListCrudRepository<Capability
      *
      * @param granteeId principal being evaluated
      * @param scopeType kind of resource being acted on
-     * @param scopeId identifier of that resource
+     * @param scopeId identifier of that resource; {@code null} for a {@code GLOBAL} evaluation,
+     *     since the {@code scope_type = 'GLOBAL'} half of the {@code OR} below never needs it —
+     *     bound anyway, and must be declared {@code @Nullable} or Spring Data's own parameter
+     *     validation rejects the call before the SQL ever runs
      * @param decisionInstant the command's single decision instant
      * @return possibly empty list of grants in force
      */
@@ -57,7 +61,7 @@ public interface CapabilityGrantRepository extends ListCrudRepository<Capability
     List<CapabilityGrant> findEffective(
             @Param("granteeId") UUID granteeId,
             @Param("scopeType") String scopeType,
-            @Param("scopeId") UUID scopeId,
+            @Param("scopeId") @Nullable UUID scopeId,
             @Param("decisionInstant") Instant decisionInstant);
 
     /**

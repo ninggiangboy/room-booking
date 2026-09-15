@@ -4,7 +4,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
-import dev.ngb.backend.identity.internal.model.account.User;
 import dev.ngb.backend.identity.internal.model.session.AuthSession;
 import dev.ngb.backend.identity.internal.model.session.AuthToken;
 import dev.ngb.backend.identity.internal.model.session.AuthTokenType;
@@ -13,9 +12,10 @@ import dev.ngb.backend.identity.internal.model.session.TokenConsumptionReason;
 import dev.ngb.backend.identity.internal.repository.session.AuthSessionRepository;
 import dev.ngb.backend.identity.internal.repository.session.AuthTokenRepository;
 import dev.ngb.backend.identity.internal.service.auth.AuthTokenFactory;
-import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import dev.ngb.backend.identity.internal.exception.InvalidRefreshTokenException;
 import dev.ngb.backend.platform.AssuranceLevel;
@@ -32,8 +32,22 @@ import dev.ngb.backend.platform.util.HashUtils;
  *
  * <p>Every refresh token issued here belongs to a session, which is what makes reuse detection
  * actionable: a replayed token identifies the session whose entire lineage must be revoked, not
- * just the one stolen secret. A token issued before sessions existed carries no session reference
- * and keeps the simpler one-shot behavior it always had.</p>
+ * just the one stolen secret. Migration {@code 037} added a database constraint requiring every
+ * refresh token to carry a session, which is what let the session-less fallback path this class
+ * used to need be deleted rather than merely left unreachable.</p>
+ *
+ * <p>{@link #consume} is its own {@code REQUIRES_NEW} transaction, with rollback suppressed for
+ * {@link InvalidRefreshTokenException}. Both are necessary together: {@code
+ * AuthenticationService.refresh} already runs inside its own {@code @Transactional} method, and
+ * {@code DomainException} -- the base every stable exception in this codebase extends -- is a
+ * {@code RuntimeException} specifically so a caller's transaction rolls back on it by default.
+ * Joining that outer transaction (the default propagation) would let the caller's rollback undo
+ * the very revocation the reuse-detection throw is supposed to guarantee, silently leaving every
+ * other token in the session's lineage usable. {@code REQUIRES_NEW} alone is not enough either:
+ * without suppressing rollback for this one exception, {@code consume}'s own transaction would
+ * roll back itself. Forcing a genuinely separate transaction also sidesteps a deadlock a nested,
+ * same-connection re-lock of the session row would otherwise risk against the row lock {@link
+ * AuthSessionRepository#findByIdForUpdate} takes below.</p>
  */
 @Service
 public class RefreshTokenService {
@@ -78,58 +92,48 @@ public class RefreshTokenService {
     }
 
     /**
-     * Opens a new session for the user and issues its first refresh token.
+     * Opens a new session for the account holder and issues its first refresh token.
      *
-     * @param user account the session belongs to
+     * @param accountHolderId account the session belongs to
      * @param method how the principal proved who they were
      * @param assuranceLevel strength of that proof
-     * @return raw refresh-token secret to return to the client
+     * @return the new session's identifier and its first raw refresh-token secret
      */
-    public String issue(User user, AuthenticationMethod method, AssuranceLevel assuranceLevel) {
+    public Issued issue(UUID accountHolderId, AuthenticationMethod method, AssuranceLevel assuranceLevel) {
         Instant now = clock.instant();
 
         AuthSession session = authSessionFactory.create(
-                user.getId(), method, assuranceLevel, now, idleExpiration, sessionAbsoluteExpiration);
+                accountHolderId, method, assuranceLevel, now, idleExpiration, sessionAbsoluteExpiration);
         session = authSessionRepository.save(session);
 
         // Only the SHA-256 hash is persisted; the raw secret is returned once to the client.
         AuthTokenFactory.IssuedToken issued = authTokenFactory.createForSession(
-                user.getId(), session.getId(), 0, now, idleExpiration);
+                accountHolderId, session.getId(), 0, now, idleExpiration);
         AuthToken savedToken = authTokenRepository.save(issued.token());
 
         session.setCurrentTokenId(savedToken.getId());
         authSessionRepository.save(session);
 
-        return issued.rawToken();
+        return new Issued(session.getId(), issued.rawToken());
     }
 
     /**
      * Consumes a refresh token and rotates it into the next generation of its session.
      *
-     * <p>A token that carries no session predates sessions and keeps the original one-shot
-     * rotation. A token that carries a session is checked against that session's current
-     * generation: a replayed already-consumed token, or an unconsumed token that is not the
-     * session's current one, is treated as reuse and revokes the whole session lineage rather than
+     * <p>A consumed token that is replayed, or an unconsumed token that is not its session's
+     * current generation, is treated as reuse and revokes the whole session lineage rather than
      * being honored as an ordinary refresh.</p>
      *
      * @param rawToken raw secret identifying the token to consume
-     * @return the account the token belonged to and the raw secret of its successor
+     * @return the account, session, and raw secret of the successor token
      * @throws InvalidRefreshTokenException when the token is unusable, or reuse is detected
      */
+    @Transactional(propagation = Propagation.REQUIRES_NEW, noRollbackFor = InvalidRefreshTokenException.class)
     public Rotated consume(String rawToken) {
         Instant now = clock.instant();
         AuthToken token = authTokenRepository.findByTokenHashAndType(
                         HashUtils.sha256Hex(rawToken), AuthTokenType.REFRESH_TOKEN)
                 .orElseThrow(InvalidRefreshTokenException::new);
-
-        if (token.getSessionId() == null) {
-            if (!token.isUsableAt(now)) {
-                throw new InvalidRefreshTokenException();
-            }
-            token.consume(now, TokenConsumptionReason.ROTATED);
-            authTokenRepository.save(token);
-            return new Rotated(token.getUserId(), null);
-        }
 
         AuthSession session = authSessionRepository.findByIdForUpdate(token.getSessionId())
                 .orElseThrow(InvalidRefreshTokenException::new);
@@ -139,7 +143,9 @@ public class RefreshTokenService {
                 && !session.getCurrentTokenId().equals(token.getId());
         if (replayed || staleGeneration) {
             // A consumed token presented again, or a token that isn't the session's current
-            // generation, is the signature of a replayed secret: revoke the whole lineage.
+            // generation, is the signature of a replayed secret: revoke the whole lineage. This
+            // method's own REQUIRES_NEW/noRollbackFor pairing (see the class Javadoc) is what lets
+            // this revocation actually commit despite the exception thrown right after it.
             revokeSessionAndTokens(session, now, "REUSE_DETECTED");
             throw new InvalidRefreshTokenException();
         }
@@ -148,7 +154,7 @@ public class RefreshTokenService {
         }
 
         AuthTokenFactory.IssuedToken issued = authTokenFactory.createForSession(
-                token.getUserId(), session.getId(), session.getRotationGeneration() + 1, now,
+                token.getAccountHolderId(), session.getId(), session.getRotationGeneration() + 1, now,
                 idleExpiration);
         AuthToken next = authTokenRepository.save(issued.token());
 
@@ -159,17 +165,18 @@ public class RefreshTokenService {
         session.setRotationGeneration(session.getRotationGeneration() + 1);
         session.setCurrentTokenId(next.getId());
         session.setLastUsedAt(now);
+        // Idle expiry slides forward on every successful rotation: idleExpiresAt ends a session
+        // that has gone quiet, and a session used every day for a year is not quiet. Without this,
+        // both expiries were effectively absolute and an actively used session died after one
+        // idle-expiration window regardless of how often it was used.
+        session.setIdleExpiresAt(now.plus(idleExpiration));
         authSessionRepository.save(session);
 
-        return new Rotated(token.getUserId(), issued.rawToken());
+        return new Rotated(token.getAccountHolderId(), session.getId(), issued.rawToken());
     }
 
     /**
      * Idempotently revokes a refresh token's session, making logout safe to retry.
-     *
-     * <p>Revoking the session, not just the presented token, is what makes "sign out everywhere"
-     * from this device's session possible: a token predating sessions falls back to revoking just
-     * itself.</p>
      *
      * @param rawToken raw secret whose stored hash identifies the token row
      */
@@ -178,14 +185,12 @@ public class RefreshTokenService {
                         HashUtils.sha256Hex(rawToken), AuthTokenType.REFRESH_TOKEN)
                 .ifPresent(token -> {
                     Instant now = clock.instant();
-                    if (token.getSessionId() != null) {
-                        authSessionRepository.findByIdForUpdate(token.getSessionId())
-                                .filter(session -> session.getRevokedAt() == null)
-                                .ifPresent(session -> {
-                                    session.revoke(now, "LOGOUT", session.getUserId());
-                                    authSessionRepository.save(session);
-                                });
-                    }
+                    authSessionRepository.findByIdForUpdate(token.getSessionId())
+                            .filter(session -> session.getRevokedAt() == null)
+                            .ifPresent(session -> {
+                                session.revoke(now, "LOGOUT", session.getAccountHolderId());
+                                authSessionRepository.save(session);
+                            });
                     if (token.getConsumedAt() == null) {
                         token.consume(now, TokenConsumptionReason.LOGOUT);
                         authTokenRepository.save(token);
@@ -194,15 +199,15 @@ public class RefreshTokenService {
     }
 
     /**
-     * Revokes every live session for a user, for account-wide security actions such as a password
-     * reset or account deletion.
+     * Revokes every live session for an account holder, for account-wide security actions such as
+     * a password reset or account closure.
      *
-     * @param userId account whose sessions are revoked
+     * @param accountHolderId account whose sessions are revoked
      * @param now the command's decision instant
      * @param reason stable reason recorded on every revoked session and token
      */
-    public void revokeAllSessionsForUser(UUID userId, Instant now, String reason) {
-        authSessionRepository.findLiveForUser(userId, now)
+    public void revokeAllSessionsForHolder(UUID accountHolderId, Instant now, String reason) {
+        authSessionRepository.findLiveForHolder(accountHolderId, now)
                 .forEach(session -> revokeSessionAndTokens(session, now, reason));
     }
 
@@ -217,12 +222,22 @@ public class RefreshTokenService {
     }
 
     /**
-     * The account a rotated token belonged to, and the raw secret of the token that replaced it.
+     * The identifier and first raw secret of a newly opened session.
      *
-     * @param userId account the token belonged to
-     * @param rawRefreshToken raw secret of the successor token, or {@code null} for a token
-     *     predating sessions, which is consumed without issuing a linked successor
+     * @param sessionId identifier of the new session
+     * @param rawRefreshToken raw secret of its first refresh token
      */
-    public record Rotated(UUID userId, @Nullable String rawRefreshToken) {
+    public record Issued(UUID sessionId, String rawRefreshToken) {
+    }
+
+    /**
+     * The account and session a rotated token belonged to, and the raw secret of the token that
+     * replaced it.
+     *
+     * @param accountHolderId account the token belonged to
+     * @param sessionId session the token was rotated under
+     * @param rawRefreshToken raw secret of the successor token
+     */
+    public record Rotated(UUID accountHolderId, UUID sessionId, String rawRefreshToken) {
     }
 }

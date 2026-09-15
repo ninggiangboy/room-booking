@@ -3,17 +3,19 @@ package dev.ngb.backend.identity.internal.service.auth.passwordreset;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import dev.ngb.backend.identity.internal.model.account.AccountHolder;
+import dev.ngb.backend.identity.internal.model.account.AccountHolderStatus;
 import dev.ngb.backend.identity.internal.model.account.ContactChannelType;
 import dev.ngb.backend.identity.internal.model.credential.AuthCredential;
 import dev.ngb.backend.identity.internal.model.credential.CredentialType;
 import dev.ngb.backend.identity.internal.model.session.AuthToken;
 import dev.ngb.backend.identity.internal.model.session.AuthTokenType;
 import dev.ngb.backend.identity.internal.model.session.TokenConsumptionReason;
-import dev.ngb.backend.identity.internal.model.account.User;
+import dev.ngb.backend.identity.internal.repository.account.AccountHolderRepository;
 import dev.ngb.backend.identity.internal.repository.account.ContactChannelRepository;
 import dev.ngb.backend.identity.internal.repository.credential.AuthCredentialRepository;
 import dev.ngb.backend.identity.internal.repository.session.AuthTokenRepository;
-import dev.ngb.backend.identity.internal.repository.account.UserRepository;
+import dev.ngb.backend.identity.internal.service.account.AccountHolderFinder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,7 +26,6 @@ import dev.ngb.backend.identity.PasswordResetIssued;
 import dev.ngb.backend.identity.internal.exception.InvalidPasswordResetTokenException;
 import dev.ngb.backend.identity.internal.service.auth.AuthTokenFactory;
 import dev.ngb.backend.identity.internal.service.auth.session.RefreshTokenService;
-import dev.ngb.backend.identity.internal.service.user.UserFinder;
 import dev.ngb.backend.identity.internal.service.validation.PasswordPolicy;
 import dev.ngb.backend.identity.internal.web.ForgotPasswordRequest;
 import dev.ngb.backend.identity.internal.web.ResetPasswordRequest;
@@ -49,12 +50,12 @@ public class PasswordResetService {
 
     private final AuthTokenRepository authTokenRepository;
     private final AuthTokenFactory authTokenFactory;
-    private final UserRepository userRepository;
+    private final AccountHolderRepository accountHolderRepository;
     private final AuthCredentialRepository authCredentialRepository;
     private final ContactChannelRepository contactChannelRepository;
     private final PasswordCredentialRotator passwordCredentialRotator;
     private final RefreshTokenService refreshTokenService;
-    private final UserFinder userFinder;
+    private final AccountHolderFinder accountHolderFinder;
     private final PasswordEncoder passwordEncoder;
     private final PasswordPolicy passwordPolicy;
     private final ApplicationEventPublisher eventPublisher;
@@ -66,12 +67,12 @@ public class PasswordResetService {
      *
      * @param authTokenRepository persistence gateway for reset tokens
      * @param authTokenFactory builder of token records and their raw secrets
-     * @param userRepository persistence gateway for accounts
+     * @param accountHolderRepository persistence gateway for account holders
      * @param authCredentialRepository persistence gateway for password credentials
      * @param contactChannelRepository persistence gateway for contact channels
      * @param passwordCredentialRotator builder of the disabled-old/enrolled-new credential pair
      * @param refreshTokenService revokes outstanding sessions after a credential recovery
-     * @param userFinder shared user lookup and account-status gateway
+     * @param accountHolderFinder shared account-holder lookup and active-status gateway
      * @param passwordEncoder verifies and hashes passwords
      * @param passwordPolicy enforces password strength and BCrypt limits
      * @param eventPublisher publishes a raw token for post-commit email delivery
@@ -81,12 +82,12 @@ public class PasswordResetService {
     public PasswordResetService(
             AuthTokenRepository authTokenRepository,
             AuthTokenFactory authTokenFactory,
-            UserRepository userRepository,
+            AccountHolderRepository accountHolderRepository,
             AuthCredentialRepository authCredentialRepository,
             ContactChannelRepository contactChannelRepository,
             PasswordCredentialRotator passwordCredentialRotator,
             RefreshTokenService refreshTokenService,
-            UserFinder userFinder,
+            AccountHolderFinder accountHolderFinder,
             PasswordEncoder passwordEncoder,
             PasswordPolicy passwordPolicy,
             ApplicationEventPublisher eventPublisher,
@@ -94,12 +95,12 @@ public class PasswordResetService {
             @Value("${app.password-reset.token-ttl:30m}") Duration tokenTtl) {
         this.authTokenRepository = authTokenRepository;
         this.authTokenFactory = authTokenFactory;
-        this.userRepository = userRepository;
+        this.accountHolderRepository = accountHolderRepository;
         this.authCredentialRepository = authCredentialRepository;
         this.contactChannelRepository = contactChannelRepository;
         this.passwordCredentialRotator = passwordCredentialRotator;
         this.refreshTokenService = refreshTokenService;
-        this.userFinder = userFinder;
+        this.accountHolderFinder = accountHolderFinder;
         this.passwordEncoder = passwordEncoder;
         this.passwordPolicy = passwordPolicy;
         this.eventPublisher = eventPublisher;
@@ -118,7 +119,7 @@ public class PasswordResetService {
     @Transactional
     public void requestReset(ForgotPasswordRequest request) {
         String normalizedEmail = StringUtils.normalizeLowerCase(request.email());
-        userFinder.findActiveByEmailIfPresent(normalizedEmail).ifPresent(this::issue);
+        accountHolderFinder.findActiveByEmailIfPresent(normalizedEmail).ifPresent(this::issue);
     }
 
     /**
@@ -144,11 +145,11 @@ public class PasswordResetService {
             throw new InvalidPasswordResetTokenException();
         }
 
-        User user = userRepository.findById(resetToken.getUserId())
-                .filter(User::isActive)
+        AccountHolder holder = accountHolderRepository.findById(resetToken.getAccountHolderId())
+                .filter(candidate -> candidate.getStatus() == AccountHolderStatus.ACTIVE)
                 .orElseThrow(InvalidPasswordResetTokenException::new);
         AuthCredential currentCredential = authCredentialRepository
-                .findActive(user.getId(), CredentialType.PASSWORD.name())
+                .findActive(holder.getId(), CredentialType.PASSWORD.name())
                 .orElseThrow(InvalidPasswordResetTokenException::new);
         if (passwordEncoder.matches(request.newPassword(), currentCredential.getVerifierDigest())) {
             throw new ValidationException(
@@ -166,30 +167,34 @@ public class PasswordResetService {
         // Possessing the reset link proves control of the email address, the same way an explicit
         // verification token does.
         contactChannelRepository
-                .findCurrentPrimary(user.getId(), ContactChannelType.EMAIL.name())
+                .findCurrentPrimary(holder.getId(), ContactChannelType.EMAIL.name())
                 .filter(channel -> !channel.isVerified())
                 .ifPresent(channel -> {
                     channel.markVerified(now, EMAIL_VERIFICATION_METHOD);
                     contactChannelRepository.save(channel);
                 });
 
-        refreshTokenService.revokeAllSessionsForUser(user.getId(), now, "PASSWORD_RESET");
+        refreshTokenService.revokeAllSessionsForHolder(holder.getId(), now, "PASSWORD_RESET");
     }
 
-    private void issue(User user) {
+    private void issue(AccountHolder holder) {
         Instant now = clock.instant();
-        authTokenRepository.findAllByUserIdAndTypeAndConsumedAtIsNull(
-                        user.getId(), AuthTokenType.PASSWORD_RESET)
+        authTokenRepository.findAllByAccountHolderIdAndTypeAndConsumedAtIsNull(
+                        holder.getId(), AuthTokenType.PASSWORD_RESET)
                 .forEach(token -> {
                     token.consume(now, TokenConsumptionReason.ROTATED);
                     authTokenRepository.save(token);
                 });
 
         AuthTokenFactory.IssuedToken issued = authTokenFactory.create(
-                user.getId(), AuthTokenType.PASSWORD_RESET, now, tokenTtl);
+                holder.getId(), AuthTokenType.PASSWORD_RESET, now, tokenTtl);
         authTokenRepository.save(issued.token());
-        eventPublisher.publishEvent(
-                new PasswordResetIssued(user.getEmail(), issued.rawToken()));
+        String email = contactChannelRepository
+                .findCurrentPrimary(holder.getId(), ContactChannelType.EMAIL.name())
+                .map(channel -> channel.getNormalizedValue())
+                .orElseThrow(() -> new IllegalStateException(
+                        "registration must create a primary email channel"));
+        eventPublisher.publishEvent(new PasswordResetIssued(email, issued.rawToken()));
     }
 
 }

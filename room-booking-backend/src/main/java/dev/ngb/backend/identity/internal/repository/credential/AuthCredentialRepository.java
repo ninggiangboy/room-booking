@@ -26,7 +26,7 @@ public interface AuthCredentialRepository extends ListCrudRepository<AuthCredent
      * <pre>{@code
      * SELECT *
      * FROM auth_credentials
-     * WHERE user_id = :userId
+     * WHERE account_holder_id = :accountHolderId
      *   AND credential_type = :credentialType
      *   AND disabled_at IS NULL
      * }</pre>
@@ -34,44 +34,45 @@ public interface AuthCredentialRepository extends ListCrudRepository<AuthCredent
      * <p>{@code uk_auth_credentials_one_active} guarantees at most one row matches, which is what
      * stops the login path from having to guess which of two passwords is current.</p>
      *
-     * @param userId principal being authenticated
+     * @param accountHolderId principal being authenticated
      * @param credentialType kind of material required
      * @return the active credential when one is enrolled
      */
     @Query("""
             SELECT *
             FROM auth_credentials
-            WHERE user_id = :userId
+            WHERE account_holder_id = :accountHolderId
               AND credential_type = :credentialType
               AND disabled_at IS NULL
             """)
     Optional<AuthCredential> findActive(
-            @Param("userId") UUID userId,
+            @Param("accountHolderId") UUID accountHolderId,
             @Param("credentialType") String credentialType);
 
     /**
      * Returns every credential ever enrolled for a principal, newest first.
      *
-     * <p>Spring derives {@code WHERE user_id = ? ORDER BY enrolled_at DESC}. Includes disabled rows,
-     * because an investigation needs to see that a factor was once present and when it went away.</p>
+     * <p>Spring derives {@code WHERE account_holder_id = ? ORDER BY enrolled_at DESC}. Includes
+     * disabled rows, because an investigation needs to see that a factor was once present and when
+     * it went away.</p>
      *
-     * @param userId principal whose enrolments are being reviewed
+     * @param accountHolderId principal whose enrolments are being reviewed
      * @return possibly empty list of credentials, newest first
      */
-    List<AuthCredential> findAllByUserIdOrderByEnrolledAtDesc(UUID userId);
+    List<AuthCredential> findAllByAccountHolderIdOrderByEnrolledAtDesc(UUID accountHolderId);
 
     /**
      * Counts the live credentials of one type for a principal.
      *
-     * <p>Spring derives {@code SELECT count(*) ... WHERE user_id = ? AND credential_type = ? AND
-     * disabled_at IS NULL}. Used before disabling a factor, so a principal cannot remove their last
-     * means of signing in.</p>
+     * <p>Spring derives {@code SELECT count(*) ... WHERE account_holder_id = ? AND credential_type =
+     * ? AND disabled_at IS NULL}. Used before disabling a factor, so a principal cannot remove
+     * their last means of signing in.</p>
      *
-     * @param userId principal being checked
+     * @param accountHolderId principal being checked
      * @param credentialType kind of material
      * @return number of active credentials of that type
      */
-    long countByUserIdAndCredentialTypeAndDisabledAtIsNull(
-            UUID userId,
+    long countByAccountHolderIdAndCredentialTypeAndDisabledAtIsNull(
+            UUID accountHolderId,
             CredentialType credentialType);
 }

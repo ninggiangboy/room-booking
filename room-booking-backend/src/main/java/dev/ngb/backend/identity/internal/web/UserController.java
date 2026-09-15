@@ -22,8 +22,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 import dev.ngb.backend.config.ApiErrorResponse;
-import dev.ngb.backend.identity.internal.service.host.HostOnboardingRequest;
-import dev.ngb.backend.identity.internal.service.host.HostOnboardingResponse;
 import dev.ngb.backend.identity.internal.service.host.HostOnboardingService;
 import dev.ngb.backend.identity.internal.service.account.UserAccountService;
 
@@ -106,26 +104,22 @@ public class UserController {
     }
 
     /**
-     * Atomically creates a host profile and grants the current account the host role.
+     * Grants the current account the host capability, idempotently.
      *
      * @param userId authenticated account identifier
-     * @param request optional host biography
-     * @return updated account roles and host profile
+     * @return updated account projection including the host role and its capabilities
      */
-    @PostMapping("/me/host-profile")
-    @Operation(summary = "Create a host profile", description = "Atomically creates the authenticated user's host profile and grants the HOST role. Repeating the request returns the existing profile.")
+    @PostMapping("/me/host-capability")
+    @Operation(summary = "Grant the host capability", description = "Idempotently grants the authenticated account the HOST role. Repeating the request returns the current projection rather than a duplicate grant.")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Updated user and host profile", content = @Content(schema = @Schema(implementation = HostOnboardingResponse.class))),
-            @ApiResponse(responseCode = "400", ref = "#/components/responses/ValidationError"),
+            @ApiResponse(responseCode = "200", description = "Updated account projection", content = @Content(schema = @Schema(implementation = UserResponse.class))),
             @ApiResponse(responseCode = "401", ref = "#/components/responses/Unauthorized"),
             @ApiResponse(responseCode = "403", ref = "#/components/responses/AccountDisabled"),
             @ApiResponse(responseCode = "404", ref = "#/components/responses/UserNotFound"),
             @ApiResponse(responseCode = "500", ref = "#/components/responses/InternalServerError")
     })
-    public HostOnboardingResponse onboardHost(
-            @AuthenticationPrincipal UUID userId,
-            @Valid @RequestBody HostOnboardingRequest request) {
-        return hostOnboardingService.onboard(userId, request);
+    public UserResponse onboardHost(@AuthenticationPrincipal UUID userId) {
+        return hostOnboardingService.onboard(userId);
     }
 
     /**

@@ -235,7 +235,7 @@ Exception trong controller đi qua `HandlerExceptionResolver`/`@ExceptionHandler
 
 ### Mapping và request data
 
-`@RequestMapping` thường đặt prefix ở class. `@GetMapping`, `@PostMapping`, `@PutMapping`, `@PatchMapping`, `@DeleteMapping` biểu đạt HTTP verb. [UserController.java](../../src/main/java/dev/ngb/backend/identity/internal/web/UserController.java) có GET `/me`, PUT `/me/password`, POST `/me/host-profile`, DELETE `/me`.
+`@RequestMapping` thường đặt prefix ở class. `@GetMapping`, `@PostMapping`, `@PutMapping`, `@PatchMapping`, `@DeleteMapping` biểu đạt HTTP verb. [UserController.java](../../src/main/java/dev/ngb/backend/identity/internal/web/UserController.java) có GET `/me`, PUT `/me/password`, POST `/me/host-capability`, DELETE `/me`.
 
 - `@PathVariable`: identity nằm trong URI `/bookings/{id}`;
 - `@RequestParam`: filter/pagination/query; project dùng `?email=`;

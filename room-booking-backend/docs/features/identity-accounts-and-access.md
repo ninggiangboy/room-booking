@@ -45,39 +45,45 @@ assurance level for this session, and append-only evidence of how each of those 
 
 ## Status and dependencies
 
-This is a target design. The repository implements a working subset of authentication and account
-management, not the complete D01 contract.
+This is a target design. The repository implements a working subset of authentication, account, and
+authorization management, not the complete D01 contract. As of migration `037`, the implemented
+subset runs entirely on the target model described in this document: `account_holders` is the sole
+principal root, and there is no remaining legacy schema.
 
 Current foundations are:
 
-- [`001-identity.sql`](../../src/main/resources/db/changelog/changes/001-identity.sql) creates
-  `users` (case-insensitive unique email, optional unique phone number, password hash, display name,
-  avatar, `ACTIVE`/`SUSPENDED`/`DELETED` status, email/phone verification instants, optimistic
-  `version`), `user_roles` with a composite primary key over `GUEST`/`HOST`/`ADMIN`, and
-  `host_profiles` keyed by `user_id` with an `identity_status` of
-  `UNVERIFIED`/`PENDING`/`VERIFIED`/`REJECTED`;
-- [`007-email-verification.sql`](../../src/main/resources/db/changelog/changes/007-email-verification.sql),
-  [`008-auth-tokens.sql`](../../src/main/resources/db/changelog/changes/008-auth-tokens.sql), and
-  [`009-password-reset.sql`](../../src/main/resources/db/changelog/changes/009-password-reset.sql)
-  produce one `auth_tokens` table holding a unique Secure Hash Algorithm 256 (SHA-256) token digest,
-  a `type` of `EMAIL_VERIFICATION`/`PASSWORD_RESET`/`REFRESH_TOKEN`, an expiry, and a consumption
-  instant, with indexes for per-user lookup and unconsumed-token expiry;
+- [`014-identity-target-model.sql`](../../src/main/resources/db/changelog/changes/014-identity-target-model.sql)
+  and [`037-identity-retire-legacy-tables.sql`](../../src/main/resources/db/changelog/changes/037-identity-retire-legacy-tables.sql)
+  together define the live schema: `account_holders` (person or organization, `ACTIVE`/`SUSPENDED`/
+  `CLOSED` status, resolved-or-unresolved market context), `contact_channels`, `auth_credentials`,
+  `auth_sessions`, `auth_tokens` (with rotation lineage), `auth_attempts`, `capability_grants`,
+  `capability_restrictions`, and `organization_members`;
 - [`AuthController`](../../src/main/java/dev/ngb/backend/identity/internal/web/AuthController.java) exposes
   register, login, refresh, logout, forgot/reset password, and email-verification request/confirm;
 - [`UserController`](../../src/main/java/dev/ngb/backend/identity/internal/web/UserController.java) exposes the
-  current-user projection, a public email-existence check, password change, atomic host onboarding,
-  and self-service soft deletion;
+  current-user projection, a public email-existence check, password change, idempotent host-capability
+  onboarding, and self-service account closure;
 - [`SecurityConfig`](../../src/main/java/dev/ngb/backend/config/SecurityConfig.java) is stateless,
   disables Cross-Site Request Forgery (CSRF) protection for a bearer-token API, lists public routes
-  explicitly, reserves `/api/v1/admin/**` for the `ADMIN` role, and requires authentication
-  everywhere else;
+  explicitly, reserves `/api/v1/admin/**` for the `ACCOUNT_SUSPEND` capability, and requires
+  authentication everywhere else;
 - [`JwtAuthenticationFilter`](../../src/main/java/dev/ngb/backend/config/JwtAuthenticationFilter.java)
-  verifies the JSON Web Token (JWT) signature and expiry, then reloads account status and roles from
-  PostgreSQL on every protected request, so a role grant applies on the next request and a
-  suspension or deletion blocks an unexpired access token immediately;
+  verifies the JSON Web Token (JWT) signature and expiry, then calls
+  [`IdentityFacts`](../../src/main/java/dev/ngb/backend/identity/IdentityFacts.java) to reload
+  account status and effective capabilities from PostgreSQL on every protected request, so a grant
+  applies on the next request and a suspension or closure blocks an unexpired access token
+  immediately. Authorities carry raw capability names, not a `ROLE_` prefix;
+- [`Capability`](../../src/main/java/dev/ngb/backend/identity/internal/service/authz/Capability.java) and
+  [`RoleBundle`](../../src/main/java/dev/ngb/backend/identity/internal/service/authz/RoleBundle.java) are the
+  capability catalog and its `GUEST`/`HOST`/`ADMIN` bundles;
+  [`AuthorizationService`](../../src/main/java/dev/ngb/backend/identity/internal/service/authz/AuthorizationService.java)
+  is a pure decision function evaluating grants minus active restrictions;
+  [`CapabilityGrantService`](../../src/main/java/dev/ngb/backend/identity/internal/service/authz/CapabilityGrantService.java)
+  is the sole writer of `capability_grants`;
 - opaque refresh, verification, and reset secrets are returned once and stored only as digests;
-  refreshing consumes the presented token and issues a new one; password reset and account status
-  changes revoke outstanding unconsumed tokens;
+  refreshing consumes the presented token and rotates it into the next generation of its session,
+  detecting a replayed token and revoking the whole session lineage; password reset and account
+  status changes revoke outstanding sessions and unconsumed tokens;
 - [`PasswordPolicy`](../../src/main/java/dev/ngb/backend/identity/internal/service/validation/PasswordPolicy.java)
   enforces length, character classes, and the 72-byte BCrypt input limit through Spring Security's
   delegating password encoder;
@@ -87,54 +93,46 @@ Current foundations are:
 These are useful foundations, not proof of complete identity behavior. The repository does not yet
 contain:
 
-- an organization or account-holder concept; every principal is one natural-person row;
-- resource-scoped authorization. `user_roles` answers "has the `HOST` role", never "may act on this
-  listing"; no co-host, delegated, or team permission exists;
-- a session or device record. A refresh token is the only session-like row, and it carries no device,
-  network, assurance, or last-used evidence;
-- refresh-token reuse detection, session inventory, per-session revocation, or a "sign out everywhere"
-  command;
-- authentication assurance levels, step-up authentication, reauthentication before a security change,
-  multi-factor enrolment, or a security-change cooling-off period;
-- a phone-verification workflow. `users.phone_number` and `users.phone_verified_at` exist but nothing
-  writes the verification instant;
-- login attempt records, credential-stuffing controls, breached-credential checks, or per-account
-  lockout; only email-verification requests are rate limited;
+- an organization concept with live code; `organization_members` exists in the schema but nothing
+  writes or reads it yet, and no co-host or team permission is issued;
+- resource-scoped authorization in practice. `AuthorizationService` can evaluate a `LISTING`- or
+  `PROPERTY`-scoped grant, but nothing yet issues one; every live grant today is `GLOBAL`-scoped;
+- a session inventory endpoint or a "sign out everywhere" command. `auth_sessions` carries everything
+  needed for both, but no controller exposes them;
+- authentication assurance levels enforced by a step-up check, reauthentication before a security
+  change, multi-factor enrolment, or a security-change cooling-off period. `auth_sessions.assurance_level`
+  is written but nothing reads it to demand a stronger proof;
+- a phone-verification workflow. `contact_channels` supports a `PHONE` channel type but nothing
+  issues a phone-verification token;
+- login-attempt velocity control. `auth_attempts` exists in the schema but nothing writes to it yet;
 - an append-only identity audit trail. Status transitions and token revocations leave no evidence
-  record beyond the mutated row;
+  record beyond the mutated row and D00's generic `audit_events`, which nothing here writes to yet;
 - an account-recovery path that survives an attacker-controlled contact channel;
-- scoped-restriction state distinct from the coarse `SUSPENDED` account status;
-- erasure or anonymization behavior for `DELETED` accounts; the row and its personal data remain;
+- capability restrictions in practice. `capability_restrictions` exists and `AuthorizationService`
+  subtracts active rows from it, but nothing yet writes one;
+- erasure or anonymization behavior for a closed account; the row and its personal data remain;
 - domain events for identity facts. Authentication email is delivered by an in-process
   `ApplicationEventPublisher` listener after commit, which is best-effort and may be lost on
   process failure;
-- any automated test. `src/test` does not exist.
+- any automated test beyond `ApplicationModules.verify()`. No integration test exercises a live
+  endpoint.
 
-One documentation discrepancy is material to this design and is recorded here rather than silently
-inherited: the root `README.md` API table, `GUIDE.md` section 9, and
-[`../data-model/001-identity.md`](../data-model/001-identity.md) all describe
-`PUT /api/v1/admin/users/{userId}/status` as an available administrator operation. No controller,
-service method, or repository call implements it; `UpdateUserStatusRequest` is an unreferenced
-data-transfer object and `SecurityConfig` only reserves the path prefix. Administrator-driven
-suspension and reactivation are therefore a **target capability**, not an implemented one, and this
-document treats them as such.
+For a use-case-by-use-case account of exactly what is implemented, partial, or planned, see
+[`../implementation/identity/`](../implementation/identity/), in particular
+[`09-roadmap.md`](../implementation/identity/09-roadmap.md), which expands the gaps above into
+concrete proposed endpoints, error semantics, and event contracts.
 
 D01 depends on D00 primitives and on approved market and privacy policy. Recommended dependency
-order:
+order for what remains:
 
-1. Approve the principal model (person versus organization), assurance levels, capability catalog,
-   session lifetime, recovery policy, retention classes, and operator-authority boundary.
-2. Add the identity audit record, login-attempt evidence, and session/device rows through forward
-   migrations, and start writing them from the existing flows without changing response contracts.
-3. Introduce resource-scoped capability evaluation behind the existing role checks, then make it
-   authoritative once every consumer reads it.
-4. Add organizations, membership, and delegated grants once capability evaluation is authoritative.
-5. Add assurance levels, step-up, security-change cooldown, and account-recovery review.
-6. Publish identity events through the D00 outbox and let D15 request scoped restrictions and session
+1. Add organizations, membership, and delegated grants (`derived_from_grant_id` has no caller yet).
+2. Introduce resource-scoped capability grants from the domains that own the resource (`supply` for
+   listing/property scope), rather than only `GLOBAL`-scoped role grants.
+3. Add assurance levels enforced by step-up, security-change cooldown, and account-recovery review.
+4. Write `auth_attempts` from the login/refresh/verification paths and add velocity control.
+5. Publish identity events through the D00 outbox and let D15 request scoped restrictions and session
    revocation through supported commands.
-7. Implement erasure, anonymization, and legal-hold behavior with D22.
-
-No Java code, configuration, or migration is changed by this document.
+6. Implement erasure, anonymization, and legal-hold behavior with D22.
 
 ## Goals
 
@@ -897,7 +895,7 @@ payloads keep their contracts; new behavior is additive.
 | `GET /api/v1/users/me` | Bearer | Effective capability summary for the current scope |
 | `GET /api/v1/users/email-exists` | Public | Decision required: keep with hard limits, protect, or remove |
 | `PUT /api/v1/users/me/password` | Bearer | Reauthentication, revocation matrix, audit |
-| `POST /api/v1/users/me/host-profile` | Bearer | Capability grant with compliance provenance |
+| `POST /api/v1/users/me/host-capability` | Bearer | Already a capability grant (`RoleBundle.HOST`); target adds compliance provenance |
 | `DELETE /api/v1/users/me` | Bearer | Deletion request, obligation check, erasure schedule |
 
 ### Proposed operations

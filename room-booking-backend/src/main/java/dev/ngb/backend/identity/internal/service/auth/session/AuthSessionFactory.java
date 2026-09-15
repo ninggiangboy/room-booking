@@ -24,7 +24,7 @@ class AuthSessionFactory {
     /**
      * Builds an unsaved session with no rotations performed yet.
      *
-     * @param userId account the session belongs to
+     * @param accountHolderId account the session belongs to
      * @param method how the principal proved who they were when the session opened
      * @param assuranceLevel strength of that proof
      * @param issuedAt workflow's single decision instant
@@ -33,7 +33,7 @@ class AuthSessionFactory {
      * @return session row to persist, with no current token set yet
      */
     AuthSession create(
-            UUID userId,
+            UUID accountHolderId,
             AuthenticationMethod method,
             AssuranceLevel assuranceLevel,
             Instant issuedAt,
@@ -41,7 +41,7 @@ class AuthSessionFactory {
             Duration absoluteTtl) {
         return AuthSession.builder()
                 .id(UUID.randomUUID())
-                .userId(userId)
+                .accountHolderId(accountHolderId)
                 .authenticationMethod(method)
                 .assuranceLevel(assuranceLevel)
                 .lastAssuranceProofAt(issuedAt)

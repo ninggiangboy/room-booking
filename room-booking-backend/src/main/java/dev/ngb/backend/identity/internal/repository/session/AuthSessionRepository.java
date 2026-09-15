@@ -26,7 +26,7 @@ public interface AuthSessionRepository extends ListCrudRepository<AuthSession, U
      * <pre>{@code
      * SELECT *
      * FROM auth_sessions
-     * WHERE user_id = :userId
+     * WHERE account_holder_id = :accountHolderId
      *   AND revoked_at IS NULL
      *   AND idle_expires_at > :decisionInstant
      *   AND absolute_expires_at > :decisionInstant
@@ -37,21 +37,21 @@ public interface AuthSessionRepository extends ListCrudRepository<AuthSession, U
      * gone quiet, the other ends one that has lived too long however actively it is used. This backs
      * the "your devices" list, so it must show exactly what an attacker could still use.</p>
      *
-     * @param userId owner whose sessions are listed
+     * @param accountHolderId owner whose sessions are listed
      * @param decisionInstant the command's single decision instant
      * @return possibly empty list of live sessions
      */
     @Query("""
             SELECT *
             FROM auth_sessions
-            WHERE user_id = :userId
+            WHERE account_holder_id = :accountHolderId
               AND revoked_at IS NULL
               AND idle_expires_at > :decisionInstant
               AND absolute_expires_at > :decisionInstant
             ORDER BY last_used_at DESC
             """)
-    List<AuthSession> findLiveForUser(
-            @Param("userId") UUID userId,
+    List<AuthSession> findLiveForHolder(
+            @Param("accountHolderId") UUID accountHolderId,
             @Param("decisionInstant") Instant decisionInstant);
 
     /**

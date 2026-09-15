@@ -48,7 +48,7 @@ public class PasswordCredentialRotator {
 
         AuthCredential next = AuthCredential.builder()
                 .id(UUID.randomUUID())
-                .userId(current.getUserId())
+                .accountHolderId(current.getAccountHolderId())
                 .credentialType(CredentialType.PASSWORD)
                 .encoderId("bcrypt")
                 .verifierDigest(passwordEncoder.encode(newRawPassword))

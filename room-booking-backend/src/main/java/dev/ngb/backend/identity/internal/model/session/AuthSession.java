@@ -39,8 +39,8 @@ public class AuthSession {
     /** Primary key of the session. */
     @Id
     private @Nullable UUID id;
-    /** User the session belongs to. */
-    private UUID userId;
+    /** Account holder the session belongs to. */
+    private UUID accountHolderId;
     /** Organization the session is currently acting for, where one is selected. */
     private @Nullable UUID activeOrganizationId;
     /** How the principal proved who they were when the session opened. */
@@ -67,8 +67,8 @@ public class AuthSession {
     private @Nullable Instant revokedAt;
     /** Stable reason for revocation; paired with {@link #revokedAt}. */
     private @Nullable String revocationReason;
-    /** Principal that revoked the session, where it was not the owner. */
-    private @Nullable UUID revokedBy;
+    /** Account holder that revoked the session, where it was not the owner. */
+    private @Nullable UUID revokedByAccountHolderId;
     /** UTC instant the row was created, maintained by Spring Data JDBC auditing. */
     @CreatedDate
     private Instant createdAt;
@@ -99,11 +99,12 @@ public class AuthSession {
      *
      * @param instant the command's decision instant
      * @param reason stable reason for the revocation
-     * @param revokedBy principal that revoked the session, or {@code null} when the owner did
+     * @param revokedByAccountHolderId account holder that revoked the session, or {@code null}
+     *     when the owner did
      */
-    public void revoke(Instant instant, String reason, @Nullable UUID revokedBy) {
+    public void revoke(Instant instant, String reason, @Nullable UUID revokedByAccountHolderId) {
         this.revokedAt = instant;
         this.revocationReason = reason;
-        this.revokedBy = revokedBy;
+        this.revokedByAccountHolderId = revokedByAccountHolderId;
     }
 }

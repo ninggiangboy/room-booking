@@ -9,12 +9,12 @@ a matter of taste.
 This rule comes from `refactor(service): build every entity through a factory`. Token rows and host
 profiles used to be assembled by inline builders at their call sites, so each workflow repeated the
 invariants a new row must satisfy — and could silently drop one. Centralizing construction means a
-new host profile can never start in a reviewed identity state, a token row always stores only a
-digest of a freshly generated secret, and a new user always starts with the guest role.
+token row always stores only a digest of a freshly generated secret and a new account holder always
+starts with the guest role.
 
 ### The shape of a factory
 
-Follow `UserRegistrationFactory`, `AuthTokenFactory`, and `HostProfileFactory`:
+Follow `UserRegistrationFactory` and `AuthTokenFactory`:
 
 - A `@Component`, **package-private**, in the same service package as the workflow that uses it.
   Package-private visibility keeps partially constructed or sensitive values — raw token secrets,

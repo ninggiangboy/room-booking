@@ -53,8 +53,19 @@ When a change touches the left column, update the right column in the same commi
 | New database migration | Changelog master, migration map, relevant data-model document |
 | New or changed engineering rule | This directory, plus `AGENTS.md` if the summary there is now wrong |
 | Renamed or removed type | Search README, GUIDE, JavaDoc links, tests, and examples for the old name |
+| Identity use case behavior | [`docs/implementation/identity/`](../implementation/) |
 
 Never edit comments inside an already-applied Liquibase changeset merely to improve prose.
+
+## Diagram format: an intentional exception
+
+Every normative document elsewhere in `docs/` uses fenced ```` ```text ```` ASCII diagrams; only
+`docs/learning/` used Mermaid before this note existed. `docs/implementation/` is a deliberate
+exception: its per-use-case flow diagrams are Mermaid (`sequenceDiagram`, `stateDiagram-v2`,
+`erDiagram`, `flowchart`), because a request/response/error walkthrough reads better as a rendered
+sequence diagram than as hand-drawn ASCII boxes, and GitHub renders Mermaid natively. Do not carry
+this exception into any other document without a similar deliberate decision recorded the way this
+one is.
 
 ## package-info.java
 

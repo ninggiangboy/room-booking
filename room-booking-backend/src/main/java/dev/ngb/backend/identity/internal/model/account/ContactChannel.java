@@ -39,8 +39,8 @@ public class ContactChannel {
     /** Primary key of the channel. */
     @Id
     private @Nullable UUID id;
-    /** Principal the channel belongs to. */
-    private UUID userId;
+    /** Account holder the channel belongs to. */
+    private UUID accountHolderId;
     /** Kind of channel. */
     private ContactChannelType channelType;
     /** Canonical form used for comparison and uniqueness; case-insensitive in the database. */

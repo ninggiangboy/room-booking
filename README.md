@@ -1,24 +1,24 @@
 # Room Booking
 
-Backend for a room-booking platform, built with Java and Spring Boot. The application currently exposes identity, authentication, and host onboarding. The database carries the full target marketplace schema — 423 tables across 35 Liquibase migrations, covering supply, inventory, pricing, booking, payment, ledger, cancellation, messaging, stay operations, reviews, trust and safety, disputes, discovery, analytics, machine learning, governance, host operations, and growth — with matching Spring Data JDBC aggregates and repositories, but no services on top of it yet.
+Backend for a room-booking platform, built with Java and Spring Boot. The application currently exposes identity, authentication, and host onboarding. The database carries the full target marketplace schema — 420 tables across 37 Liquibase migrations, covering supply, inventory, pricing, booking, payment, ledger, cancellation, messaging, stay operations, reviews, trust and safety, disputes, discovery, analytics, machine learning, governance, host operations, and growth — with matching Spring Data JDBC aggregates and repositories, but no services on top of it yet.
 
 ## Current features
 
 - Guest registration and login
-- JWT access tokens
-- Rotating, database-backed refresh tokens
+- JWT access tokens (subject is the account holder id; capabilities are reloaded from the database on every request rather than trusted from the token)
+- Rotating, database-backed refresh tokens with reuse detection that revokes the whole session lineage
 - Logout and refresh-token revocation
 - User-requested email verification with cooldown and rolling rate limits
 - Forgot/reset password with short-lived, single-use email tokens
 - Current-user lookup and password changes
-- Atomic host onboarding with `HOST` role assignment
-- Administrator-controlled suspension/reactivation and user-initiated account soft deletion
-- Immediate rejection of access tokens belonging to suspended or deleted accounts
+- Idempotent host onboarding that grants the `HOST` capability
+- User-initiated account closure, revoking every outstanding session and token
+- Immediate rejection of access tokens belonging to suspended or closed accounts
 - Consistent JSON error responses
 - Liquibase-managed PostgreSQL and PostGIS schema
 
-> Everything beyond the list above is schema and persistence only. The tables, constraints, triggers, aggregates, and repositories exist; the services and HTTP endpoints that would drive them do not. Migration `014` also created a target identity model that the running authentication code has not yet been moved onto — see
-> [the data-model README](room-booking-backend/docs/data-model/README.md) before changing identity code.
+> Everything beyond the list above is schema and persistence only. The tables, constraints, triggers, aggregates, and repositories exist; the services and HTTP endpoints that would drive them do not. Identity now runs entirely on the target model migration `014` introduced: `account_holders` is the sole principal root, and migration `037` retired the legacy `users`/`user_roles`/`host_profiles` schema — see
+> [the data-model README](room-booking-backend/docs/data-model/README.md) and [`docs/implementation/`](room-booking-backend/docs/implementation/README.md) before changing identity code.
 
 ## Tech stack
 
@@ -87,9 +87,8 @@ docker compose -f compose.local.yaml down
 | `GET` | `/api/v1/users/email-exists?email=...` | Public | Check whether an email is registered |
 | `GET` | `/api/v1/users/me` | Bearer token | Get the current user |
 | `PUT` | `/api/v1/users/me/password` | Bearer token | Change the current user's password |
-| `POST` | `/api/v1/users/me/host-profile` | Bearer token | Create a host profile and grant the `HOST` role |
-| `DELETE` | `/api/v1/users/me` | Bearer token | Soft-delete the current account and revoke opaque tokens |
-| `PUT` | `/api/v1/admin/users/{userId}/status` | `ADMIN` bearer token | Activate or suspend a non-deleted account |
+| `POST` | `/api/v1/users/me/host-capability` | Bearer token | Idempotently grant the `HOST` capability |
+| `DELETE` | `/api/v1/users/me` | Bearer token | Close the current account and revoke opaque tokens |
 
 Protected endpoints expect an access token:
 
@@ -170,13 +169,14 @@ room-booking-backend/
 │   ├── hostops/      # Host metric, benchmark, forecast, advice, bulk edit
 │   └── growth/       # Program, referral, stored value, loyalty, campaign, affiliate
 ├── src/main/resources/
-│   └── db/changelog/ # Liquibase migrations, 000-035 (035 is the event publication registry table)
+│   └── db/changelog/ # Liquibase migrations, 000-037 (037 retires the legacy identity schema)
 ├── docs/
 │   ├── architecture/ # The modular-monolith decision and the event publication registry
 │   ├── modules/      # One document per module: ownership, clusters, API, allowed dependencies
 │   ├── conventions/  # The binding rule set for code changes
 │   ├── data-model/   # One note per migration, plus the schema overview
 │   ├── features/     # Authoritative feature designs
+│   ├── implementation/ # Per-use-case behavior for the code that actually runs, starting with identity
 │   ├── learning/     # Background notes
 │   └── templates/    # Document prompts
 └── compose.local.yaml
@@ -208,6 +208,7 @@ cd room-booking-backend
 - [Marketplace target state and implementation dependencies](room-booking-backend/docs/marketplace-problem-breakdown.md)
 - [Standard feature-design document prompt](room-booking-backend/docs/templates/feature-design-document-prompt.md)
 - [Data model — migration history, schema coverage, and what the schema does not yet prove](room-booking-backend/docs/data-model/README.md)
+- [Implementation — per-use-case request/response/flow/error documentation for the code that actually runs](room-booking-backend/docs/implementation/README.md)
 - [Platform foundation design](room-booking-backend/docs/features/platform-foundation.md)
 - [Date, time, and time-zone handling design](room-booking-backend/docs/features/date-time-and-time-zone-handling.md)
 - [Identity, accounts, and access design](room-booking-backend/docs/features/identity-accounts-and-access.md)

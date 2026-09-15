@@ -4,22 +4,25 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
-import dev.ngb.backend.identity.internal.model.Role;
+import java.util.stream.Collectors;
 import dev.ngb.backend.identity.internal.model.account.AccountHolder;
-import dev.ngb.backend.identity.internal.model.account.AccountHolderType;
 import dev.ngb.backend.identity.internal.model.account.ContactChannel;
 import dev.ngb.backend.identity.internal.model.account.ContactChannelType;
-import dev.ngb.backend.identity.internal.model.account.User;
+import dev.ngb.backend.identity.internal.model.capability.GrantSource;
+import dev.ngb.backend.identity.internal.model.capability.PrincipalType;
 import dev.ngb.backend.identity.internal.model.credential.AuthCredential;
 import dev.ngb.backend.identity.internal.model.credential.CredentialType;
 import dev.ngb.backend.identity.internal.model.session.AuthenticationMethod;
 import dev.ngb.backend.identity.internal.repository.account.AccountHolderRepository;
 import dev.ngb.backend.identity.internal.repository.account.ContactChannelRepository;
-import dev.ngb.backend.identity.internal.repository.account.UserRepository;
-import dev.ngb.backend.identity.internal.repository.capability.UserRoleRepository;
 import dev.ngb.backend.identity.internal.repository.credential.AuthCredentialRepository;
+import dev.ngb.backend.identity.internal.service.account.AccountHolderFinder;
 import dev.ngb.backend.identity.internal.service.auth.session.RefreshTokenService;
+import dev.ngb.backend.identity.internal.service.authz.AuthorizationService;
+import dev.ngb.backend.identity.internal.service.authz.CapabilityGrantService;
+import dev.ngb.backend.identity.internal.service.authz.RoleBundle;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,7 +34,6 @@ import dev.ngb.backend.identity.internal.exception.EmailAlreadyRegisteredExcepti
 import dev.ngb.backend.identity.internal.exception.InvalidCredentialsException;
 import dev.ngb.backend.identity.internal.exception.InvalidRefreshTokenException;
 import dev.ngb.backend.identity.internal.exception.UserAccountDisabledException;
-import dev.ngb.backend.identity.internal.service.user.UserFinder;
 import dev.ngb.backend.identity.internal.service.validation.PasswordPolicy;
 import dev.ngb.backend.identity.internal.web.AuthResponse;
 import dev.ngb.backend.identity.internal.web.LoginRequest;
@@ -54,8 +56,8 @@ import dev.ngb.backend.platform.util.StringUtils;
 @RequiredArgsConstructor
 public class AuthenticationService {
 
-    private final UserRepository userRepository;
-    private final UserRoleRepository userRoleRepository;
+    private static final String REGISTRATION_REASON = "SELF_SERVICE_REGISTRATION";
+
     private final AccountHolderRepository accountHolderRepository;
     private final ContactChannelRepository contactChannelRepository;
     private final AuthCredentialRepository authCredentialRepository;
@@ -63,8 +65,10 @@ public class AuthenticationService {
     private final AccessTokenService accessTokenService;
     private final RefreshTokenService refreshTokenService;
     private final PasswordPolicy passwordPolicy;
-    private final UserFinder userFinder;
+    private final AccountHolderFinder accountHolderFinder;
     private final UserRegistrationFactory userRegistrationFactory;
+    private final CapabilityGrantService capabilityGrantService;
+    private final AuthorizationService authorizationService;
     private final Clock clock;
 
     /**
@@ -83,19 +87,21 @@ public class AuthenticationService {
     public AuthResponse login(LoginRequest request) {
         String normalizedEmail = StringUtils.normalizeLowerCase(request.email());
 
-        User user = userFinder.findActiveByEmail(
+        AccountHolder holder = accountHolderFinder.findActiveByEmail(
                 normalizedEmail, InvalidCredentialsException::new);
 
         AuthCredential credential = authCredentialRepository
-                .findActive(user.getId(), CredentialType.PASSWORD.name())
+                .findActive(holder.getId(), CredentialType.PASSWORD.name())
                 .orElseThrow(InvalidCredentialsException::new);
         if (!passwordEncoder.matches(request.password(), credential.getVerifierDigest())) {
             throw new InvalidCredentialsException();
         }
 
-        return createAuthResponse(
-                user, userRoleRepository.findRolesByUserId(user.getId()),
-                AuthenticationMethod.PASSWORD, AssuranceLevel.AAL1);
+        RefreshTokenService.Issued issued = refreshTokenService.issue(
+                holder.getId(), AuthenticationMethod.PASSWORD, AssuranceLevel.AAL1);
+        String accessToken = accessTokenService.generateAccessToken(
+                holder.getId(), accessTokenClaims(issued.sessionId()));
+        return new AuthResponse(accessToken, issued.rawRefreshToken(), buildUserResponse(holder));
     }
 
     /**
@@ -108,18 +114,11 @@ public class AuthenticationService {
     @Transactional
     public AuthResponse refresh(RefreshTokenRequest request) {
         RefreshTokenService.Rotated rotated = refreshTokenService.consume(request.refreshToken());
-        if (rotated.rawRefreshToken() == null) {
-            // The presented token predates sessions and cannot be rotated into a session-backed
-            // successor; the caller must log in again to obtain one.
-            throw new InvalidRefreshTokenException();
-        }
-
-        User user = userFinder.findActiveById(rotated.userId(), InvalidCredentialsException::new);
-        List<Role> roles = userRoleRepository.findRolesByUserId(user.getId());
+        AccountHolder holder = accountHolderFinder.findActiveById(
+                rotated.accountHolderId(), InvalidCredentialsException::new);
         String accessToken = accessTokenService.generateAccessToken(
-                user.getId(), accessTokenClaims(user, roles));
-        return new AuthResponse(
-                accessToken, rotated.rawRefreshToken(), buildUserResponse(user, roles));
+                holder.getId(), accessTokenClaims(rotated.sessionId()));
+        return new AuthResponse(accessToken, rotated.rawRefreshToken(), buildUserResponse(holder));
     }
 
     /**
@@ -136,12 +135,14 @@ public class AuthenticationService {
      * Creates a validated guest account and initial authenticated session.
      *
      * <p>All inserts share one transaction. The early existence check produces a fast readable
-     * error, while the database unique constraint remains the final defense against concurrent
-     * requests registering the same address.</p>
+     * error; unlike the retired {@code users.email} column, {@code contact_channels} carries no
+     * database-level uniqueness for an unverified claim (two accounts may each claim the same
+     * address before either proves it), so this check is a best-effort guard against an accidental
+     * duplicate rather than the final defense against a deliberate race.</p>
      *
      * @param request Bean-validated registration data
-     * @return initial token pair and newly created user
-     * @throws EmailAlreadyRegisteredException when the normalized email is already present
+     * @return initial token pair and newly created account
+     * @throws EmailAlreadyRegisteredException when the normalized email is already claimed
      */
     @Transactional
     public AuthResponse registerUser(RegisterRequest request) {
@@ -149,7 +150,8 @@ public class AuthenticationService {
         String normalizedDisplayName = StringUtils.normalizeRequired(request.displayName());
         passwordPolicy.validate(request.password());
 
-        if (userRepository.existsByEmail(normalizedEmail)) {
+        if (contactChannelRepository.existsByChannelTypeAndNormalizedValue(
+                ContactChannelType.EMAIL, normalizedEmail)) {
             throw new EmailAlreadyRegisteredException(normalizedEmail);
         }
 
@@ -160,59 +162,62 @@ public class AuthenticationService {
                 request.password(),
                 normalizedDisplayName,
                 issuedAt);
-        User user = newAccount.user();
 
+        AccountHolder holder;
+        ContactChannel emailChannel;
         try {
-            user = userRepository.save(user);
+            holder = accountHolderRepository.save(newAccount.accountHolder());
+            emailChannel = contactChannelRepository.save(newAccount.emailChannel());
         } catch (DataIntegrityViolationException exception) {
-            // The database unique constraint closes the race between the earlier check and this insert.
+            // A concurrent request that also passed the check above and won the same race fails
+            // here instead: account_holders itself carries no email, so contact_channels is where
+            // any remaining database-level protection would surface.
             throw new EmailAlreadyRegisteredException(normalizedEmail, exception);
         }
-
-        accountHolderRepository.save(newAccount.accountHolder());
-        ContactChannel emailChannel = contactChannelRepository.save(newAccount.emailChannel());
         authCredentialRepository.save(newAccount.passwordCredential());
 
-        // Reuse the user's audited createdAt as the role's grant instant so both rows share
-        // registration's single decision instant instead of a second, later clock read.
-        userRoleRepository.grantRole(
-                user.getId(),
-                newAccount.initialRole().getId().getRole().name(),
-                user.getCreatedAt());
+        // Reuse the holder's audited createdAt as the grant instant so every row from this
+        // registration shares one decision instant instead of a second, later clock read.
+        capabilityGrantService.issueRoleGrant(
+                PrincipalType.PERSON,
+                holder.getId(),
+                RoleBundle.GUEST,
+                GrantSource.SELF_SERVICE,
+                REGISTRATION_REASON,
+                holder.getCreatedAt());
 
-        List<Role> roles = List.of(Role.GUEST);
+        RefreshTokenService.Issued issued = refreshTokenService.issue(
+                holder.getId(), AuthenticationMethod.PASSWORD, AssuranceLevel.AAL1);
         String accessToken = accessTokenService.generateAccessToken(
-                user.getId(), accessTokenClaims(user, roles));
-        String refreshToken = refreshTokenService.issue(
-                user, AuthenticationMethod.PASSWORD, AssuranceLevel.AAL1);
+                holder.getId(), accessTokenClaims(issued.sessionId()));
         UserResponse userResponse = UserResponse.from(
-                user, emailChannel, newAccount.accountHolder().getId(), roles);
-        return new AuthResponse(accessToken, refreshToken, userResponse);
+                holder,
+                emailChannel,
+                null,
+                List.of(RoleBundle.GUEST.name()),
+                roleBundleCapabilityNames(RoleBundle.GUEST));
+        return new AuthResponse(accessToken, issued.rawRefreshToken(), userResponse);
     }
 
-    private AuthResponse createAuthResponse(
-            User user, List<Role> roles, AuthenticationMethod method, AssuranceLevel assuranceLevel) {
-        String accessToken = accessTokenService.generateAccessToken(
-                user.getId(), accessTokenClaims(user, roles));
-        // Refresh tokens are opaque, session-backed, and stored only as hashes.
-        String refreshToken = refreshTokenService.issue(user, method, assuranceLevel);
-        return new AuthResponse(accessToken, refreshToken, buildUserResponse(user, roles));
+    private Map<String, ?> accessTokenClaims(UUID sessionId) {
+        return Map.of("sid", sessionId.toString());
     }
 
-    private Map<String, ?> accessTokenClaims(User user, List<Role> roles) {
-        List<String> roleNames = roles.stream().map(Role::name).toList();
-        return Map.of("email", user.getEmail(), "roles", roleNames);
-    }
-
-    private UserResponse buildUserResponse(User user, List<Role> roles) {
+    private UserResponse buildUserResponse(AccountHolder holder) {
+        Instant now = clock.instant();
         ContactChannel emailChannel = contactChannelRepository
-                .findCurrentPrimary(user.getId(), ContactChannelType.EMAIL.name())
+                .findCurrentPrimary(holder.getId(), ContactChannelType.EMAIL.name())
                 .orElse(null);
-        UUID accountHolderId = accountHolderRepository
-                .findByUserIdAndHolderType(user.getId(), AccountHolderType.PERSON)
-                .map(AccountHolder::getId)
-                .orElse(null);
-        return UserResponse.from(user, emailChannel, accountHolderId, roles);
+        List<String> roleNames = capabilityGrantService.effectiveRoleNames(holder.getId(), now);
+        Set<String> capabilities = authorizationService.effectiveGlobalCapabilities(holder.getId(), now)
+                .stream()
+                .map(Enum::name)
+                .collect(Collectors.toSet());
+        return UserResponse.from(holder, emailChannel, null, roleNames, capabilities);
+    }
+
+    private static Set<String> roleBundleCapabilityNames(RoleBundle role) {
+        return role.capabilities().stream().map(Enum::name).collect(Collectors.toSet());
     }
 
 }

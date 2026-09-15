@@ -59,7 +59,7 @@ public interface ContactChannelRepository extends ListCrudRepository<ContactChan
      * <pre>{@code
      * SELECT *
      * FROM contact_channels
-     * WHERE user_id = :userId
+     * WHERE account_holder_id = :accountHolderId
      *   AND channel_type = :channelType
      *   AND is_primary = true
      *   AND superseded_by IS NULL
@@ -68,31 +68,62 @@ public interface ContactChannelRepository extends ListCrudRepository<ContactChan
      * <p>{@code uk_contact_channels_one_primary} guarantees at most one row matches. This is where a
      * security notification must be delivered, regardless of what other channels exist.</p>
      *
-     * @param userId principal being contacted
+     * @param accountHolderId principal being contacted
      * @param channelType kind of channel required
      * @return the current primary channel when one exists
      */
     @Query("""
             SELECT *
             FROM contact_channels
-            WHERE user_id = :userId
+            WHERE account_holder_id = :accountHolderId
               AND channel_type = :channelType
               AND is_primary = true
               AND superseded_by IS NULL
             """)
     Optional<ContactChannel> findCurrentPrimary(
-            @Param("userId") UUID userId,
+            @Param("accountHolderId") UUID accountHolderId,
             @Param("channelType") String channelType);
 
     /**
      * Returns every channel of one type a principal has registered.
      *
-     * <p>Spring derives {@code WHERE user_id = ? AND channel_type = ?}, including unverified and
-     * superseded rows.</p>
+     * <p>Spring derives {@code WHERE account_holder_id = ? AND channel_type = ?}, including
+     * unverified and superseded rows.</p>
      *
-     * @param userId principal whose channels are listed
+     * @param accountHolderId principal whose channels are listed
      * @param channelType kind of channel
      * @return possibly empty list of channels
      */
-    List<ContactChannel> findAllByUserIdAndChannelType(UUID userId, ContactChannelType channelType);
+    List<ContactChannel> findAllByAccountHolderIdAndChannelType(
+            UUID accountHolderId, ContactChannelType channelType);
+
+    /**
+     * Returns every current primary channel claiming one address, verified or not.
+     *
+     * <p>Spring derives {@code WHERE channel_type = ? AND normalized_value = ? AND is_primary =
+     * true}. Deliberately not narrowed to a single result: two accounts may each claim the same
+     * address before either proves it, per {@link ContactChannel}'s class documentation, so login
+     * resolution ({@link dev.ngb.backend.identity.internal.service.account.AccountHolderFinder})
+     * must be prepared for more than one candidate.</p>
+     *
+     * @param channelType kind of channel
+     * @param normalizedValue canonical form of the address
+     * @return possibly empty, possibly multi-row list of claiming channels
+     */
+    List<ContactChannel> findAllByChannelTypeAndNormalizedValueAndIsPrimaryTrue(
+            ContactChannelType channelType, String normalizedValue);
+
+    /**
+     * Performs an existence check for one address, verified or not.
+     *
+     * <p>Spring derives {@code SELECT ... WHERE channel_type = ? AND normalized_value = ?}. Used to
+     * reject a duplicate registration attempt before any row is written, the same guard
+     * {@code UserRepository.existsByEmail} used to provide against {@code users.email}.</p>
+     *
+     * @param channelType kind of channel
+     * @param normalizedValue canonical form of the address
+     * @return whether any channel, verified or not, already claims that address
+     */
+    boolean existsByChannelTypeAndNormalizedValue(
+            ContactChannelType channelType, String normalizedValue);
 }

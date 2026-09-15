@@ -20,15 +20,15 @@ public interface PropertyCollaboratorRepository
     /**
      * Finds one person's collaboration on one property.
      *
-     * <p>Spring derives {@code WHERE property_id = ? AND user_id = ?}, matching
+     * <p>Spring derives {@code WHERE property_id = ? AND account_holder_id = ?}, matching
      * {@code uk_property_collaborators_pair}. Returns ended collaborations too, so past actions stay
      * attributable.</p>
      *
      * @param propertyId property in question
-     * @param userId person in question
+     * @param accountHolderId person in question
      * @return the collaboration when one exists, in any status
      */
-    Optional<PropertyCollaborator> findByPropertyIdAndUserId(UUID propertyId, UUID userId);
+    Optional<PropertyCollaborator> findByPropertyIdAndAccountHolderId(UUID propertyId, UUID accountHolderId);
 
     /**
      * Returns a property's collaborators in one status.
@@ -46,12 +46,13 @@ public interface PropertyCollaboratorRepository
     /**
      * Returns the properties one person collaborates on, in one status.
      *
-     * <p>Spring derives {@code WHERE user_id = ? AND status = ?}. Backs the co-host's own view of
-     * what they are responsible for.</p>
+     * <p>Spring derives {@code WHERE account_holder_id = ? AND status = ?}. Backs the co-host's
+     * own view of what they are responsible for.</p>
      *
-     * @param userId person whose collaborations are listed
+     * @param accountHolderId person whose collaborations are listed
      * @param status status to filter by
      * @return possibly empty list of collaborations
      */
-    List<PropertyCollaborator> findAllByUserIdAndStatus(UUID userId, CollaboratorStatus status);
+    List<PropertyCollaborator> findAllByAccountHolderIdAndStatus(
+            UUID accountHolderId, CollaboratorStatus status);
 }
