@@ -9,6 +9,9 @@ For the product-wide problem map, domain boundaries, implementation dependencies
 completion gates beyond these historical changesets, see
 [`../marketplace-problem-breakdown.md`](../marketplace-problem-breakdown.md).
 
+For what the code that actually runs today does, endpoint by endpoint — identity is the only module
+with live application code — see [`../implementation/`](../implementation/README.md).
+
 The target shared identifier, time, locale, money, request/error, command-idempotency, outbox/inbox,
 audit, compatible migration/deployment, security, observability, and recovery primitives are
 documented in [`../features/platform-foundation.md`](../features/platform-foundation.md).
