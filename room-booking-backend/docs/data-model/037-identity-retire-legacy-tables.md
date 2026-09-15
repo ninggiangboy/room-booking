@@ -33,11 +33,13 @@ skipping it, cost nothing here.
   no corresponding grant was backfilled one, so nothing loses its role in the cutover.
 - **`verification_appeals.submitted_by`, `property_collaborators.user_id`** — the only two foreign
   keys into `users` from outside `identity`, repointed and renamed the same way
-  (`submitted_by_account_holder_id`, `account_holder_id`).
-- **`listings.host_id`, `bookings.guest_id`/`host_id`, `reviews.reviewer_id`/`reviewee_id`,
-  `favorites.user_id`** — four more foreign keys into `users` that the original plan did not name,
-  found while auditing every reference before dropping the table. Repointed at `account_holders`
-  with column names left unchanged, since none of those modules has live application code yet.
+  (`submitted_by_account_holder_id`, `account_holder_id`). A broader grep also turns up
+  `fk_listings_host`, `fk_bookings_guest`/`fk_bookings_host`, `fk_reviews_reviewer`/
+  `fk_reviews_reviewee`, and `fk_favorites_user` in migrations `002`/`004`/`006`, but those tables
+  were dropped by `016-01-retire-historical-listing-stack` well before this migration runs; the
+  `016`-created `listings`/`properties` catalog reaches its account holder through
+  `properties.account_holder_id`, which has referenced `account_holders` directly since the moment
+  it was created. Nothing outside the two named tables needed repointing.
 - **`auth_tokens`** gained `ck_auth_tokens_refresh_requires_session`, requiring every refresh token
   to carry a session — see § *Resolved* in [`014`](014-identity-target-model.md#resolved-session-less-refresh-tokens).
 - `DROP TABLE host_profiles; DROP TABLE user_roles; DROP TABLE users;` — in that order, so no

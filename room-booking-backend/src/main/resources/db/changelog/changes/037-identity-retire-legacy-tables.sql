@@ -11,13 +11,12 @@
 -- holds a user id is rewritten through the account_holders.user_id join before that join column is
 -- dropped. On a fresh database every rewrite below is a no-op.
 --
--- Adaptation from the original plan: while auditing every foreign key into users, four more turned
--- up outside identity that the plan text did not name -- listings.host_id, bookings.guest_id,
--- bookings.host_id, reviews.reviewer_id, reviews.reviewee_id, and favorites.user_id (migrations 002,
--- 004, 006). None of those modules has live application code yet, so this changeset repoints them
--- the same way as the two the plan did name, but keeps their column names unchanged rather than
--- renaming them: a rename would only be cosmetic today, and the modules that eventually read these
--- columns are better positioned to choose their own naming when they gain live code.
+-- The only two foreign keys into users from outside identity are verification_appeals.submitted_by
+-- (migration 015) and property_collaborators.user_id (migration 016). Migration 016 also created a
+-- fresh listings/bookings/reviews/favorites-shaped catalog after dropping the migration
+-- 002/004/006 tables of the same name that used to reference users; the new tables reach their
+-- account holder through properties.account_holder_id, which already referenced account_holders
+-- directly from the moment it was created, so none of them need repointing here.
 
 --changeset ninggiangboy:037-01-account-holder-profile-fields
 -- avatar_url is the one users column with no home in the target model; every other users column
@@ -144,47 +143,6 @@ ALTER TABLE property_collaborators
     ADD CONSTRAINT fk_property_collaborators_account_holder
         FOREIGN KEY (account_holder_id) REFERENCES account_holders (id);
 ALTER INDEX idx_property_collaborators_user RENAME TO idx_property_collaborators_account_holder;
-
--- The four FKs below were not named by the original plan text (see the header note); they are
--- repointed with their column names left unchanged, since no live Java code reads them yet.
-UPDATE listings l SET host_id = h.id FROM account_holders h WHERE h.user_id = l.host_id;
-ALTER TABLE listings DROP CONSTRAINT fk_listings_host;
-ALTER TABLE listings
-    ADD CONSTRAINT fk_listings_host FOREIGN KEY (host_id) REFERENCES account_holders (id);
-
-UPDATE bookings b SET guest_id = h.id FROM account_holders h WHERE h.user_id = b.guest_id;
-UPDATE bookings b SET host_id = h.id FROM account_holders h WHERE h.user_id = b.host_id;
-ALTER TABLE bookings DROP CONSTRAINT fk_bookings_guest;
-ALTER TABLE bookings DROP CONSTRAINT fk_bookings_host;
-ALTER TABLE bookings
-    ADD CONSTRAINT fk_bookings_guest FOREIGN KEY (guest_id) REFERENCES account_holders (id),
-    ADD CONSTRAINT fk_bookings_host FOREIGN KEY (host_id) REFERENCES account_holders (id);
-
-UPDATE reviews r SET reviewer_id = h.id FROM account_holders h WHERE h.user_id = r.reviewer_id;
-UPDATE reviews r SET reviewee_id = h.id FROM account_holders h WHERE h.user_id = r.reviewee_id;
-ALTER TABLE reviews DROP CONSTRAINT fk_reviews_reviewer;
-ALTER TABLE reviews DROP CONSTRAINT fk_reviews_reviewee;
-ALTER TABLE reviews
-    ADD CONSTRAINT fk_reviews_reviewer FOREIGN KEY (reviewer_id) REFERENCES account_holders (id),
-    ADD CONSTRAINT fk_reviews_reviewee FOREIGN KEY (reviewee_id) REFERENCES account_holders (id);
-
-UPDATE favorites f SET user_id = h.id FROM account_holders h WHERE h.user_id = f.user_id;
-ALTER TABLE favorites DROP CONSTRAINT fk_favorites_user;
-ALTER TABLE favorites
-    ADD CONSTRAINT fk_favorites_user
-        FOREIGN KEY (user_id) REFERENCES account_holders (id) ON DELETE CASCADE;
---rollback ALTER TABLE favorites DROP CONSTRAINT fk_favorites_user;
---rollback ALTER TABLE favorites ADD CONSTRAINT fk_favorites_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE;
---rollback ALTER TABLE reviews DROP CONSTRAINT fk_reviews_reviewee;
---rollback ALTER TABLE reviews DROP CONSTRAINT fk_reviews_reviewer;
---rollback ALTER TABLE reviews ADD CONSTRAINT fk_reviews_reviewee FOREIGN KEY (reviewee_id) REFERENCES users (id);
---rollback ALTER TABLE reviews ADD CONSTRAINT fk_reviews_reviewer FOREIGN KEY (reviewer_id) REFERENCES users (id);
---rollback ALTER TABLE bookings DROP CONSTRAINT fk_bookings_host;
---rollback ALTER TABLE bookings DROP CONSTRAINT fk_bookings_guest;
---rollback ALTER TABLE bookings ADD CONSTRAINT fk_bookings_host FOREIGN KEY (host_id) REFERENCES users (id);
---rollback ALTER TABLE bookings ADD CONSTRAINT fk_bookings_guest FOREIGN KEY (guest_id) REFERENCES users (id);
---rollback ALTER TABLE listings DROP CONSTRAINT fk_listings_host;
---rollback ALTER TABLE listings ADD CONSTRAINT fk_listings_host FOREIGN KEY (host_id) REFERENCES users (id);
 --rollback ALTER INDEX idx_property_collaborators_account_holder RENAME TO idx_property_collaborators_user;
 --rollback ALTER TABLE property_collaborators DROP CONSTRAINT fk_property_collaborators_account_holder;
 --rollback ALTER TABLE property_collaborators ADD CONSTRAINT fk_property_collaborators_user FOREIGN KEY (account_holder_id) REFERENCES users (id);
@@ -280,8 +238,8 @@ DROP TABLE users;
 --rollback CREATE TABLE host_profiles (user_id UUID PRIMARY KEY, bio TEXT, identity_status VARCHAR(24) NOT NULL DEFAULT 'UNVERIFIED', average_rating NUMERIC(3, 2), review_count INTEGER NOT NULL DEFAULT 0, created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now(), version BIGINT NOT NULL DEFAULT 0);
 
 --changeset ninggiangboy:037-07-rename-unresolved-market-context
--- "Legacy" stopped being a thing that exists once the legacy schema was dropped by the previous
--- changeset; UNRESOLVED names the same fact -- no market has been recorded for this holder -- without
+-- "Legacy" stopped being a thing that exists once the previous changeset dropped the legacy
+-- schema. UNRESOLVED names the same fact -- no market has been recorded for this holder -- without
 -- implying it came from an old system.
 DROP INDEX idx_account_holders_unreconciled;
 UPDATE account_holders SET context_state = 'UNRESOLVED' WHERE context_state = 'LEGACY_UNRECONCILED';

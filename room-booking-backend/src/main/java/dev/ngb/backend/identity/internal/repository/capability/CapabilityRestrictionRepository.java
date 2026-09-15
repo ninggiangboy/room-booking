@@ -6,6 +6,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 
 import dev.ngb.backend.identity.internal.model.capability.CapabilityRestriction;
 
@@ -39,7 +40,9 @@ public interface CapabilityRestrictionRepository
      *
      * @param principalId principal being evaluated
      * @param scopeType kind of resource being acted on
-     * @param scopeId identifier of that resource
+     * @param scopeId identifier of that resource; {@code null} for a {@code GLOBAL} evaluation —
+     *     see {@code CapabilityGrantRepository.findEffective}'s parameter doc for why this must be
+     *     declared {@code @Nullable} even though the SQL only reads it on the non-global branch
      * @param decisionInstant the command's single decision instant
      * @return possibly empty list of restrictions in force
      */
@@ -55,7 +58,7 @@ public interface CapabilityRestrictionRepository
     List<CapabilityRestriction> findActive(
             @Param("principalId") UUID principalId,
             @Param("scopeType") String scopeType,
-            @Param("scopeId") UUID scopeId,
+            @Param("scopeId") @Nullable UUID scopeId,
             @Param("decisionInstant") Instant decisionInstant);
 
     /**

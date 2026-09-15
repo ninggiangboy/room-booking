@@ -14,6 +14,8 @@ import dev.ngb.backend.identity.internal.repository.session.AuthTokenRepository;
 import dev.ngb.backend.identity.internal.service.auth.AuthTokenFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import dev.ngb.backend.identity.internal.exception.InvalidRefreshTokenException;
 import dev.ngb.backend.platform.AssuranceLevel;
@@ -33,6 +35,19 @@ import dev.ngb.backend.platform.util.HashUtils;
  * just the one stolen secret. Migration {@code 037} added a database constraint requiring every
  * refresh token to carry a session, which is what let the session-less fallback path this class
  * used to need be deleted rather than merely left unreachable.</p>
+ *
+ * <p>{@link #consume} is its own {@code REQUIRES_NEW} transaction, with rollback suppressed for
+ * {@link InvalidRefreshTokenException}. Both are necessary together: {@code
+ * AuthenticationService.refresh} already runs inside its own {@code @Transactional} method, and
+ * {@code DomainException} -- the base every stable exception in this codebase extends -- is a
+ * {@code RuntimeException} specifically so a caller's transaction rolls back on it by default.
+ * Joining that outer transaction (the default propagation) would let the caller's rollback undo
+ * the very revocation the reuse-detection throw is supposed to guarantee, silently leaving every
+ * other token in the session's lineage usable. {@code REQUIRES_NEW} alone is not enough either:
+ * without suppressing rollback for this one exception, {@code consume}'s own transaction would
+ * roll back itself. Forcing a genuinely separate transaction also sidesteps a deadlock a nested,
+ * same-connection re-lock of the session row would otherwise risk against the row lock {@link
+ * AuthSessionRepository#findByIdForUpdate} takes below.</p>
  */
 @Service
 public class RefreshTokenService {
@@ -113,6 +128,7 @@ public class RefreshTokenService {
      * @return the account, session, and raw secret of the successor token
      * @throws InvalidRefreshTokenException when the token is unusable, or reuse is detected
      */
+    @Transactional(propagation = Propagation.REQUIRES_NEW, noRollbackFor = InvalidRefreshTokenException.class)
     public Rotated consume(String rawToken) {
         Instant now = clock.instant();
         AuthToken token = authTokenRepository.findByTokenHashAndType(
@@ -127,7 +143,9 @@ public class RefreshTokenService {
                 && !session.getCurrentTokenId().equals(token.getId());
         if (replayed || staleGeneration) {
             // A consumed token presented again, or a token that isn't the session's current
-            // generation, is the signature of a replayed secret: revoke the whole lineage.
+            // generation, is the signature of a replayed secret: revoke the whole lineage. This
+            // method's own REQUIRES_NEW/noRollbackFor pairing (see the class Javadoc) is what lets
+            // this revocation actually commit despite the exception thrown right after it.
             revokeSessionAndTokens(session, now, "REUSE_DETECTED");
             throw new InvalidRefreshTokenException();
         }
