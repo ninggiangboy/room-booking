@@ -14,16 +14,20 @@ import dev.ngb.backend.identity.internal.model.capability.GrantSource;
 import dev.ngb.backend.identity.internal.model.capability.PrincipalType;
 import dev.ngb.backend.identity.internal.model.credential.AuthCredential;
 import dev.ngb.backend.identity.internal.model.credential.CredentialType;
+import dev.ngb.backend.identity.internal.model.session.AuthAttemptOutcome;
+import dev.ngb.backend.identity.internal.model.session.AuthAttemptType;
 import dev.ngb.backend.identity.internal.model.session.AuthenticationMethod;
 import dev.ngb.backend.identity.internal.repository.account.AccountHolderRepository;
 import dev.ngb.backend.identity.internal.repository.account.ContactChannelRepository;
 import dev.ngb.backend.identity.internal.repository.credential.AuthCredentialRepository;
 import dev.ngb.backend.identity.internal.service.account.AccountHolderFinder;
+import dev.ngb.backend.identity.internal.service.auth.session.AuthAttemptService;
 import dev.ngb.backend.identity.internal.service.auth.session.RefreshTokenService;
 import dev.ngb.backend.identity.internal.service.authz.AuthorizationService;
 import dev.ngb.backend.identity.internal.service.authz.CapabilityGrantService;
 import dev.ngb.backend.identity.internal.service.authz.RoleBundle;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -42,6 +46,7 @@ import dev.ngb.backend.identity.internal.web.RefreshTokenRequest;
 import dev.ngb.backend.identity.internal.web.RegisterRequest;
 import dev.ngb.backend.identity.internal.web.UserResponse;
 import dev.ngb.backend.platform.AssuranceLevel;
+import dev.ngb.backend.platform.util.HashUtils;
 import dev.ngb.backend.platform.util.StringUtils;
 
 
@@ -69,6 +74,7 @@ public class AuthenticationService {
     private final UserRegistrationFactory userRegistrationFactory;
     private final CapabilityGrantService capabilityGrantService;
     private final AuthorizationService authorizationService;
+    private final AuthAttemptService authAttemptService;
     private final Clock clock;
 
     /**
@@ -79,29 +85,57 @@ public class AuthenticationService {
      * to avoid revealing registered addresses.</p>
      *
      * @param request validated login DTO from the controller
+     * @param clientDescriptor client description shown to the owner when listing their devices, or
+     *     {@code null} when unavailable
+     * @param originHash SHA-256 digest of the network origin, or {@code null} when unavailable
      * @return new authenticated-session response
      * @throws InvalidCredentialsException when the email or password does not match
      * @throws UserAccountDisabledException when the account is not active
+     * @throws dev.ngb.backend.identity.internal.exception.AuthAttemptRateLimitException when the
+     *     account or identifier has failed too many recent attempts
      */
     @Transactional
-    public AuthResponse login(LoginRequest request) {
+    public AuthResponse login(
+            LoginRequest request, @Nullable String clientDescriptor, @Nullable String originHash) {
         String normalizedEmail = StringUtils.normalizeLowerCase(request.email());
+        String identifierDigest = HashUtils.sha256Hex(normalizedEmail);
+        // auth_attempts.device_hash is a digest, unlike auth_sessions.client_descriptor, which is
+        // the raw string shown to the account holder when listing their devices.
+        String deviceHash = clientDescriptor != null ? HashUtils.sha256Hex(clientDescriptor) : null;
+        Instant now = clock.instant();
 
-        AccountHolder holder = accountHolderFinder.findActiveByEmail(
-                normalizedEmail, InvalidCredentialsException::new);
+        // Checked against the identifier before the account resolves, so an attacker probing
+        // addresses that do not exist is bounded the same as one attacking a real account.
+        authAttemptService.checkVelocity(null, identifierDigest, AuthAttemptType.LOGIN, now);
 
-        AuthCredential credential = authCredentialRepository
-                .findActive(holder.getId(), CredentialType.PASSWORD.name())
-                .orElseThrow(InvalidCredentialsException::new);
-        if (!passwordEncoder.matches(request.password(), credential.getVerifierDigest())) {
-            throw new InvalidCredentialsException();
+        AccountHolder holder = null;
+        try {
+            holder = accountHolderFinder.findActiveByEmail(
+                    normalizedEmail, InvalidCredentialsException::new);
+            authAttemptService.checkVelocity(holder.getId(), identifierDigest, AuthAttemptType.LOGIN, now);
+
+            AuthCredential credential = authCredentialRepository
+                    .findActive(holder.getId(), CredentialType.PASSWORD.name())
+                    .orElseThrow(InvalidCredentialsException::new);
+            if (!passwordEncoder.matches(request.password(), credential.getVerifierDigest())) {
+                throw new InvalidCredentialsException();
+            }
+
+            RefreshTokenService.Issued issued = refreshTokenService.issue(
+                    holder.getId(), AuthenticationMethod.PASSWORD, AssuranceLevel.AAL1,
+                    clientDescriptor, originHash);
+            authAttemptService.record(
+                    holder.getId(), identifierDigest, AuthAttemptType.LOGIN, AuthAttemptOutcome.SUCCESS,
+                    null, originHash, deviceHash, now);
+            String accessToken = accessTokenService.generateAccessToken(
+                    holder.getId(), accessTokenClaims(issued.sessionId()));
+            return new AuthResponse(accessToken, issued.rawRefreshToken(), buildUserResponse(holder));
+        } catch (InvalidCredentialsException | UserAccountDisabledException failure) {
+            authAttemptService.record(
+                    holder != null ? holder.getId() : null, identifierDigest, AuthAttemptType.LOGIN,
+                    AuthAttemptOutcome.FAILURE, failure.getCode(), originHash, deviceHash, now);
+            throw failure;
         }
-
-        RefreshTokenService.Issued issued = refreshTokenService.issue(
-                holder.getId(), AuthenticationMethod.PASSWORD, AssuranceLevel.AAL1);
-        String accessToken = accessTokenService.generateAccessToken(
-                holder.getId(), accessTokenClaims(issued.sessionId()));
-        return new AuthResponse(accessToken, issued.rawRefreshToken(), buildUserResponse(holder));
     }
 
     /**
@@ -141,11 +175,15 @@ public class AuthenticationService {
      * duplicate rather than the final defense against a deliberate race.</p>
      *
      * @param request Bean-validated registration data
+     * @param clientDescriptor client description shown to the owner when listing their devices, or
+     *     {@code null} when unavailable
+     * @param originHash SHA-256 digest of the network origin, or {@code null} when unavailable
      * @return initial token pair and newly created account
      * @throws EmailAlreadyRegisteredException when the normalized email is already claimed
      */
     @Transactional
-    public AuthResponse registerUser(RegisterRequest request) {
+    public AuthResponse registerUser(
+            RegisterRequest request, @Nullable String clientDescriptor, @Nullable String originHash) {
         String normalizedEmail = StringUtils.normalizeLowerCase(request.email());
         String normalizedDisplayName = StringUtils.normalizeRequired(request.displayName());
         passwordPolicy.validate(request.password());
@@ -187,7 +225,8 @@ public class AuthenticationService {
                 holder.getCreatedAt());
 
         RefreshTokenService.Issued issued = refreshTokenService.issue(
-                holder.getId(), AuthenticationMethod.PASSWORD, AssuranceLevel.AAL1);
+                holder.getId(), AuthenticationMethod.PASSWORD, AssuranceLevel.AAL1,
+                clientDescriptor, originHash);
         String accessToken = accessTokenService.generateAccessToken(
                 holder.getId(), accessTokenClaims(issued.sessionId()));
         UserResponse userResponse = UserResponse.from(

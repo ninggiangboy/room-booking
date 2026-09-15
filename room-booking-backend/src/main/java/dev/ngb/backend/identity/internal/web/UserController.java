@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
+import java.time.Clock;
+import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,17 +15,25 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.List;
 import java.util.UUID;
 
 import dev.ngb.backend.config.ApiErrorResponse;
+import dev.ngb.backend.identity.internal.repository.session.AuthSessionRepository;
+import dev.ngb.backend.identity.internal.service.auth.session.RefreshTokenService;
 import dev.ngb.backend.identity.internal.service.host.HostOnboardingService;
 import dev.ngb.backend.identity.internal.service.account.UserAccountService;
+import dev.ngb.backend.platform.ActorType;
+import dev.ngb.backend.platform.AuditEntry;
+import dev.ngb.backend.platform.AuditOutcome;
+import dev.ngb.backend.platform.AuditTrailWriter;
 
 
 
@@ -41,6 +51,10 @@ public class UserController {
 
     private final UserAccountService userAccountService;
     private final HostOnboardingService hostOnboardingService;
+    private final AuthSessionRepository authSessionRepository;
+    private final RefreshTokenService refreshTokenService;
+    private final AuditTrailWriter auditTrailWriter;
+    private final Clock clock;
 
     /**
      * Returns the account represented by the current access token.
@@ -138,6 +152,89 @@ public class UserController {
     })
     public ResponseEntity<Void> deleteOwnAccount(@AuthenticationPrincipal UUID userId) {
         userAccountService.deleteOwnAccount(userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Lists the authenticated account's live sessions, most recently used first.
+     *
+     * @param userId authenticated account identifier
+     * @return possibly empty list of live sessions
+     */
+    @GetMapping("/me/sessions")
+    @Operation(summary = "List the current user's sessions", description = "Returns every session the authenticated account could still act through, most recently used first.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Live sessions", content = @Content(schema = @Schema(implementation = SessionResponse.class))),
+            @ApiResponse(responseCode = "401", ref = "#/components/responses/Unauthorized"),
+            @ApiResponse(responseCode = "500", ref = "#/components/responses/InternalServerError")
+    })
+    public List<SessionResponse> listSessions(@AuthenticationPrincipal UUID userId) {
+        return authSessionRepository.findLiveForHolder(userId, clock.instant())
+                .stream()
+                .map(SessionResponse::from)
+                .toList();
+    }
+
+    /**
+     * Revokes one of the authenticated account's sessions.
+     *
+     * @param userId authenticated account identifier
+     * @param sessionId session to revoke
+     * @return {@code 204 No Content}
+     */
+    @DeleteMapping("/me/sessions/{sessionId}")
+    @Operation(summary = "Revoke a session", description = "Revokes one session belonging to the authenticated account and every token issued under it.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Session revoked, or already revoked"),
+            @ApiResponse(responseCode = "401", ref = "#/components/responses/Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "No live session with that identifier belongs to the caller (SESSION_NOT_FOUND)", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "500", ref = "#/components/responses/InternalServerError")
+    })
+    public ResponseEntity<Void> revokeSession(
+            @AuthenticationPrincipal UUID userId, @PathVariable UUID sessionId) {
+        Instant now = clock.instant();
+        refreshTokenService.revokeSession(userId, sessionId, now, "USER_REVOKED_SESSION");
+        auditTrailWriter.record(new AuditEntry(
+                now,
+                "session.revoked",
+                "identity",
+                "AuthSession",
+                sessionId,
+                AuditOutcome.ALLOWED,
+                "USER_REVOKED_SESSION",
+                ActorType.USER,
+                userId,
+                null));
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Signs the authenticated account out of every session.
+     *
+     * @param userId authenticated account identifier
+     * @return {@code 204 No Content}
+     */
+    @DeleteMapping("/me/sessions")
+    @Operation(summary = "Sign out everywhere", description = "Revokes every live session belonging to the authenticated account, including the one used to issue this request.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Every session revoked"),
+            @ApiResponse(responseCode = "401", ref = "#/components/responses/Unauthorized"),
+            @ApiResponse(responseCode = "500", ref = "#/components/responses/InternalServerError")
+    })
+    public ResponseEntity<Void> revokeAllSessions(@AuthenticationPrincipal UUID userId) {
+        Instant now = clock.instant();
+        refreshTokenService.revokeAllSessionsForHolder(userId, now, "USER_SIGN_OUT_EVERYWHERE");
+        auditTrailWriter.record(new AuditEntry(
+                now,
+                "session.revoked_all",
+                "identity",
+                "AccountHolder",
+                userId,
+                AuditOutcome.ALLOWED,
+                "USER_SIGN_OUT_EVERYWHERE",
+                ActorType.USER,
+                userId,
+                null));
         return ResponseEntity.noContent().build();
     }
 }

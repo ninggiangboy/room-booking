@@ -37,7 +37,7 @@ public class AuthAttempt {
     @Id
     private @Nullable UUID id;
     /** Account the attempt resolved to, where it resolved to one. */
-    private @Nullable UUID userId;
+    private @Nullable UUID accountHolderId;
     /** SHA-256 digest of the identifier tried, where no account was resolved. */
     private @Nullable String identifierDigest;
     /** Which authentication action was attempted. */

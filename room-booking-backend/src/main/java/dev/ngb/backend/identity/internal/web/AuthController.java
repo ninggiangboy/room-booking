@@ -7,8 +7,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,6 +24,7 @@ import dev.ngb.backend.config.ApiErrorResponse;
 import dev.ngb.backend.identity.internal.service.auth.AuthenticationService;
 import dev.ngb.backend.identity.internal.service.auth.verification.EmailVerificationService;
 import dev.ngb.backend.identity.internal.service.auth.passwordreset.PasswordResetService;
+import dev.ngb.backend.platform.util.HashUtils;
 
 
 
@@ -61,8 +64,10 @@ public class AuthController {
             @ApiResponse(responseCode = "409", description = "Email is already registered (EMAIL_ALREADY_REGISTERED)", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "500", ref = "#/components/responses/InternalServerError")
     })
-    public ResponseEntity<AuthResponse> registerUser(@Valid @RequestBody RegisterRequest request) {
-        AuthResponse response = authenticationService.registerUser(request);
+    public ResponseEntity<AuthResponse> registerUser(
+            @Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
+        AuthResponse response = authenticationService.registerUser(
+                request, clientDescriptor(httpRequest), originHash(httpRequest));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -82,8 +87,9 @@ public class AuthController {
             @ApiResponse(responseCode = "403", ref = "#/components/responses/AccountDisabled"),
             @ApiResponse(responseCode = "500", ref = "#/components/responses/InternalServerError")
     })
-    public AuthResponse login(@Valid @RequestBody LoginRequest request) {
-        return authenticationService.login(request);
+    public AuthResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+        return authenticationService.login(
+                request, clientDescriptor(httpRequest), originHash(httpRequest));
     }
 
     /**
@@ -204,5 +210,33 @@ public class AuthController {
     public ResponseEntity<Void> requestVerification(@AuthenticationPrincipal UUID userId) {
         emailVerificationService.requestVerification(userId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Reads the client's user-agent header for the session-inventory device list, bounded to the
+     * {@code auth_sessions.client_descriptor} column width.
+     *
+     * @param request current HTTP request
+     * @return truncated user-agent string, or {@code null} when the header is absent
+     */
+    private static @Nullable String clientDescriptor(HttpServletRequest request) {
+        String userAgent = request.getHeader("User-Agent");
+        if (userAgent == null || userAgent.isBlank()) {
+            return null;
+        }
+        return userAgent.length() > 255 ? userAgent.substring(0, 255) : userAgent;
+    }
+
+    /**
+     * Hashes the client's network address; the raw address is never persisted.
+     *
+     * @param request current HTTP request
+     * @return SHA-256 digest of the remote address, or {@code null} when unavailable
+     */
+    private static @Nullable String originHash(HttpServletRequest request) {
+        String remoteAddress = request.getRemoteAddr();
+        return remoteAddress == null || remoteAddress.isBlank()
+                ? null
+                : HashUtils.sha256Hex(remoteAddress);
     }
 }

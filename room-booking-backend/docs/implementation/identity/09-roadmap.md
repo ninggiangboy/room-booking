@@ -6,20 +6,24 @@ What is designed in
 detail; read it directly for the complete rationale, the proposed-operations table, the revocation
 matrix, error semantics, event contracts, and assurance-level table.
 
-## Administrator suspend / reactivate
+## Administrator suspend / reactivate — Built
 
-No controller sets an `account_holders.status` other than the one the account holder sets on
-itself. `SecurityConfig` reserves `/api/v1/admin/**` behind `hasAuthority("ACCOUNT_SUSPEND")`, and
-`RoleBundle.ADMIN` already carries `ACCOUNT_SUSPEND`/`ACCOUNT_REACTIVATE`, but no `ADMIN` grant is
-ever issued and no endpoint exists to issue a suspension. See D01 § *Proposed operations* for the
-target `PUT /api/v1/admin/accounts/{id}/status` shape.
+`AdminController.updateAccountStatus` (`PUT /api/v1/admin/users/{userId}/status`) and
+`AdminAccountService` move a holder between `ACTIVE` and `SUSPENDED`, mirroring
+`UserAccountService`'s revoke-sessions-and-tokens pattern and writing an `account.suspended` /
+`account.reactivated` row to the audit trail below. `CLOSED` stays reachable only through
+self-service closure — this endpoint rejects any transition to or from it. Bootstrapping the first
+`ADMIN` grant is still manual: nothing in the product issues one yet, so an operator inserts the
+first `capability_grants` row directly.
 
-## Session inventory and sign-out-everywhere
+## Session inventory and sign-out-everywhere — Built
 
-`auth_sessions` carries everything a "your devices" list and a self-service "sign out everywhere"
-command need (`clientDescriptor`, `originHash`, `lastUsedAt`, live/revoked state), and
-`RefreshTokenService.revokeAllSessionsForHolder` already implements the revocation half. No
-controller exposes either a list or a targeted revoke.
+`GET /api/v1/users/me/sessions`, `DELETE /api/v1/users/me/sessions/{sessionId}`, and
+`DELETE /api/v1/users/me/sessions` expose the list, a targeted revoke, and sign-out-everywhere,
+built on `AuthSessionRepository.findLiveForHolder` and the existing
+`RefreshTokenService.revokeAllSessionsForHolder` plus a new `revokeSession`. `AuthController.login`
+and `.registerUser` now capture `client_descriptor` (the request's `User-Agent`, truncated) and
+`origin_hash` (a digest of the remote address) so the device list is no longer empty.
 
 ## Step-up, reauthentication, and multi-factor
 
@@ -42,26 +46,39 @@ to attach without revisiting the revocation mechanism.
 taxonomy; only `ACCOUNT`-purpose `EMAIL` channels are ever created, by registration. No endpoint
 lets a holder add, verify, or manage additional channels.
 
-## `auth_attempts` velocity control
+## `auth_attempts` velocity control — Built
 
-The table, its check constraints, and its three velocity-lookup indexes exist; nothing in
-`AuthenticationService`, `EmailVerificationService`, or `PasswordResetService` writes to it. There
-is currently no login-attempt throttling or credential-stuffing defense beyond email verification's
-own cooldown/quota.
+`AuthenticationService.login` writes an `AuthAttempt` row (via a new `AuthAttemptService`/
+`AuthAttemptFactory`) for every attempt and checks both the per-account and per-identifier failure
+count in the rolling window before evaluating credentials, rejecting with `429
+AUTH_ATTEMPT_RATE_LIMITED` once either reaches the configured threshold
+(`app.auth-attempts.*`). Fixed a latent bug found while wiring this up: `AuthAttempt.userId` and
+`AuthAttemptRepository` still referenced the `user_id` column migration `037` renamed to
+`account_holder_id`, unnoticed only because nothing had used the repository yet. Deliberately not
+wired into refresh, password reset, or email verification — refresh has no user-supplied identifier
+to limit against, and the other two already have their own cooldown.
 
-## Capability restrictions in practice
+## Capability restrictions in practice — Built (single-capability only)
 
-`AuthorizationService.effectiveCapabilities` already subtracts active `capability_restrictions`
-rows, and single-capability restrictions are fully wired. Nothing issues a restriction, and
-capability-group restrictions (`capability_group` rather than `capability`) have no defined
-group-to-capability taxonomy to expand against — see the note in
-[`07-authorization.md`](07-authorization.md).
+`CapabilityRestrictionService`/`CapabilityRestrictionFactory` are the only writer of
+`capability_restrictions`, exposed as `POST/DELETE/GET /api/v1/admin/capability-restrictions`.
+Fixed a second latent bug found while wiring this up: `ck_capability_restrictions_principal` still
+allowed only `USER`, though migration `037` renamed the shared `PrincipalType` enum's `USER` value
+to `PERSON` for `capability_grants` and never repointed this table — see migration `038`.
+Capability-*group* restrictions remain out of scope; no group-to-capability taxonomy exists, so
+`AuthorizationService.effectiveCapabilities` still only subtracts single-capability restrictions.
 
-## Identity audit trail
+## Identity audit trail — Built
 
-D00's generic `audit_events` primitive (migration `012`) is the intended home for an append-only
-identity audit trail; no identity workflow writes to it today. A status transition or token
-revocation currently leaves no evidence beyond the mutated row itself.
+A new `platform.AuditTrailWriter` port (implementation in `platform.internal.service.audit`,
+matching the `EmailSender`/`SmtpEmailSender` pattern) is the only writer of `audit_events` reachable
+from outside `platform`. Wired into the workflows added by this pass — admin suspend/reactivate,
+self-service session revoke, and capability restriction issue/lift — rather than retrofitted onto
+every pre-existing mutation. Fixed a third latent bug found while wiring this up: `AuditEvent` (like
+`AuthAttempt`) has no `@Version`, so Spring Data JDBC's `isNew()` check falls back to "is the `@Id`
+null"; a factory that pre-assigns the id the way every other factory in this codebase does makes it
+issue a silent, zero-row `UPDATE` instead of an `INSERT`. Both factories now leave `id` unset and
+let the database's own `DEFAULT gen_random_uuid()` generate it.
 
 ## Identity events through the outbox
 
@@ -95,5 +112,7 @@ operator tool that does not yet exist to consume it.
 
 ## Status
 
-Everything on this page is **Planned**: designed in D01, in some cases already scaffolded in the
-schema, but with no live service or endpoint behind it.
+Administrator suspend/reactivate, session inventory and sign-out-everywhere, `auth_attempts`
+velocity control, capability restrictions (single-capability), and the identity audit trail are
+**Built**. Everything else on this page is still **Planned**: designed in D01, in some cases
+already scaffolded in the schema, but with no live service or endpoint behind it.

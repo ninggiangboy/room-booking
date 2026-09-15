@@ -24,7 +24,7 @@ public interface AuthAttemptRepository extends ListCrudRepository<AuthAttempt, U
      * <pre>{@code
      * SELECT count(*)
      * FROM auth_attempts
-     * WHERE user_id = :userId
+     * WHERE account_holder_id = :accountHolderId
      *   AND attempt_type = :attemptType
      *   AND outcome_class = 'FAILURE'
      *   AND occurred_at >= :windowStart
@@ -34,7 +34,7 @@ public interface AuthAttemptRepository extends ListCrudRepository<AuthAttempt, U
      * would let ordinary step-up traffic trip the limit meant to catch attackers. The window start
      * is derived by the caller from its own decision instant.</p>
      *
-     * @param userId account being protected
+     * @param accountHolderId account being protected
      * @param attemptType kind of attempt being limited
      * @param windowStart inclusive beginning of the rate-limit window
      * @return number of failures in the window
@@ -42,13 +42,13 @@ public interface AuthAttemptRepository extends ListCrudRepository<AuthAttempt, U
     @Query("""
             SELECT count(*)
             FROM auth_attempts
-            WHERE user_id = :userId
+            WHERE account_holder_id = :accountHolderId
               AND attempt_type = :attemptType
               AND outcome_class = 'FAILURE'
               AND occurred_at >= :windowStart
             """)
-    long countRecentFailuresForUser(
-            @Param("userId") UUID userId,
+    long countRecentFailuresForAccountHolder(
+            @Param("accountHolderId") UUID accountHolderId,
             @Param("attemptType") String attemptType,
             @Param("windowStart") Instant windowStart);
 
@@ -88,11 +88,12 @@ public interface AuthAttemptRepository extends ListCrudRepository<AuthAttempt, U
     /**
      * Returns one account's recent attempts, most recent first.
      *
-     * <p>Spring derives {@code WHERE user_id = ? ORDER BY occurred_at DESC}. Backs account-takeover
-     * investigation, where the pattern of failures matters more than any single row.</p>
+     * <p>Spring derives {@code WHERE account_holder_id = ? ORDER BY occurred_at DESC}. Backs
+     * account-takeover investigation, where the pattern of failures matters more than any single
+     * row.</p>
      *
-     * @param userId account being investigated
+     * @param accountHolderId account being investigated
      * @return possibly empty list of attempts, most recent first
      */
-    List<AuthAttempt> findAllByUserIdOrderByOccurredAtDesc(UUID userId);
+    List<AuthAttempt> findAllByAccountHolderIdOrderByOccurredAtDesc(UUID accountHolderId);
 }

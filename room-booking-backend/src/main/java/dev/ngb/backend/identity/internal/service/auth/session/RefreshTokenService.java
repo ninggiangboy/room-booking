@@ -12,12 +12,14 @@ import dev.ngb.backend.identity.internal.model.session.TokenConsumptionReason;
 import dev.ngb.backend.identity.internal.repository.session.AuthSessionRepository;
 import dev.ngb.backend.identity.internal.repository.session.AuthTokenRepository;
 import dev.ngb.backend.identity.internal.service.auth.AuthTokenFactory;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import dev.ngb.backend.identity.internal.exception.InvalidRefreshTokenException;
+import dev.ngb.backend.identity.internal.exception.SessionNotFoundException;
 import dev.ngb.backend.platform.AssuranceLevel;
 import dev.ngb.backend.platform.util.DurationUtils;
 import dev.ngb.backend.platform.util.HashUtils;
@@ -97,13 +99,22 @@ public class RefreshTokenService {
      * @param accountHolderId account the session belongs to
      * @param method how the principal proved who they were
      * @param assuranceLevel strength of that proof
+     * @param clientDescriptor client description shown to the owner when listing their devices, or
+     *     {@code null} when unavailable
+     * @param originHash SHA-256 digest of the network origin, or {@code null} when unavailable
      * @return the new session's identifier and its first raw refresh-token secret
      */
-    public Issued issue(UUID accountHolderId, AuthenticationMethod method, AssuranceLevel assuranceLevel) {
+    public Issued issue(
+            UUID accountHolderId,
+            AuthenticationMethod method,
+            AssuranceLevel assuranceLevel,
+            @Nullable String clientDescriptor,
+            @Nullable String originHash) {
         Instant now = clock.instant();
 
         AuthSession session = authSessionFactory.create(
-                accountHolderId, method, assuranceLevel, now, idleExpiration, sessionAbsoluteExpiration);
+                accountHolderId, method, assuranceLevel, now, idleExpiration, sessionAbsoluteExpiration,
+                clientDescriptor, originHash);
         session = authSessionRepository.save(session);
 
         // Only the SHA-256 hash is persisted; the raw secret is returned once to the client.
@@ -209,6 +220,26 @@ public class RefreshTokenService {
     public void revokeAllSessionsForHolder(UUID accountHolderId, Instant now, String reason) {
         authSessionRepository.findLiveForHolder(accountHolderId, now)
                 .forEach(session -> revokeSessionAndTokens(session, now, reason));
+    }
+
+    /**
+     * Revokes one session belonging to an account holder, for self-service device management.
+     *
+     * @param accountHolderId owner the session must belong to
+     * @param sessionId session to revoke
+     * @param now the command's decision instant
+     * @param reason stable reason recorded on the revoked session and its tokens
+     * @throws SessionNotFoundException when no session with that id belongs to the account holder,
+     *     deliberately identical to an absent session so a caller cannot probe another holder's
+     *     session ids
+     */
+    public void revokeSession(UUID accountHolderId, UUID sessionId, Instant now, String reason) {
+        AuthSession session = authSessionRepository.findByIdForUpdate(sessionId)
+                .filter(candidate -> candidate.getAccountHolderId().equals(accountHolderId))
+                .orElseThrow(() -> new SessionNotFoundException(sessionId));
+        if (session.isLiveAt(now)) {
+            revokeSessionAndTokens(session, now, reason);
+        }
     }
 
     private void revokeSessionAndTokens(AuthSession session, Instant now, String reason) {
