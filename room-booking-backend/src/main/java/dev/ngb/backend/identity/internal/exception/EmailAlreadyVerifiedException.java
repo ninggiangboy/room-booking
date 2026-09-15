@@ -1,7 +1,8 @@
 package dev.ngb.backend.identity.internal.exception;
 
 import java.util.Map;
-import dev.ngb.backend.identity.internal.model.account.User;
+import dev.ngb.backend.identity.internal.model.account.AccountHolder;
+import dev.ngb.backend.identity.internal.model.account.ContactChannel;
 
 import dev.ngb.backend.platform.exception.base.ConflictException;
 
@@ -15,12 +16,13 @@ public class EmailAlreadyVerifiedException extends ConflictException {
     /**
      * Creates a conflict containing safe account context.
      *
-     * @param user account whose email is already verified
+     * @param holder account holder whose email is already verified
+     * @param emailChannel the holder's already-verified primary email channel
      */
-    public EmailAlreadyVerifiedException(User user) {
+    public EmailAlreadyVerifiedException(AccountHolder holder, ContactChannel emailChannel) {
         super(
                 CODE,
                 "email is already verified",
-                Map.of("userId", user.getId(), "email", user.getEmail()));
+                Map.of("userId", holder.getId(), "email", emailChannel.getNormalizedValue()));
     }
 }

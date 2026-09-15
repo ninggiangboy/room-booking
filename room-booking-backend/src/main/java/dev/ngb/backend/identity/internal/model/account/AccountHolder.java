@@ -16,10 +16,12 @@ import org.springframework.data.annotation.Version;
 import org.springframework.data.relational.core.mapping.Table;
 
 /**
- * The entity that owns supply, enters contracts, and is settled.
+ * The account holder: the principal that signs in, owns supply, enters contracts, and is settled.
  *
- * <p>A user is who signs in; an account holder is who the platform is doing business with. They
- * coincide for an individual host and diverge for a company, whose supply and payouts belong to the
+ * <p>Since migration {@code 037} retired the legacy {@code users} table, this is the single
+ * principal root identity code is built on — the identifier a JWT names in its subject claim, and
+ * the row every capability grant, session, credential, and contact channel points at. It coincides
+ * with an individual host and diverges for a company, whose supply and payouts belong to the
  * organization rather than to whichever employee happens to manage them.</p>
  *
  * <p>Holders are never deleted — a closed holder still has to explain the bookings it contracted and
@@ -33,20 +35,20 @@ import org.springframework.data.relational.core.mapping.Table;
 @Table("account_holders")
 public class AccountHolder {
 
-    /** Primary key of the holder. */
+    /** Primary key of the holder, and the identifier every JWT subject claim now names. */
     @Id
     private @Nullable UUID id;
     /** Whether the holder is a person or an organization. */
     private AccountHolderType holderType;
-    /** User this holder is the account of; {@code null} for an organization. */
-    private @Nullable UUID userId;
     /** Name the holder is presented and contracted under. */
     private String displayName;
+    /** Optional location of the holder's avatar; the one profile field with no other home. */
+    private @Nullable String avatarUrl;
     /** Whether the holder may own supply, contract, and be settled. */
     private AccountHolderStatus status;
-    /** Market the holder operates in; {@code null} only while unreconciled. */
+    /** Market the holder operates in; {@code null} only while unresolved. */
     private @Nullable String marketCode;
-    /** Whether the market is known, or merely inherited from before markets existed. */
+    /** Whether the market is known or has never been resolved. */
     private MarketContextState contextState;
     /** UTC instant the row was created, maintained by Spring Data JDBC auditing. */
     @CreatedDate
@@ -61,7 +63,7 @@ public class AccountHolder {
     /**
      * Reports whether this holder may take part in a consequential workflow.
      *
-     * <p>Both conditions matter. An unreconciled holder has no market, so there is no approved tax
+     * <p>Both conditions matter. An unresolved holder has no market, so there is no approved tax
      * treatment, cancellation ladder, or contracting entity for it — publishing or booking under it
      * would form a contract under rules nobody approved.</p>
      *

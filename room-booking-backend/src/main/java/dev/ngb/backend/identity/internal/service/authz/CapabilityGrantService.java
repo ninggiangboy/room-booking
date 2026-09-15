@@ -1,6 +1,8 @@
 package dev.ngb.backend.identity.internal.service.authz;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import dev.ngb.backend.identity.internal.model.capability.AuthorizationScopeType;
@@ -18,9 +20,8 @@ import org.springframework.stereotype.Service;
  * <p>{@code @Service} registers this as business logic; Lombok's {@code @RequiredArgsConstructor}
  * generates constructor injection for the repository. Centralizing every write here guarantees a
  * grant is always constructed with a materialized capability array consistent with its role
- * label, and that revoking a delegation always walks {@link
- * CapabilityGrant#getDerivedFromGrantId()} rather than leaving a co-host holding authority the
- * owner believes was withdrawn.</p>
+ * label, and that revoking a delegation always walks {@code CapabilityGrant.getDerivedFromGrantId()}
+ * rather than leaving a co-host holding authority the owner believes was withdrawn.</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -85,6 +86,27 @@ public class CapabilityGrantService {
                 .stream()
                 .filter(grant -> role.name().equals(grant.getRoleName()))
                 .findFirst();
+    }
+
+    /**
+     * Returns the distinct role labels of a principal's currently effective global grants.
+     *
+     * <p>Used to build the {@code roleNames} field of the API's user projection now that {@code
+     * user_roles} is gone; a resource-scoped grant with no role label is deliberately excluded,
+     * since a role name is only ever a convenience label for a global bundle.</p>
+     *
+     * @param granteeId principal being evaluated
+     * @param decisionInstant the command's single decision instant
+     * @return distinct, possibly empty list of role labels, in the order the grants were returned
+     */
+    public List<String> effectiveRoleNames(UUID granteeId, Instant decisionInstant) {
+        return capabilityGrantRepository
+                .findEffective(granteeId, AuthorizationScopeType.GLOBAL.name(), null, decisionInstant)
+                .stream()
+                .map(CapabilityGrant::getRoleName)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
     }
 
     /**

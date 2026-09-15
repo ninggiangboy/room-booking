@@ -38,15 +38,15 @@ public class PropertyCollaborator {
     private @Nullable UUID id;
     /** Property being worked on. */
     private UUID propertyId;
-    /** User doing the work. */
-    private UUID userId;
+    /** Account holder doing the work. */
+    private UUID accountHolderId;
     /** What they do on the property. */
     private CollaboratorRole collaboratorRole;
     /** Property-scoped grant that carries what they may actually do. */
     private @Nullable UUID capabilityGrantId;
     /** Whether the collaboration is currently in force. */
     private CollaboratorStatus status;
-    /** User who invited them. */
+    /** Account holder who invited them. */
     private @Nullable UUID invitedBy;
     /** UTC instant the collaboration began. */
     private Instant startedAt;

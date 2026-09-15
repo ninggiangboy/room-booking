@@ -4,20 +4,21 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import dev.ngb.backend.identity.internal.model.account.AccountHolder;
-import dev.ngb.backend.identity.internal.model.account.AccountHolderType;
 import dev.ngb.backend.identity.internal.model.account.ContactChannel;
 import dev.ngb.backend.identity.internal.model.account.ContactChannelType;
 import dev.ngb.backend.identity.internal.model.session.AuthToken;
 import dev.ngb.backend.identity.internal.model.session.AuthTokenType;
 import dev.ngb.backend.identity.internal.model.session.TokenConsumptionReason;
-import dev.ngb.backend.identity.internal.model.account.User;
-import dev.ngb.backend.identity.internal.repository.account.AccountHolderRepository;
 import dev.ngb.backend.identity.internal.repository.account.ContactChannelRepository;
 import dev.ngb.backend.identity.internal.repository.session.AuthTokenRepository;
-import dev.ngb.backend.identity.internal.repository.capability.UserRoleRepository;
+import dev.ngb.backend.identity.internal.service.account.AccountHolderFinder;
 import dev.ngb.backend.identity.internal.service.auth.AuthTokenFactory;
+import dev.ngb.backend.identity.internal.service.authz.AuthorizationService;
+import dev.ngb.backend.identity.internal.service.authz.CapabilityGrantService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,7 +32,6 @@ import dev.ngb.backend.identity.internal.exception.EmailVerificationRateLimitExc
 import dev.ngb.backend.identity.internal.exception.InvalidEmailVerificationTokenException;
 import dev.ngb.backend.identity.internal.exception.UserAccountDisabledException;
 import dev.ngb.backend.identity.internal.exception.UserNotFoundException;
-import dev.ngb.backend.identity.internal.service.user.UserFinder;
 import dev.ngb.backend.identity.internal.web.UserResponse;
 import dev.ngb.backend.identity.internal.web.VerifyEmailRequest;
 import dev.ngb.backend.platform.util.HashUtils;
@@ -43,7 +43,7 @@ import dev.ngb.backend.platform.util.HashUtils;
  * <p>{@code @Service} registers the use case, and Lombok generates constructor injection for final
  * dependencies. {@code @Value} injects token lifetime and request-limit configuration into the
  * remaining mutable fields. Public entry points are transactional so token creation, consumption,
- * rate-limit checks, and user updates commit or roll back together.</p>
+ * rate-limit checks, and account updates commit or roll back together.</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -53,10 +53,10 @@ public class EmailVerificationService {
 
     private final AuthTokenRepository authTokenRepository;
     private final ContactChannelRepository contactChannelRepository;
-    private final AccountHolderRepository accountHolderRepository;
-    private final UserRoleRepository userRoleRepository;
     private final AuthTokenFactory authTokenFactory;
-    private final UserFinder userFinder;
+    private final AccountHolderFinder accountHolderFinder;
+    private final CapabilityGrantService capabilityGrantService;
+    private final AuthorizationService authorizationService;
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
@@ -86,15 +86,15 @@ public class EmailVerificationService {
         }
     }
 
-    private void issue(User user, ContactChannel emailChannel) {
+    private void issue(AccountHolder holder, ContactChannel emailChannel) {
         if (emailChannel.isVerified()) {
-            throw new EmailAlreadyVerifiedException(user);
+            throw new EmailAlreadyVerifiedException(holder, emailChannel);
         }
 
         Instant now = clock.instant();
         // A newly issued token supersedes every older unconsumed verification token.
-        authTokenRepository.findAllByUserIdAndTypeAndConsumedAtIsNull(
-                        user.getId(), AuthTokenType.EMAIL_VERIFICATION)
+        authTokenRepository.findAllByAccountHolderIdAndTypeAndConsumedAtIsNull(
+                        holder.getId(), AuthTokenType.EMAIL_VERIFICATION)
                 .forEach(token -> {
             token.consume(now, TokenConsumptionReason.ROTATED);
             authTokenRepository.save(token);
@@ -102,37 +102,37 @@ public class EmailVerificationService {
 
         // Persist only a hash so a database leak cannot reveal a usable verification link.
         AuthTokenFactory.IssuedToken issued = authTokenFactory.create(
-                user.getId(), AuthTokenType.EMAIL_VERIFICATION, now, tokenTtl);
+                holder.getId(), AuthTokenType.EMAIL_VERIFICATION, now, tokenTtl);
         authTokenRepository.save(issued.token());
         eventPublisher.publishEvent(
-                new EmailVerificationIssued(user.getEmail(), issued.rawToken()));
+                new EmailVerificationIssued(emailChannel.getNormalizedValue(), issued.rawToken()));
     }
 
     /**
      * Issues a verification token for an active, unverified account when request limits permit.
      *
-     * <p>The user row is locked before inspecting token history so concurrent requests for the
+     * <p>The holder row is locked before inspecting token history so concurrent requests for the
      * same account cannot independently pass the cooldown or rolling-window checks.</p>
      *
-     * @param userId authenticated account requesting another message
+     * @param holderId authenticated account requesting another message
      * @throws UserNotFoundException when the account no longer exists
      * @throws UserAccountDisabledException when the account is not active
      * @throws EmailAlreadyVerifiedException when verification is already complete
      * @throws EmailVerificationRateLimitException when the cooldown or rolling quota is exceeded
      */
     @Transactional
-    public void requestVerification(UUID userId) {
-        User user = userFinder.findActiveByIdForUpdate(userId);
+    public void requestVerification(UUID holderId) {
+        AccountHolder holder = accountHolderFinder.findActiveByIdForUpdate(holderId);
         ContactChannel emailChannel = contactChannelRepository
-                .findCurrentPrimary(userId, ContactChannelType.EMAIL.name())
+                .findCurrentPrimary(holderId, ContactChannelType.EMAIL.name())
                 .orElseThrow(() -> new IllegalStateException(
                         "registration must create a primary email channel"));
-        enforceRequestLimits(userId);
-        issue(user, emailChannel);
+        enforceRequestLimits(holderId);
+        issue(holder, emailChannel);
     }
 
     /**
-     * Consumes a valid token and returns the user's updated public details.
+     * Consumes a valid token and returns the account's updated public details.
      *
      * @param request validated DTO containing the raw one-time token
      * @return updated account projection with its email verification timestamp
@@ -140,11 +140,11 @@ public class EmailVerificationService {
      */
     @Transactional
     public UserResponse verify(VerifyEmailRequest request) {
-        UUID userId = consume(request.token());
-        User user = userFinder.findActiveById(userId);
+        UUID holderId = consume(request.token());
+        AccountHolder holder = accountHolderFinder.findActiveById(holderId);
 
         ContactChannel emailChannel = contactChannelRepository
-                .findCurrentPrimary(userId, ContactChannelType.EMAIL.name())
+                .findCurrentPrimary(holderId, ContactChannelType.EMAIL.name())
                 .orElseThrow(() -> new IllegalStateException(
                         "registration must create a primary email channel"));
         if (!emailChannel.isVerified()) {
@@ -152,12 +152,13 @@ public class EmailVerificationService {
             emailChannel = contactChannelRepository.save(emailChannel);
         }
 
-        UUID accountHolderId = accountHolderRepository
-                .findByUserIdAndHolderType(userId, AccountHolderType.PERSON)
-                .map(AccountHolder::getId)
-                .orElse(null);
-        return UserResponse.from(
-                user, emailChannel, accountHolderId, userRoleRepository.findRolesByUserId(userId));
+        Instant now = clock.instant();
+        List<String> roleNames = capabilityGrantService.effectiveRoleNames(holderId, now);
+        Set<String> capabilities = authorizationService.effectiveGlobalCapabilities(holderId, now)
+                .stream()
+                .map(Enum::name)
+                .collect(Collectors.toSet());
+        return UserResponse.from(holder, emailChannel, null, roleNames, capabilities);
     }
 
     private UUID consume(String rawToken) {
@@ -169,18 +170,18 @@ public class EmailVerificationService {
             throw new InvalidEmailVerificationTokenException();
         }
 
-        // Consuming before returning the user ID makes the token one-time within this transaction.
+        // Consuming before returning the holder ID makes the token one-time within this transaction.
         token.consume(now, TokenConsumptionReason.USED);
         authTokenRepository.save(token);
-        return token.getUserId();
+        return token.getAccountHolderId();
     }
 
-    private void enforceRequestLimits(UUID userId) {
+    private void enforceRequestLimits(UUID holderId) {
         Instant now = clock.instant();
         Instant windowStart = now.minus(rateLimitWindow);
         List<AuthToken> recentTokens = authTokenRepository
-                .findAllByUserIdAndTypeAndCreatedAtGreaterThanEqualOrderByCreatedAtAsc(
-                        userId, AuthTokenType.EMAIL_VERIFICATION, windowStart);
+                .findAllByAccountHolderIdAndTypeAndCreatedAtGreaterThanEqualOrderByCreatedAtAsc(
+                        holderId, AuthTokenType.EMAIL_VERIFICATION, windowStart);
 
         if (!recentTokens.isEmpty()) {
             Instant cooldownEndsAt = recentTokens.getLast().getCreatedAt().plus(requestCooldown);

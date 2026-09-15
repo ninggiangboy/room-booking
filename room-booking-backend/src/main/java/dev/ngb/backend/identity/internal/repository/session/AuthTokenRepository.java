@@ -51,7 +51,7 @@ public interface AuthTokenRepository extends ListCrudRepository<AuthToken, UUID>
      * <pre>{@code
      * SELECT ...
      * FROM auth_tokens
-     * WHERE user_id = ?
+     * WHERE account_holder_id = ?
      *   AND type = ?
      *   AND consumed_at IS NULL
      * }</pre>
@@ -59,45 +59,46 @@ public interface AuthTokenRepository extends ListCrudRepository<AuthToken, UUID>
      * <p>The list return type asks Spring Data to materialize every matching row, returning an
      * empty list rather than {@code null} when nothing matches.</p>
      *
-     * @param userId token owner
+     * @param accountHolderId token owner
      * @param type token purpose
      * @return possibly empty list of unconsumed records
      */
-    List<AuthToken> findAllByUserIdAndTypeAndConsumedAtIsNull(
-            UUID userId,
+    List<AuthToken> findAllByAccountHolderIdAndTypeAndConsumedAtIsNull(
+            UUID accountHolderId,
             AuthTokenType type);
 
     /**
      * Finds all outstanding tokens for an account, regardless of purpose.
      *
-     * <p>Spring derives {@code WHERE user_id = ? AND consumed_at IS NULL}. The result may contain
-     * refresh, verification, and password-reset records and is empty when nothing is revocable.</p>
+     * <p>Spring derives {@code WHERE account_holder_id = ? AND consumed_at IS NULL}. The result may
+     * contain refresh, verification, and password-reset records and is empty when nothing is
+     * revocable.</p>
      *
-     * @param userId token owner
+     * @param accountHolderId token owner
      * @return possibly empty list of unconsumed token records
      */
-    List<AuthToken> findAllByUserIdAndConsumedAtIsNull(UUID userId);
+    List<AuthToken> findAllByAccountHolderIdAndConsumedAtIsNull(UUID accountHolderId);
 
     /**
-     * Finds tokens issued to one user during a rate-limit window, oldest first.
+     * Finds tokens issued to one account holder during a rate-limit window, oldest first.
      *
-     * <p>Spring Data parses {@code findAllByUserIdAndTypeAndCreatedAtGreaterThanEqual} into
-     * equality predicates for user and type plus {@code created_at >= ?}. The
+     * <p>Spring Data parses {@code findAllByAccountHolderIdAndTypeAndCreatedAtGreaterThanEqual}
+     * into equality predicates for account holder and type plus {@code created_at >= ?}. The
      * {@code OrderByCreatedAtAsc} suffix adds ascending creation-time ordering:</p>
      *
      * <pre>{@code
      * SELECT ... FROM auth_tokens
-     * WHERE user_id = ? AND type = ? AND created_at >= ?
+     * WHERE account_holder_id = ? AND type = ? AND created_at >= ?
      * ORDER BY created_at ASC
      * }</pre>
      *
-     * @param userId token owner
+     * @param accountHolderId token owner
      * @param type token purpose
      * @param earliestCreatedAt inclusive beginning of the rate-limit window
      * @return tokens in the window ordered from oldest to newest
      */
-    List<AuthToken> findAllByUserIdAndTypeAndCreatedAtGreaterThanEqualOrderByCreatedAtAsc(
-            UUID userId,
+    List<AuthToken> findAllByAccountHolderIdAndTypeAndCreatedAtGreaterThanEqualOrderByCreatedAtAsc(
+            UUID accountHolderId,
             AuthTokenType type,
             Instant earliestCreatedAt);
 

@@ -42,8 +42,8 @@ public class VerificationAppeal {
     private UUID hostLegalProfileId;
     /** Decision being challenged. */
     private UUID contestedDecisionId;
-    /** User who submitted the appeal. */
-    private UUID submittedBy;
+    /** Account holder who submitted the appeal. */
+    private UUID submittedByAccountHolderId;
     /** UTC instant of submission. */
     private Instant submittedAt;
     /** The host's stated grounds, in their own words. */

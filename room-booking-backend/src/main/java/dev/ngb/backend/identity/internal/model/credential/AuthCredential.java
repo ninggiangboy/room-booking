@@ -39,8 +39,8 @@ public class AuthCredential {
     /** Primary key of the credential. */
     @Id
     private @Nullable UUID id;
-    /** Principal the credential authenticates. */
-    private UUID userId;
+    /** Account holder the credential authenticates. */
+    private UUID accountHolderId;
     /** Kind of authentication material. */
     private CredentialType credentialType;
     /** Encoder or algorithm identifier, so a rehash can target outdated entries. */

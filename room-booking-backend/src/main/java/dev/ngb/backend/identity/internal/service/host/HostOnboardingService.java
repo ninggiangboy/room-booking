@@ -1,86 +1,85 @@
 package dev.ngb.backend.identity.internal.service.host;
 
-import dev.ngb.backend.identity.internal.model.capability.HostProfile;
-import dev.ngb.backend.identity.internal.model.Role;
-import dev.ngb.backend.identity.internal.model.account.User;
+import dev.ngb.backend.identity.internal.model.account.AccountHolder;
+import dev.ngb.backend.identity.internal.model.account.ContactChannel;
+import dev.ngb.backend.identity.internal.model.account.ContactChannelType;
 import dev.ngb.backend.identity.internal.model.capability.GrantSource;
 import dev.ngb.backend.identity.internal.model.capability.PrincipalType;
-import dev.ngb.backend.identity.internal.repository.capability.HostProfileRepository;
-import dev.ngb.backend.identity.internal.repository.capability.UserRoleRepository;
+import dev.ngb.backend.identity.internal.repository.account.ContactChannelRepository;
+import dev.ngb.backend.identity.internal.service.account.AccountHolderFinder;
+import dev.ngb.backend.identity.internal.service.authz.AuthorizationService;
 import dev.ngb.backend.identity.internal.service.authz.CapabilityGrantService;
 import dev.ngb.backend.identity.internal.service.authz.RoleBundle;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import dev.ngb.backend.identity.internal.exception.UserNotFoundException;
-import dev.ngb.backend.identity.internal.service.user.UserFinder;
-import dev.ngb.backend.identity.internal.web.HostProfileResponse;
 import dev.ngb.backend.identity.internal.web.UserResponse;
-import dev.ngb.backend.platform.util.StringUtils;
 
 
-/** Owns the single workflow that promotes an active guest account to a host account. */
+/**
+ * Owns the single workflow that promotes an active guest account to a host account.
+ *
+ * <p>{@code @Service} registers this as business logic; Lombok's {@code @RequiredArgsConstructor}
+ * generates constructor injection for every final dependency. {@code host_profiles} is gone as of
+ * migration {@code 037}: {@code bio}, {@code average_rating}, and {@code review_count} were never
+ * this module's facts to own (see {@code docs/features/identity-accounts-and-access.md} §
+ * Profile facts and their consumers), so onboarding now does exactly one thing -- issue the
+ * {@code HOST} capability grant -- and returns nothing but the account projection.</p>
+ */
 @Service
 @RequiredArgsConstructor
 public class HostOnboardingService {
 
     private static final String HOST_ONBOARDING_REASON = "SELF_SERVICE_HOST_ONBOARDING";
 
-    private final UserRoleRepository userRoleRepository;
-    private final HostProfileRepository hostProfileRepository;
-    private final HostProfileFactory hostProfileFactory;
     private final CapabilityGrantService capabilityGrantService;
-    private final UserFinder userFinder;
+    private final AuthorizationService authorizationService;
+    private final AccountHolderFinder accountHolderFinder;
+    private final ContactChannelRepository contactChannelRepository;
     private final Clock clock;
 
     /**
-     * Creates the caller's host profile and grants the host role in one transaction. Repeating
-     * the request returns the existing profile and repairs a missing role or capability grant.
+     * Grants the caller the host role, idempotently, in one transaction.
      *
-     * <p>Both {@link Role#HOST} and its {@link RoleBundle#HOST} capability grant are issued here.
-     * Authorization decisions already flow through the capability grant; the role row remains the
-     * compatibility surface until migration 037 retires {@code user_roles}, which is what keeps
-     * this change revertible without a database migration.</p>
+     * <p>Repeating the request finds the existing effective grant through {@link
+     * CapabilityGrantService#findEffectiveRoleGrant} and returns the current projection rather
+     * than issuing a duplicate grant.</p>
      *
-     * @param userId authenticated account identifier
-     * @param request optional public profile information
-     * @return account roles and host profile after onboarding
+     * @param holderId authenticated account identifier
+     * @return account projection reflecting the host role and its capabilities
      * @throws dev.ngb.backend.identity.internal.exception.UserAccountDisabledException when the account is inactive
      * @throws UserNotFoundException when the account does not exist
      */
     @Transactional
-    public HostOnboardingResponse onboard(UUID userId, HostOnboardingRequest request) {
-        User user = userFinder.findActiveByIdForUpdate(userId);
+    public UserResponse onboard(UUID holderId) {
+        AccountHolder holder = accountHolderFinder.findActiveByIdForUpdate(holderId);
 
         Instant now = clock.instant();
-        HostProfile profile = hostProfileRepository.findById(userId).orElseGet(() ->
-                hostProfileRepository.save(
-                        hostProfileFactory.create(userId, normalizeOptional(request.bio()))));
-
-        userRoleRepository.grantRole(userId, Role.HOST.name(), now);
-        capabilityGrantService.findEffectiveRoleGrant(userId, RoleBundle.HOST, now)
+        capabilityGrantService.findEffectiveRoleGrant(holderId, RoleBundle.HOST, now)
                 .orElseGet(() -> capabilityGrantService.issueRoleGrant(
-                        PrincipalType.USER,
-                        userId,
+                        PrincipalType.PERSON,
+                        holderId,
                         RoleBundle.HOST,
                         GrantSource.SELF_SERVICE,
                         HOST_ONBOARDING_REASON,
                         now));
 
-        List<Role> roles = userRoleRepository.findRolesByUserId(userId);
-        return new HostOnboardingResponse(
-                UserResponse.from(user, null, roles),
-                HostProfileResponse.from(profile));
-    }
-
-    private static @Nullable String normalizeOptional(@Nullable String value) {
-        String normalized = StringUtils.normalize(value);
-        return normalized == null || normalized.isEmpty() ? null : normalized;
+        ContactChannel emailChannel = contactChannelRepository
+                .findCurrentPrimary(holderId, ContactChannelType.EMAIL.name())
+                .orElse(null);
+        List<String> roleNames = capabilityGrantService.effectiveRoleNames(holderId, now);
+        Set<String> capabilities = authorizationService.effectiveGlobalCapabilities(holderId, now)
+                .stream()
+                .map(Enum::name)
+                .collect(Collectors.toSet());
+        return UserResponse.from(holder, emailChannel, null, roleNames, capabilities);
     }
 }

@@ -1,13 +1,14 @@
 package dev.ngb.backend.identity.internal.repository.account;
 
 import dev.ngb.backend.identity.internal.model.account.MarketContextState;
+import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.ListCrudRepository;
+import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import dev.ngb.backend.identity.internal.model.account.AccountHolder;
-import dev.ngb.backend.identity.internal.model.account.AccountHolderType;
 
 
 /**
@@ -15,41 +16,38 @@ import dev.ngb.backend.identity.internal.model.account.AccountHolderType;
  *
  * <p>CRUD methods inherited from {@code ListCrudRepository} generate ID-based select, insert/update,
  * and delete SQL for {@code account_holders}. Nothing here deletes a holder in practice: closure is
- * a status, because a closed holder still has to explain the bookings it contracted.</p>
+ * a status, because a closed holder still has to explain the bookings it contracted. Since migration
+ * {@code 037} retired the legacy {@code users} table, {@code AccountHolder.getId()} is also the
+ * identifier every JWT subject claim names, so a lookup by that id is simply {@code findById},
+ * inherited from {@code ListCrudRepository}.</p>
  */
 public interface AccountHolderRepository extends ListCrudRepository<AccountHolder, UUID> {
 
     /**
-     * Finds the person holder backing one user account.
-     *
-     * <p>Spring derives two equality predicates from the property path:</p>
+     * Loads one holder while taking a transaction-scoped row lock.
      *
      * <pre>{@code
-     * SELECT ...
-     * FROM account_holders
-     * WHERE user_id = ?
-     *   AND holder_type = ?
+     * SELECT * FROM account_holders WHERE id = :id FOR UPDATE
      * }</pre>
      *
-     * <p>{@code uk_account_holders_person_user} guarantees at most one person holder per user, so
-     * {@link Optional} is the honest return type.</p>
+     * <p>{@code id} is bound to the named parameter. The lock serializes concurrent status or
+     * profile changes for the same holder until the surrounding transaction ends.</p>
      *
-     * @param userId user whose holder is wanted
-     * @param holderType pass {@link AccountHolderType#PERSON}
-     * @return the holder when it exists
+     * @param id holder identifier
+     * @return optional locked holder, empty when no row matches
      */
-    Optional<AccountHolder> findByUserIdAndHolderType(UUID userId, AccountHolderType holderType);
+    @Query("SELECT * FROM account_holders WHERE id = :id FOR UPDATE")
+    Optional<AccountHolder> findByIdForUpdate(@Param("id") UUID id);
 
     /**
-     * Returns holders whose market context still has to be resolved by an operator.
+     * Returns holders whose market context has never been resolved by an operator.
      *
-     * <p>Spring derives {@code WHERE context_state = 'LEGACY_UNRECONCILED'} from the enum argument
-     * and orders by creation. These are rows backfilled from before markets existed; they are
-     * blocked from consequential workflows until a market is recorded, because guessing one would
-     * let a contract form under rules nobody approved.</p>
+     * <p>Spring derives {@code WHERE context_state = 'UNRESOLVED'} from the enum argument and
+     * orders by creation. These holders are blocked from consequential workflows until a market is
+     * recorded, because guessing one would let a contract form under rules nobody approved.</p>
      *
-     * @param contextState pass the unreconciled state
-     * @return possibly empty list of holders awaiting reconciliation, oldest first
+     * @param contextState pass the unresolved state
+     * @return possibly empty list of holders awaiting resolution, oldest first
      */
     List<AccountHolder> findAllByContextStateOrderByCreatedAtAsc(
             MarketContextState contextState);

@@ -9,8 +9,6 @@ import dev.ngb.backend.identity.internal.model.account.ContactChannel;
 import dev.ngb.backend.identity.internal.model.account.ContactChannelPurpose;
 import dev.ngb.backend.identity.internal.model.account.ContactChannelType;
 import dev.ngb.backend.identity.internal.model.account.MarketContextState;
-import dev.ngb.backend.identity.internal.model.account.User;
-import dev.ngb.backend.identity.internal.model.account.UserStatus;
 import dev.ngb.backend.identity.internal.model.credential.AuthCredential;
 import dev.ngb.backend.identity.internal.model.credential.CredentialType;
 import lombok.RequiredArgsConstructor;
@@ -19,18 +17,21 @@ import org.springframework.stereotype.Component;
 
 
 /**
- * Constructs a new user and the rows every registration must create alongside it: the person
- * account holder the platform transacts with, the primary email contact channel, and the password
- * credential that authenticates future logins.
+ * Constructs the rows every registration must create together: the person account holder the
+ * platform transacts with, the primary email contact channel, and the password credential that
+ * authenticates future logins.
  *
  * <p>{@code @Component} makes the factory injectable. Lombok generates constructor injection for
  * the encoder. Package-private visibility keeps partially constructed registration values inside
  * the authentication package.</p>
  *
- * <p>The initial guest-role grant is no longer built here: {@link
+ * <p>Since migration {@code 037} retired the legacy {@code users} table, {@link AccountHolder} is
+ * the only aggregate a registration creates for the principal itself; there is no separate user
+ * row and no {@code user_roles} assignment. {@link
  * dev.ngb.backend.identity.internal.service.authz.CapabilityGrantService} is the sole writer of
- * {@code capability_grants}, so {@link AuthenticationService} issues that grant itself once the
- * account holder it is keyed on has been persisted and has an identifier to grant against.</p>
+ * {@code capability_grants}, so {@link AuthenticationService} issues the initial guest grant
+ * itself once the account holder built here has been persisted and has an identifier to grant
+ * against.</p>
  */
 @Component
 @RequiredArgsConstructor
@@ -60,26 +61,18 @@ class UserRegistrationFactory {
             String rawPassword,
             String displayName,
             Instant issuedAt) {
-        User user = User.builder()
-                .id(UUID.randomUUID())
-                .email(normalizedEmail)
-                .displayName(displayName)
-                .status(UserStatus.ACTIVE)
-                .build();
-
         AccountHolder accountHolder = AccountHolder.builder()
                 .id(UUID.randomUUID())
                 .holderType(AccountHolderType.PERSON)
-                .userId(user.getId())
                 .displayName(displayName)
                 .status(AccountHolderStatus.ACTIVE)
                 .marketCode(null)
-                .contextState(MarketContextState.LEGACY_UNRECONCILED)
+                .contextState(MarketContextState.UNRESOLVED)
                 .build();
 
         ContactChannel emailChannel = ContactChannel.builder()
                 .id(UUID.randomUUID())
-                .userId(user.getId())
+                .accountHolderId(accountHolder.getId())
                 .channelType(ContactChannelType.EMAIL)
                 .normalizedValue(normalizedEmail)
                 .originalValue(rawEmail)
@@ -89,26 +82,24 @@ class UserRegistrationFactory {
 
         AuthCredential passwordCredential = AuthCredential.builder()
                 .id(UUID.randomUUID())
-                .userId(user.getId())
+                .accountHolderId(accountHolder.getId())
                 .credentialType(CredentialType.PASSWORD)
                 .encoderId("bcrypt")
                 .verifierDigest(passwordEncoder.encode(rawPassword))
                 .enrolledAt(issuedAt)
                 .build();
 
-        return new NewAccount(user, accountHolder, emailChannel, passwordCredential);
+        return new NewAccount(accountHolder, emailChannel, passwordCredential);
     }
 
     /**
      * Every row registration must persist together.
      *
-     * @param user new user aggregate
-     * @param accountHolder new user's person account holder
-     * @param emailChannel new user's unverified primary email channel
-     * @param passwordCredential new user's password credential
+     * @param accountHolder new person account holder
+     * @param emailChannel new unverified primary email channel
+     * @param passwordCredential new password credential
      */
     record NewAccount(
-            User user,
             AccountHolder accountHolder,
             ContactChannel emailChannel,
             AuthCredential passwordCredential) {

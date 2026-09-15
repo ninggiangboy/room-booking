@@ -6,6 +6,10 @@ package dev.ngb.backend.identity.internal.model.capability;
  * <p>The source is what makes a grant reviewable. A capability a user gave themselves and one a risk
  * decision imposed are very different facts, and an operator reviewing an account needs to tell them
  * apart without reading a free-text reason.</p>
+ *
+ * <p>{@code LEGACY} existed only to mark grants backfilled from the retired {@code user_roles}
+ * table's role model. Migration {@code 037} converted every such row to {@code SELF_SERVICE} and
+ * narrowed the database check constraint accordingly, so this enum no longer declares it.</p>
  */
 public enum GrantSource {
     /** The principal granted it to themselves by completing a normal flow. */
@@ -17,7 +21,5 @@ public enum GrantSource {
     /** Imposed or narrowed by a risk decision. */
     RISK,
     /** Granted by platform governance, such as an operator role. */
-    GOVERNANCE,
-    /** Backfilled from the historical role model; provenance is the old row, not a decision. */
-    LEGACY
+    GOVERNANCE
 }

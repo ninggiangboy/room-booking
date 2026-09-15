@@ -40,8 +40,8 @@ public class AuthToken {
     /** Primary key of the token record, not the secret exposed to the client. */
     @Id
     private @Nullable UUID id;
-    /** Account that owns this token. */
-    private UUID userId;
+    /** Account holder that owns this token. */
+    private UUID accountHolderId;
     /** Purpose that prevents one token kind from being used as another. */
     private AuthTokenType type;
     /** SHA-256 digest of the raw secret; raw tokens are never persisted. */
