@@ -100,6 +100,9 @@ configuration provenance, and second-market compatibility boundary are documente
 | 032 | Admin and governance | `032-admin-and-governance.sql` | An administrative action is a domain command with a name on it, never a database edit: authority is defined apart from the grant that confers it, separation of duties is refused at insert rather than reported quarterly, a configured value carries its schema, scope, priority, interval, owner and version, a kill switch is always pullable and never re-armable without approval, and emergency access expires and owes a review |
 | 033 | Host operations | `033-host-operations.sql` | Advice that does not say what it is based on, how sure it is and who pays for it is pressure with a number on it: a host-facing metric is a published definition with an evidence floor rather than a query, a rate is stored beside the counts that produced it, a market benchmark clears a contributor floor or carries the true reason it was suppressed, a forecast carries the interval around its own estimate, every piece of advice records what was shown and what the host chose, and a bulk edit reports what it did to every target rather than that it succeeded |
 | 034 | Growth and loyalty | `034-growth-and-loyalty.sql` | Every incentive is somebody's money: a programme that grants value names the legal entity that owes it and the ledger account it comes off, credit is held as lots so expiry belongs to the money rather than to the balance, eligibility is a version and a recorded reason, a referral qualifies against a stay that happened and is reversed before it is closed, nobody is contacted without a consent that covers this category and this channel, no campaign may claim uplift without a holdout, and a waitlist offer needs a quote holding the room behind it |
+| 035 | Event publication | `035-event-publication.sql` | Spring Modulith's event publication registry table exists so a listener that has not completed is republished on restart instead of silently dropped |
+| 036 | Drop legacy user credential fields | `036-identity-drop-legacy-user-credential-fields.sql` | `users.password_hash`, `email_verified_at`, `phone_verified_at` are dropped now that nothing reads or writes them |
+| 037 | Retire the legacy identity schema | `037-identity-retire-legacy-tables.sql` | `account_holders` becomes the identity module's single principal root; `host_profiles`, `user_roles`, and `users` are dropped |
 
 ## Shared conventions
 
@@ -147,23 +150,25 @@ a target-state schema representation. D23 (reliability, observability, performan
 tables of its own: it is satisfied by the outbox, inbox, dead-letter and audit primitives in `012`
 plus runtime configuration.
 
-Counted against a database with `000`-`034` applied:
+Counted against a database with `000`-`034` applied (not yet recounted against `037`; the table
+count below already reflects the three tables `037` dropped, everything else is the last full
+count):
 
 | Measure | Count |
 | --- | --- |
-| Migration files, all included in `db.changelog-master.yaml` | 35 |
-| Changesets applied | 554 |
-| Tables, excluding Liquibase and PostGIS bookkeeping | 423 |
+| Migration files, all included in `db.changelog-master.yaml` | 37 |
+| Changesets applied | 554 (as of `034`; `035`-`037` add more) |
+| Tables, excluding Liquibase and PostGIS bookkeeping | 420 (423 minus `host_profiles`, `user_roles`, `users`, dropped by `037`) |
 | Tables created, then retired by `016` | 435, then 12 |
-| `CHECK` constraints | 3552 |
-| Foreign keys | 1285 |
-| Unique constraints | 330 |
+| `CHECK` constraints | 3552 (as of `034`) |
+| Foreign keys | 1285 (as of `034`; `037` repoints roughly twenty of these at `account_holders` rather than changing the count) |
+| Unique constraints | 330 (as of `034`) |
 | Exclusion constraints | 16 |
 | Deferrable constraints | 31 |
 | Project-owned `plpgsql` functions | 177 |
 | Triggers | 299 |
-| Spring Data JDBC aggregates and their repositories | 423 each |
-| Enums mirroring a `CHECK` vocabulary | 843 |
+| Spring Data JDBC aggregates and their repositories | 420 each |
+| Enums mirroring a `CHECK` vocabulary | 843 (as of `034`) |
 
 Every table has an aggregate. `geo_areas` and `geo_area_names` were the last two without one:
 created by `010` and deliberately reused rather than rebuilt by `017`, they fell through the gap
@@ -183,20 +188,14 @@ positions in Java, where the answer comes out in degrees rather than metres.
 A schema is not a running system, and these three gaps are the ones most easily misread:
 
 - **The services are not written.** The application still exposes only identity, authentication and
-  host onboarding, across two controllers and fourteen endpoints. Every other table is reachable
+  host onboarding, across two controllers and thirteen endpoints. Every other table is reachable
   only through its repository.
-- **Which table is the root of identity is still an open decision.** `014` created
-  `account_holders` beside `users` rather than replacing it, and the running services still read and
-  write `users`, `user_roles`, `host_profiles` and `auth_tokens`. The schema has already voted the
-  other way: 223 foreign keys point at `account_holders` and 13 at `users`, eleven of those from
-  `014`/`015`'s own identity tables. So an account registered today can be authenticated and
-  nothing else -- it has no `account_holders` row for the rest of the schema to reference.
-
-  There is no data to migrate. `014-10-backfill-identity-from-users` ran against an empty table and
-  exists for a production cutover this project has never needed, which makes the cheaper option the
-  live one: move authentication onto the target model and retire `users`, rather than dual-write and
-  reconcile. Deferred deliberately while there is only one service; it gets more expensive with the
-  second.
+- **Which table is the root of identity is resolved.** `014` created `account_holders` beside
+  `users` rather than replacing it; migration `037` completed that cutover. `account_holders` is now
+  the identity module's sole principal root, `host_profiles`/`user_roles`/`users` are dropped, and
+  every foreign key that used to point at `users` now points at `account_holders`. An account
+  registered today has exactly one `account_holders` row from the moment registration commits, and
+  every other table in the schema already pointed at that table rather than at `users`.
 - **Constraint coverage is not the same as workflow coverage.** The invariants below the tables were
   probed scenario by scenario per migration, but no end-to-end journey has been executed against
   them.

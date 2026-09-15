@@ -8,22 +8,29 @@ The repository is the backend of a room-booking platform. The Java application c
 
 - guest registration;
 - login and logout;
-- short-lived JWT access tokens;
-- rotating, database-backed refresh tokens;
+- short-lived JWT access tokens, whose subject is the account holder id and whose authorities are
+  reloaded from the database on every request rather than trusted from the token;
+- rotating, database-backed refresh tokens with reuse detection;
 - email verification;
 - forgot/reset password;
 - current-user lookup and password changes;
-- atomic host onboarding and role assignment;
-- administrator-controlled suspension/reactivation and terminal self-service soft deletion;
+- idempotent host onboarding that grants the `HOST` capability;
+- user-initiated, terminal account closure;
 - consistent JSON errors.
 
-The database contains much more than that. Migrations `012`-`034` built the full target
+Identity runs entirely on `account_holders`, `contact_channels`, `auth_credentials`,
+`auth_sessions`, `auth_tokens`, and `capability_grants`/`capability_restrictions` (migration `014`,
+completed by `037`). There is no separate `users` table anymore.
+
+The database contains much more than identity. Migrations `012`-`034` built the full target
 marketplace schema -- supply, inventory, pricing, booking, payment, ledger, cancellation,
 messaging, stay operations, reviews, trust and safety, disputes, discovery, analytics, machine
-learning, governance, host operations, and growth -- 423 tables, each with a Spring Data JDBC
+learning, governance, host operations, and growth -- 420 tables, each with a Spring Data JDBC
 aggregate and repository. None of it has a service or an HTTP endpoint. Do not assume that a
 table means a target capability is complete; section 11 explains what the schema does and does
-not prove.
+not prove. Section 12 also points at
+[`docs/implementation/`](docs/implementation/README.md) for a per-use-case account of exactly
+what identity's live endpoints do.
 
 ## 2. Prerequisites
 
@@ -138,7 +145,7 @@ src/main/java/dev/ngb/backend
 ├── config/           Security filter chain, OpenAPI, JDBC conversion, global exception handling
 │                     (an "open" module -- may depend on anything, since it wires everything)
 ├── identity/         Account holder, session, credential, capability; the only live auth/onboarding
-│   └── internal/     service/{auth,account,user,validation,host}, web (controllers + DTOs), model
+│   └── internal/     service/{auth,account,authz,validation,host}, web (controllers + DTOs), model
 ├── hostverification/ Seller KYC/KYB, screening, tax identity, payout-destination eligibility
 ├── market/, supply/, inventory/, pricing/, booking/, payment/, ledger/, messaging/, stay/,
 │   review/, trust/, support/, discovery/, analytics/, ml/, admin/, hostops/, growth/
@@ -151,7 +158,7 @@ src/main/java/dev/ngb/backend
 src/main/resources
 ├── application.properties
 ├── application-local.properties
-└── db/changelog/    Liquibase migration history, 000-035 (035: the event publication registry table)
+└── db/changelog/    Liquibase migration history, 000-037 (037: the legacy identity schema is retired)
 ```
 
 The usual dependency direction, inside one module:
@@ -442,17 +449,28 @@ Raw passwords must contain at least eight characters, including an uppercase let
 
 ### Access tokens
 
-An access token is a signed JWT containing the user ID as `sub`, plus email and roles. It is short-lived and is not stored in the database. The server verifies its signature and expiration on every protected request.
+An access token is a signed JWT containing the account holder ID as `sub` and the session ID as
+`sid`. It is short-lived and is not stored in the database. The server verifies its signature and
+expiration on every protected request.
 
-The JWT role claim is a session snapshot for clients. Authorization uses the current database roles, and the account must still be `ACTIVE`. Consequently, granting `HOST` takes effect on the next request, while suspending or deleting an account immediately blocks an otherwise valid access token.
+The token carries no `roles` claim. `JwtAuthenticationFilter` calls `IdentityFacts.resolve` on
+every protected request, which reloads the account's current status and effective capabilities
+straight from PostgreSQL and builds Spring Security authorities from capability names (no `ROLE_`
+prefix — authority is a capability, not a role). Consequently, granting `HOST` takes effect on the
+next request, while suspending or closing an account immediately blocks an otherwise valid access
+token, rather than waiting for it to expire.
 
 ### Opaque one-time tokens
 
 Refresh, email-verification, and password-reset tokens are random opaque secrets. The client receives the raw token once, while the database stores only its SHA-256 hash. A leaked database therefore does not immediately reveal usable raw tokens. `SecureTokenUtils` owns secure generation, `HashUtils` owns hashing, and `AuthToken.isUsableAt` centralizes the consumed/expired check.
 
-Refresh tokens rotate: refreshing consumes the old token and returns a new one. Replaying the old value fails. Issuing a new email-verification token consumes older unconsumed verification tokens.
+Refresh tokens belong to a session (`auth_sessions`) and rotate: refreshing consumes the old token,
+slides the session's idle expiry forward, and issues a new token in the next rotation generation.
+Replaying an already-consumed token, or a token that is not the session's current generation, is
+treated as reuse and revokes the whole session lineage rather than being honored as an ordinary
+refresh.
 
-Password recovery deliberately returns the same `204 No Content` response for registered and unregistered valid emails, preventing account enumeration. A successful reset consumes its one-time token and revokes every unconsumed refresh token for that user. Previously issued access JWTs are stateless and remain valid only until their short expiration.
+Password recovery deliberately returns the same `204 No Content` response for registered and unregistered valid emails, preventing account enumeration. A successful reset consumes its one-time token and revokes every live session for that account. Previously issued access JWTs are stateless and remain valid only until their short expiration.
 
 ## 9. Try the complete API flow
 
@@ -527,16 +545,17 @@ Save the new refresh token. The token used in this request has been consumed and
 
 ### Become a host
 
-An active account can create its host profile. The profile and `HOST` role are written in one transaction, and repeating the request is safe:
+An active account can grant itself the `HOST` capability. The request body is empty, and repeating
+it is safe — it returns the existing grant rather than issuing a duplicate one:
 
 ```bash
-curl --request POST http://localhost:8080/api/v1/users/me/host-profile \
-  --header 'Authorization: Bearer PASTE_ACCESS_TOKEN_HERE' \
-  --header 'Content-Type: application/json' \
-  --data '{"bio":"I have hosted travelers since 2024."}'
+curl --request POST http://localhost:8080/api/v1/users/me/host-capability \
+  --header 'Authorization: Bearer PASTE_ACCESS_TOKEN_HERE'
 ```
 
-The response contains the updated user roles and host profile. Current roles are reloaded from the database for each protected request, so the new authority is effective immediately.
+The response contains the updated account projection, including `roleNames` and `capabilities`.
+`IdentityFacts` reloads capabilities from the database for each protected request, so the new
+authority is effective immediately.
 
 ### Change the password
 
@@ -593,22 +612,12 @@ A successful reset returns `204 No Content`. The token is single-use, and all ex
 curl 'http://localhost:8080/api/v1/users/email-exists?email=beginner%40example.com'
 ```
 
-### Suspend or reactivate an account
+> **No admin suspend/reactivate endpoint exists yet.** `SecurityConfig` reserves
+> `/api/v1/admin/**` behind the `ACCOUNT_SUSPEND` capability, and the capability itself is in
+> `RoleBundle.ADMIN`, but no controller implements it. See
+> [`docs/implementation/identity/09-roadmap.md`](docs/implementation/identity/09-roadmap.md).
 
-An account with the `ADMIN` role can change another account's lifecycle status:
-
-```bash
-curl --request PUT http://localhost:8080/api/v1/admin/users/USER_UUID/status \
-  --header 'Authorization: Bearer PASTE_ADMIN_ACCESS_TOKEN_HERE' \
-  --header 'Content-Type: application/json' \
-  --data '{"status":"SUSPENDED"}'
-```
-
-The admin endpoint accepts only `ACTIVE` and `SUSPENDED`. It cannot delete an account or change a
-user that has already self-deleted. Suspension revokes all outstanding opaque tokens, and the
-account's access JWTs stop authenticating immediately.
-
-### Soft-delete the current account
+### Close the current account
 
 ```bash
 curl --request DELETE http://localhost:8080/api/v1/users/me \
@@ -616,8 +625,10 @@ curl --request DELETE http://localhost:8080/api/v1/users/me \
 ```
 
 The endpoint returns `204 No Content`. Historical references remain intact, but the account cannot
-log in, refresh a session, use an existing access token, request password recovery, or be restored
-through the admin status endpoint.
+log in, refresh a session, use an existing access token, or request password recovery. Every live
+session is revoked, and the very next request with the still-unexpired access token used to close
+the account is rejected, because `IdentityFacts` reloads status per request rather than trusting
+the token.
 
 ## 10. Error responses
 
@@ -647,7 +658,7 @@ Swagger UI documents the following common error codes at the operations where th
 | `400` | `INVALID_PASSWORD_RESET_TOKEN` | Password-reset token is unknown, expired, consumed, or unusable. |
 | `401` | `INVALID_CREDENTIALS` | Login credentials or the current password do not match. |
 | `401` | `INVALID_REFRESH_TOKEN` | Refresh token is invalid, expired, or already used. |
-| `403` | `USER_ACCOUNT_DISABLED` | The account is suspended or deleted. |
+| `403` | `USER_ACCOUNT_DISABLED` | The account is suspended or closed. |
 | `409` | `EMAIL_ALREADY_REGISTERED` | The email address already belongs to an account. |
 | `409` | `EMAIL_ALREADY_VERIFIED` | Verification was requested for an already verified email. |
 | `429` | `EMAIL_VERIFICATION_RATE_LIMITED` | Verification request cooldown or quota was exceeded; see `Retry-After` and `data.retryAfterSeconds`. |
@@ -656,7 +667,8 @@ Swagger UI documents the following common error codes at the operations where th
 
 The numbered SQL files are historical, ordered changesets. Reading them top to bottom shows how the
 schema arrived where it is, not a plan of phases. Files `000`-`011` built a small listing-centric
-foundation; files `012`-`034` replaced it with the target marketplace schema.
+foundation; files `012`-`034` replaced it with the target marketplace schema; files `035`-`037`
+retire the last piece of the original foundation, identity.
 
 An applied changeset is never edited. That rule is why the history reads the way it does: the tables
 of `002`-`006` were not reshaped into their successors, they were dropped and recreated under new
@@ -667,7 +679,7 @@ names by later migrations, and the original files still stand unchanged.
 | Migration | Historical result |
 | --- | --- |
 | `000` | PostgreSQL extensions for UUIDs, case-insensitive text, and range constraints |
-| `001` | Users, user roles, and host profiles |
+| `001` | Users, user roles, and host profiles -- retired by `037` |
 | `002` | Listings, images, amenities, and search indexes -- retired by `016` |
 | `003` | Per-day availability and pricing -- retired by `016` |
 | `004` | Bookings, immutable nightly snapshots, and overlap protection -- retired by `016` |
@@ -714,6 +726,14 @@ exception: `017` kept them and built around them, because the model was already 
 | `033` | Host-facing advice carries its evidence, its uncertainty, and its cost |
 | `034` | Every incentive names whose money it is |
 
+### Identity retirement, `035`-`037`
+
+| Migration | What it made true |
+| --- | --- |
+| `035` | Spring Modulith's event publication registry table exists, so an incomplete listener is republished on restart |
+| `036` | `users.password_hash`, `email_verified_at`, `phone_verified_at` are dropped, now dead columns |
+| `037` | `account_holders` becomes the sole principal root; `host_profiles`, `user_roles`, and `users` are dropped |
+
 Each of these has a companion note in `docs/data-model/` explaining why it exists, what it
 supersedes, and which invariants live below the tables rather than in application code. Read that
 note before the SQL; the SQL is long and the note says what matters.
@@ -721,16 +741,15 @@ note before the SQL; the SQL is long and the note says what matters.
 ### What the schema does not mean
 
 The schema is complete; the application is not. Only identity, authentication, and host onboarding
-have services behind them.
+have services behind them. See [`docs/implementation/identity/`](docs/implementation/identity/) for
+exactly what those services do, use case by use case.
 
-The one place this matters before you write any code is identity. Migration `014` created
-`account_holders` beside `users` rather than replacing it, and the running code still uses
-`users`, `user_roles`, `host_profiles`, and `auth_tokens`. The rest of the schema does not: 223
-foreign keys point at `account_holders` and 13 at `users`. An account registered today can log
-in and do nothing else, because nothing else has a row to reference. Which of the two becomes
-the root of identity is an open decision, recorded in `docs/data-model/README.md`; read it
-before touching identity code, and do not assume `users` is the answer just because it is what
-the current services use.
+The one place this used to matter most is identity, and it is now resolved: migration `014`
+created `account_holders` beside `users` rather than replacing it, and migration `037` completed
+that cutover. `account_holders` is the identity module's sole principal root; `users`,
+`user_roles`, and `host_profiles` no longer exist. Read `docs/data-model/README.md` and
+`docs/implementation/identity/` before touching identity code — the second one documents every
+live use case, request by request.
 
 Important data conventions are documented in `docs/data-model/README.md`: money uses integer minor
 units, stay ranges are half-open, timestamps use timezone-aware values, and deletion is normally
@@ -745,16 +764,20 @@ represented by status rather than removing historical rows. Date and time-zone s
 3. `identity/internal/web/AuthController.java` and its request/response records to see the HTTP surface.
 4. `config/SecurityConfig.java` and `config/JwtAuthenticationFilter.java` to understand public and
    protected routes, and `docs/modules/config.md` for why they live in an "open" module.
-5. `identity/internal/service/auth/AuthenticationService.java` to follow the main use cases.
-6. `identity/internal/model/account/User.java`, `identity/internal/model/session/AuthToken.java`, and
-   their repositories to connect Java objects to tables — and `docs/modules/identity.md` for why both
-   `users` and the target-model `account_holders` live in this one module.
+5. `identity/internal/service/auth/AuthenticationService.java` to follow the main use cases, and
+   `docs/implementation/identity/01-registration.md`/`02-login-and-sessions.md` for the same flows
+   documented request-by-request with sequence diagrams.
+6. `identity/internal/model/account/AccountHolder.java`, `identity/internal/model/session/AuthToken.java`,
+   and their repositories to connect Java objects to tables — and `docs/modules/identity.md` for the
+   full account/credential/session/capability cluster map.
 7. `EmailVerificationService`, `PasswordResetService`, and `AuthEmailNotifier` (all under
    `identity/internal/service/auth/`) to see reusable token utilities, transactions, and post-commit
    events — and `docs/architecture/event-publication-registry.md` for why these two events
    deliberately stay off the `@ApplicationModuleListener` registry.
-8. `identity/internal/service/user/UserFinder.java` to see shared user lookup and active-account
-   behavior extracted from workflows.
+8. `identity/internal/service/account/AccountHolderFinder.java` and
+   `identity/internal/service/authz/{Capability,RoleBundle,AuthorizationService,CapabilityGrantService}.java`
+   to see shared account lookup and the capability evaluation every protected request now depends on
+   — and `docs/implementation/identity/07-authorization.md` for the evaluation flowchart.
 9. `config/ApiExceptionHandler.java` and `platform/exception/base/` to understand failures.
 10. The Liquibase master file and `docs/data-model/README.md` to see the whole schema at once and to
     read what it does not yet prove.

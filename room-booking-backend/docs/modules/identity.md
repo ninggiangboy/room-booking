@@ -3,95 +3,87 @@
 ## Goal
 
 Own the account holder, its credentials, its sessions, and what it is permitted to do — the single
-most FK-referenced concept in the schema — and carry forward, unmodified, the only substantial live
-application code that exists in this codebase today: registration, login, email verification,
-password reset, refresh-token rotation, and the legacy host-onboarding workflow that grants the
-`HOST` role.
+most FK-referenced concept in the schema — and carry the only substantial live application code
+that exists in this codebase today: registration, login, email verification, password reset,
+refresh-token rotation, and host onboarding, which grants the `HOST` capability.
+
+Migration `037` retired the legacy `users`/`user_roles`/`host_profiles` schema that migration `001`
+created and that the rest of this document used to describe as still live. `account_holders` is now
+the module's sole principal root.
 
 ## Forces that shaped it
 
-- **A bidirectional foreign-key cycle forces migrations `001`, `007`–`009`, and `014` into one
-  module.** `014` created `account_holders` alongside the original `users` table and points back to
-  it nine times; `auth_tokens` (from `001`, renamed by `008`) points to `auth_sessions` (from `014`).
-  Neither half can be separated from the other without breaking a live foreign key.
-- **`identity` is the only exception to the "derive module from `@Table` → `CREATE TABLE`" rule.**
-  `auth_tokens` has no `CREATE TABLE` of its own — changeset `008` renamed `007`'s original table —
-  so it is the one entity in the entire 423-table schema assigned to a module by hand rather than by
-  the mechanical lookup.
-- **This is the only module with running services**, across all four aggregates that have one
-  (`User`, `UserRole`, `HostProfile`, `AuthToken`). `HostOnboardingService` looks like
-  [`hostverification`](hostverification.md)'s at a glance — same name, same onboarding subject — but
-  it operates on `host_profiles`, the legacy table migration `001` put here, not on
-  `hostverification`'s target-model `host_legal_profiles` from migration `015`. See "The legacy
-  host-onboarding workflow" below.
+- **`account_holders` is the single most FK-referenced table in the schema.** 223 foreign keys
+  already pointed at it before migration `037`, and `037` repointed roughly twenty more that used to
+  point at the now-dropped `users`. Every module that references a principal references this table.
+- **This is the only module with running services**, across the aggregates that survive:
+  `AccountHolder`, `ContactChannel`, `AuthCredential`, `AuthSession`, `AuthToken`,
+  `CapabilityGrant`, `CapabilityRestriction`, `OrganizationMember`. `HostOnboardingService` looks
+  like [`hostverification`](hostverification.md)'s at a glance — same name, same onboarding subject
+  — but it issues a `HOST` capability grant, not a `hostverification`-owned row; see "What it does
+  not own" below.
 
 ## What it owns
 
-- **`account` cluster** — `users` (aggregate root, in-module in-degree 10), `account_holders`,
-  `organization_members`, `contact_channels`.
+- **`account` cluster** — `account_holders` (the sole principal root), `organization_members`,
+  `contact_channels`.
 - **`credential` cluster** — `auth_credentials`.
-- **`session` cluster** — `auth_sessions`, `auth_tokens` (hand-assigned, see above), `auth_attempts`.
-- **`capability` cluster** — `capability_grants`, `capability_restrictions`, `user_roles`,
-  `host_profiles`.
+- **`session` cluster** — `auth_sessions`, `auth_tokens`, `auth_attempts`.
+- **`capability` cluster** — `capability_grants`, `capability_restrictions`.
 
-Live code moving here unchanged from the current flat packages, per Phase 3 of the migration:
-`service/auth/*` (`AuthenticationService`, `AccessTokenService`, `RefreshTokenService`,
+Live code: `service/auth/*` (`AuthenticationService`, `AccessTokenService`, `RefreshTokenService`,
 `EmailVerificationService`, `PasswordResetService`, `AuthTokenFactory`, `UserRegistrationFactory`,
-`AuthEmailNotifier`), `service/account/UserAccountService`, `service/user/UserFinder`,
-`service/validation/PasswordPolicy`, `service/host/*` (see below), `controller/AuthController`,
-`controller/UserController`, `event/EmailVerificationIssued`, `event/PasswordResetIssued`. These
-land under `identity.internal.service.{auth,account,user,validation,host}` and
-`identity.internal.web`, preserving the existing package-private visibility of `AuthTokenFactory`,
-`UserRegistrationFactory`, and `HostProfileFactory` exactly.
-
-### The legacy host-onboarding workflow
-
-`service/host/HostOnboardingService` and its package-private `HostProfileFactory` were first drafted
-into [`hostverification`](hostverification.md), because "host onboarding" reads like that module's
-job. Building the move script's import graph proved otherwise: `HostOnboardingService` reads and
-writes `identity`'s own `User` and `user_roles` rows directly (`UserFinder`, `UserRoleRepository`),
-and returns `identity`'s `UserResponse`/`HostProfileResponse` DTOs. None of that is
-`hostverification`'s schema — `host_profiles` is migration `001`'s legacy table, a different thing
-from `hostverification`'s target-model `host_legal_profiles` (migration `015`), the same duality
-already named in "The open `users` versus `account_holders` question" below. Moving the service
-without moving the tables it touches would have turned direct, same-package field access into an
-illegal reach into another module's `internal`, so it stays here, in
-`identity.internal.service.host`, beside the tables it actually operates on.
-
-See [`../data-model/001-identity.md`](../data-model/001-identity.md),
-[`../data-model/014-identity-target-model.md`](../data-model/014-identity-target-model.md), and
-[`../features/identity-accounts-and-access.md`](../features/identity-accounts-and-access.md).
+`AuthEmailNotifier`), `service/account/{UserAccountService,AccountHolderFinder}`,
+`service/authz/{Capability,RoleBundle,AuthorizationService,CapabilityGrantService}`,
+`service/validation/PasswordPolicy`, `service/host/HostOnboardingService`,
+`controller/AuthController`, `controller/UserController`, `event/EmailVerificationIssued`,
+`event/PasswordResetIssued`, and the module-root `IdentityFacts`. These live under
+`identity.internal.service.{auth,account,authz,validation,host}` and `identity.internal.web`,
+preserving the existing package-private visibility of `AuthTokenFactory` and
+`UserRegistrationFactory`.
 
 ## Aggregate clusters inside it
 
-Four clusters across 12 tables. `users` dominates the internal FK graph (in-degree 10); the other
-roots (`account_holders`, `auth_tokens`, `capability_grants`, `contact_channels`, `auth_sessions`)
-each anchor a small satellite of their own.
+Three clusters across 9 tables (down from four clusters across 12 before migration `037` dropped
+`host_profiles`, `user_roles`, and `users`). `account_holders` dominates the internal FK graph; the
+other roots (`auth_tokens`, `capability_grants`, `contact_channels`, `auth_sessions`) each anchor a
+small satellite of their own.
 
 ## What it does not own
 
-Whether an external module should be pointing at `users` or at `account_holders` for a given fact.
-That question is explicitly **not resolved by this migration** — see "The open `users` versus
-`account_holders` question" below. `identity` also does not own the target-model verification a host
-must pass to be trusted with real supply and payouts (`hostverification`'s `host_legal_profiles`
-lifecycle, distinct from the legacy `host_profiles` onboarding this module still runs — see "The
-legacy host-onboarding workflow" above) or the policies that decide what a risk-flagged account may
-do (`trust`); it owns only who someone is and what they are authenticated to do.
+`identity` does not own the target-model verification a host must pass to be trusted with real
+supply and payouts — that is `hostverification`'s `host_legal_profiles` lifecycle (migration `015`)
+— nor the public host profile (`bio`, rating, review count), which belonged to nobody's live code
+after migration `037` dropped `host_profiles`; whichever module eventually owns it starts from a
+clean slate rather than inheriting `identity`'s old table. `identity` also does not own the
+policies that decide what a risk-flagged account may do (`trust`); it owns only who someone is and
+what they are authenticated to do.
+
+See [`../data-model/001-identity.md`](../data-model/001-identity.md),
+[`../data-model/014-identity-target-model.md`](../data-model/014-identity-target-model.md),
+[`../data-model/037-identity-retire-legacy-tables.md`](../data-model/037-identity-retire-legacy-tables.md),
+and [`../features/identity-accounts-and-access.md`](../features/identity-accounts-and-access.md).
 
 ## Public API
 
 - `AccessTokenService` — promoted to `identity`'s root package (not `internal/`) specifically because
   `config`'s `JwtAuthenticationFilter` is a genuine external consumer of token verification. See
   "What changes for `JwtAuthenticationFilter`" below.
-- `UserFinder`-shaped lookups for "load this account and decide what an absent or disabled one
-  means," the precedent already established in
+- `IdentityFacts` — promoted alongside `AccessTokenService`, for the identical reason: the filter
+  must reload a principal's status and effective capabilities from PostgreSQL on every request
+  rather than trusting the JWT's own (now roleless) claims, and that reload is a genuine external
+  consumer of identity state, not an internal collaborator. `AccessTokenService.generateAccessToken`
+  no longer writes a `roles` claim; it writes `sid` (the session id) instead.
+- `AccountHolderFinder`-shaped lookups for "load this account and decide what an absent or disabled
+  one means," the precedent already established in
   [`../conventions/01-architecture-and-layering.md`](../conventions/01-architecture-and-layering.md).
 - `EmailVerificationIssued` and `PasswordResetIssued` remain published events, but deliberately do
   **not** move to the `@ApplicationModuleListener` registry — see below.
 
 Everything else — `AuthenticationService`, `RefreshTokenService`, `EmailVerificationService`,
-`PasswordResetService`, the two factories, `UserAccountService`, `PasswordPolicy` — stays under
-`internal/service/...` and is invisible outside this module.
+`PasswordResetService`, the two factories, `UserAccountService`, `AuthorizationService`,
+`CapabilityGrantService`, `PasswordPolicy` — stays under `internal/service/...` and is invisible
+outside this module.
 
 ### What changes for `JwtAuthenticationFilter`
 
@@ -142,35 +134,40 @@ legacy host-onboarding workflow" above.
 `identity` is referenced by more foreign keys than any other module: `support` (63), `review` (23),
 `admin` (22), `trust` (20), `stay` (18), `growth` (16), `booking` (16), `pricing` (10), `ledger`
 (10), `discovery` (11), `messaging` (12), `hostops` (6), `hostverification` (4), `supply` (4),
-`payment` (3). System-wide, `account_holders` alone is the target of 164 foreign keys outside its own
-migration group. None of this is visible to `ApplicationModules.verify()`; it is recorded here so a
-reviewer changing this module's schema understands the blast radius a passing build will not reveal.
+`payment` (3). System-wide, `account_holders` alone is the target of at least 164 foreign keys
+outside its own migration group (as counted before migration `037`; `037` repointed several more of
+`supply`'s and `booking`/`review`/`trust`-engagement's early foreign keys at `account_holders`,
+which only grows this number). None of this is visible to `ApplicationModules.verify()`; it is
+recorded here so a reviewer changing this module's schema understands the blast radius a passing
+build will not reveal.
 
-## The open `users` versus `account_holders` question
+## Resolved: `users` versus `account_holders`
 
-[`../data-model/README.md`](../data-model/README.md) records that 223 foreign keys across the schema
-point at `account_holders` and 13 point at `users`, while all live application code today still
-addresses `users`. This migration does **not** resolve which table is the long-term identity anchor.
-What it does is put both tables inside the same module, so that whichever way the question resolves,
-resolving it is a change entirely internal to `identity` — a service swapping which table it reads,
-not a cross-module contract change.
+This question used to be open: 223 foreign keys pointed at `account_holders` and only 13 at `users`,
+while all live application code still addressed `users`. Migration `037` resolved it in the
+direction the schema had already voted: `account_holders` is now the sole principal root, and every
+foreign key that used to point at `users` points at `account_holders`. Resolving it stayed a change
+entirely internal to `identity` plus two named tables outside it
+(`verification_appeals.submitted_by`, `property_collaborators.user_id`) — a data-model and service
+change, not a cross-module contract change, exactly as this document predicted it would be.
 
 ## What it leaves open
 
-The `AccessTokenService` promotion above is the only public-API change this migration makes to
-`identity`'s live code; everything else about how registration, login, verification, and reset work
-is unchanged. Whether `capability_grants`/`capability_restrictions` need their own service ahead of
-whatever consumes them (`trust`, `admin`) is left to when that consuming code is written.
+`Capability`/`RoleBundle`/`AuthorizationService`/`CapabilityGrantService` exist and are the live
+authorization mechanism, but nothing yet issues a resource-scoped grant (only `GLOBAL`-scoped
+`GUEST`/`HOST` grants exist), nothing issues a `capability_restrictions` row, and delegation
+(`derived_from_grant_id`) has no caller. See
+[`../implementation/identity/09-roadmap.md`](../implementation/identity/09-roadmap.md) for what is
+designed but not built.
 
 ## Exit criteria
 
-- All 12 tables and their entities/repositories live under `dev.ngb.backend.identity.internal.model`
-  / `.repository`, in the four clusters above; `auth_tokens` is placed here explicitly rather than
-  derived.
-- `service/auth`, `service/account`, `service/user`, `service/validation`, `service/host`, the two
-  auth controllers, and the two auth events move into `identity.internal.service.*` /
-  `.internal.web` / root, with `AccessTokenService` promoted to the module root and every factory
-  (`AuthTokenFactory`, `UserRegistrationFactory`, `HostProfileFactory`) still package-private.
+- All 9 tables and their entities/repositories live under `dev.ngb.backend.identity.internal.model`
+  / `.repository`, in the three clusters above.
+- `service/auth`, `service/account`, `service/authz`, `service/validation`, `service/host`, the two
+  auth controllers, and the two auth events live under `identity.internal.service.*` /
+  `.internal.web` / root, with `AccessTokenService` and `IdentityFacts` at the module root and every
+  factory (`AuthTokenFactory`, `UserRegistrationFactory`) still package-private.
 - `EmailVerificationIssued`/`PasswordResetIssued` remain on `@TransactionalEventListener`, documented
   as the named exception in `AuthEmailNotifier`'s Javadoc.
 - `ApplicationModules.verify()` passes with `identity`'s only declared dependencies being `market`,

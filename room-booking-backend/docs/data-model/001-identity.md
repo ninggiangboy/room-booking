@@ -1,60 +1,31 @@
-# Migration 001 — Identity foundation
+# Migration 001 — Identity foundation (retired)
 
-## Goal
+## Historical note
 
-Support registration, authentication identity, authorization roles, and optional host onboarding.
+This migration created `users`, `user_roles`, and `host_profiles`: the first identity schema, built
+before the target principal model existed. Migration
+[`014`](014-identity-target-model.md) added `account_holders` and its satellites beside these three
+tables without replacing them, and migration [`037`](037-identity-retire-legacy-tables.md) completed
+the cutover — repointing every foreign key that pointed at `users` through `account_holders`, then
+dropping `host_profiles`, `user_roles`, and `users` in that order. None of the three tables this
+migration created still exists.
 
-## Tables
+This document is kept for history. For the schema and service rules these tables were replaced by,
+see [`014-identity-target-model.md`](014-identity-target-model.md) and
+[`037-identity-retire-legacy-tables.md`](037-identity-retire-legacy-tables.md). For the live
+authorization design, see
+[`../features/identity-accounts-and-access.md`](../features/identity-accounts-and-access.md) and
+[`../modules/identity.md`](../modules/identity.md).
 
-- `users`: account identity and verification state.
-- `user_roles`: a user may be both guest and host.
-- `host_profiles`: host-only profile and identity-verification state.
+## What used to be here
 
-## Service rules
-
-- The target principal and organization model, account lifecycle, credential and session integrity,
-  refresh reuse detection, assurance and step-up, resource-scoped capability authorization, bounded
-  delegation, account recovery, operator authority decomposition, and erasure boundaries follow
-  [`../features/identity-accounts-and-access.md`](../features/identity-accounts-and-access.md).
-  `users`, `user_roles`, and `auth_tokens` are historical foundations: `user_roles` answers whether
-  an account holds a role, never whether it may act on a specific resource.
-- Normalize email before writing even though `citext` protects uniqueness.
-- Store only a modern password hash; never store credentials or verification tokens in these tables.
-- Add `HOST` and create `host_profiles` in the same transaction when onboarding completes.
-- Treat `average_rating` and `review_count` as read-model counters whose source of truth is qualified
-  review publication. Verified rights, immutable revisions, transparent aggregates, historical host
-  attribution, reviewer attention, and the prohibition on a generic human trust score follow
-  [`../features/review-reputation-and-aspect-intelligence.md`](../features/review-reputation-and-aspect-intelligence.md).
-- Future contact preferences, consent evidence, transactional-notification routing, booking
-  participants, and purpose-bound support access follow
-  [`../features/messaging-notifications-and-stay-operations.md`](../features/messaging-notifications-and-stay-operations.md);
-  the existing authentication email sender is not that durable notification platform.
-- Future account-risk decisions, scoped capability restrictions, step-up challenges, account-takeover
-  review, appeals, and their boundary with the coarse `users.status` state follow
-  [`../features/trust-safety-fraud-and-moderation.md`](../features/trust-safety-fraud-and-moderation.md).
-  `identity_status = VERIFIED` is evidence of a completed verification step, not a permanent trust
-  score or authority for every future action.
-- Future support participants, verified representation, purpose-bound agent access, skill/market
-  authority, monetary limits, maker-checker, conflicts, break-glass, and access audit follow
-  [`../features/disputes-damage-claims-and-support.md`](../features/disputes-damage-claims-and-support.md).
-  Existing `ADMIN` is not an unrestricted support or financial authority.
-
-## Exit criteria
-
-- A user can register with a unique email.
-- Roles can be granted without creating a second account.
-- Suspending or soft-deleting an account prevents authentication while preserving booking history.
-
-## Implementation status
-
-The schema is complete. Registration creates the initial `GUEST` role, host onboarding atomically
-creates a `host_profiles` row and grants `HOST`, and users can soft-delete only their own account.
-`DELETED` is terminal. Protected requests reload status and roles from the database, while deletion
-also revokes every outstanding opaque authentication token.
-
-The `SUSPENDED` status is enforced on the authentication path but no application code writes it:
-`SecurityConfig` reserves `/api/v1/admin/**` for the `ADMIN` role and `UpdateUserStatusRequest`
-exists, yet no controller or service implements administrator-driven suspension or reactivation.
-Treat it as a target capability described in
-[`../features/identity-accounts-and-access.md`](../features/identity-accounts-and-access.md), which
-also replaces the coarse `ADMIN` role with scoped operator capabilities.
+- `users`: account identity and verification state. Superseded by `account_holders` plus
+  `contact_channels` and `auth_credentials`.
+- `user_roles`: a user may be both guest and host. Superseded by `capability_grants`, whose
+  `role_name` column carries the same convenience label but whose materialized `capabilities` array
+  is what authorization decisions actually evaluate.
+- `host_profiles`: host-only profile and identity-verification state. Its `bio`, `average_rating`,
+  and `review_count` were never this module's facts to own (see
+  [`../features/identity-accounts-and-access.md`](../features/identity-accounts-and-access.md) §
+  Profile facts and their consumers); host identity verification lives in `hostverification`'s
+  `host_legal_profiles` (migration `015`), and no module yet owns the public host profile.

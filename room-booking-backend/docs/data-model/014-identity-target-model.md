@@ -28,11 +28,12 @@ private table, so there is one append-only trail rather than one per domain.
 
 ## Design rules
 
-- **This migration is additive.** `users`, `user_roles`, and `host_profiles` keep working and remain
-  the compatibility surface. The identity design stages the cutover across releases — add tables,
-  write both, backfill, reconcile, switch reads, then drop the fallback — and collapsing those steps
-  into one migration is how a login outage happens. **Steps 5–7 have not been done: authorization
-  still evaluates roles.**
+- **This migration was additive.** `users`, `user_roles`, and `host_profiles` kept working and
+  remained the compatibility surface while later releases wrote both, reconciled, and switched
+  reads. **All of that is now done: migration [`037`](037-identity-retire-legacy-tables.md)
+  completed the cutover and dropped the three legacy tables. Authorization evaluates
+  `capability_grants` exclusively; `account_holders` is the identity module's sole principal
+  root.**
 - **Restrictions subtract; they do not edit.** Keeping both facts — the principal was granted this,
   *and* a decision currently suppresses it — is what gives an appeal something to restore.
 - **Scope is what a role could not say.** `ck_capability_grants_scope_id` forces every non-global
@@ -71,16 +72,21 @@ resolves it, which is the intended outcome rather than a defect.
 `users.email` and `users.phone_number` are already unique, so the verified-primary uniqueness cannot
 be violated by the backfill.
 
-The role-to-capability mapping in the backfill is a **legacy equivalence, not a new authorization
-design**. Step 4 of the identity migration plan reconciles it: every protected route must evaluate
-identically under the role check and the capability check before any read switches over.
+The role-to-capability mapping in the backfill was a **legacy equivalence, not a new authorization
+design** — it existed only so the role check and the capability check would agree before reads
+switched over. Migration `037` rewrote every backfilled row's `grantee_id` from a user id to a
+holder id, converted `grantee_type = 'USER'` to `'PERSON'`, and converted `source = 'LEGACY'` to
+`'SELF_SERVICE'`, then narrowed both check constraints so the old values can no longer be written.
+`Capability` and `RoleBundle` (`identity/internal/service/authz/`) are now the single source of
+truth this backfill SQL used to be a stand-in for.
 
-## Open decision, not yet taken
+## Resolved: session-less refresh tokens
 
-Existing session-less refresh tokens have no `auth_sessions` row. The identity design leaves the
-choice explicit: either synthesize a session per unconsumed refresh token at switch time, or require
-one re-login. The second is simpler and strictly safer; the first avoids signing every active user
-out. **This has not been decided, and the read cutover should not happen until it is.**
+This migration left session-less refresh tokens' fate an open decision: since no data existed to
+migrate, migration `037` made the decision moot rather than choosing between synthesizing a session
+or requiring one re-login. It added `ck_auth_tokens_refresh_requires_session`, requiring every
+refresh token to carry a session, and `RefreshTokenService` no longer has a session-less code path
+to choose between.
 
 ## Exit criteria
 
