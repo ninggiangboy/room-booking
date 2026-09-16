@@ -1,6 +1,7 @@
 /**
- * Small stateless helpers for string normalization, duration validation, hashing, and secure token
- * generation that are safe to reuse across application layers.
+ * Small stateless helpers for string normalization, duration validation, hashing, secure token
+ * generation, and RFC 6238 time-based one-time passwords that are safe to reuse across application
+ * layers.
  *
  * <p>Lives under {@code platform} because these helpers depend on nothing else in the application
  * and every module is free to use them.</p>

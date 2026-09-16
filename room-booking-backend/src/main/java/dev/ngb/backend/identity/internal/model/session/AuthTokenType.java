@@ -14,5 +14,8 @@ public enum AuthTokenType {
     /** Rotating session secret used to obtain a new access-token pair. */
     REFRESH_TOKEN,
     /** One-time numeric code used to prove control of a self-service contact channel. */
-    CONTACT_CHANNEL_VERIFICATION
+    CONTACT_CHANNEL_VERIFICATION,
+    /** Short-lived proof that a stronger factor was just verified, presented before a sensitive
+     * action. */
+    STEP_UP
 }

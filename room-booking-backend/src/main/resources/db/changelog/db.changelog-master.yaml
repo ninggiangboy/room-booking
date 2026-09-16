@@ -121,3 +121,6 @@ databaseChangeLog:
   - include:
       file: changes/039-identity-contact-channel-verification.sql
       relativeToChangelogFile: true
+  - include:
+      file: changes/040-identity-step-up-token-type.sql
+      relativeToChangelogFile: true
