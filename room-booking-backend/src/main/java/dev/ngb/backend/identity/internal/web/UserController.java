@@ -105,11 +105,11 @@ public class UserController {
      * @return {@code 204 No Content}
      */
     @PutMapping("/me/password")
-    @Operation(summary = "Change the current password", description = "Checks the current password, applies password policy to the replacement, and revokes outstanding refresh tokens.")
+    @Operation(summary = "Change the current password", description = "Checks the current password, applies password policy to the replacement, and revokes outstanding refresh tokens. Requires a fresh step-up proof (from POST /api/v1/users/me/mfa/totp/step-up) when the caller has TOTP enrolled.")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Password changed and refresh tokens revoked"),
             @ApiResponse(responseCode = "400", description = "Request or password-policy validation failure (VALIDATION_ERROR)", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-            @ApiResponse(responseCode = "401", description = "Missing or invalid access token, or incorrect current password (INVALID_CREDENTIALS)", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Missing or invalid access token, incorrect current password (INVALID_CREDENTIALS), missing step-up proof (STEP_UP_REQUIRED), or invalid step-up proof (INVALID_STEP_UP_PROOF)", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "403", ref = "#/components/responses/AccountDisabled"),
             @ApiResponse(responseCode = "500", ref = "#/components/responses/InternalServerError")
     })
@@ -140,15 +140,15 @@ public class UserController {
     }
 
     /**
-     * Soft-deletes the current account and revokes all outstanding opaque tokens.
+     * Requests deletion of the current account and revokes all outstanding opaque tokens.
      *
      * @param userId authenticated account identifier
      * @return {@code 204 No Content}
      */
     @DeleteMapping("/me")
-    @Operation(summary = "Delete the current account", description = "Soft-deletes the authenticated account and revokes every outstanding opaque token. Access JWTs remain stateless and naturally expire after their configured lifetime.")
+    @Operation(summary = "Request deletion of the current account", description = "Moves the authenticated account to DELETION_REQUESTED and revokes every outstanding session and opaque token. Access JWTs remain stateless and naturally expire, but every request re-checks status, so one stops authenticating immediately. An operator completes the closure separately; this codebase does not yet check settlement or booking obligations before doing so.")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Account soft-deleted and opaque tokens revoked"),
+            @ApiResponse(responseCode = "204", description = "Deletion requested, sessions and opaque tokens revoked"),
             @ApiResponse(responseCode = "401", ref = "#/components/responses/Unauthorized"),
             @ApiResponse(responseCode = "403", ref = "#/components/responses/AccountDisabled"),
             @ApiResponse(responseCode = "500", ref = "#/components/responses/InternalServerError")

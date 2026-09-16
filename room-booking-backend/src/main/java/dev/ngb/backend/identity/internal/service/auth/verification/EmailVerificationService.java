@@ -8,11 +8,13 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import dev.ngb.backend.identity.internal.model.account.AccountHolder;
+import dev.ngb.backend.identity.internal.model.account.AccountHolderStatus;
 import dev.ngb.backend.identity.internal.model.account.ContactChannel;
 import dev.ngb.backend.identity.internal.model.account.ContactChannelType;
 import dev.ngb.backend.identity.internal.model.session.AuthToken;
 import dev.ngb.backend.identity.internal.model.session.AuthTokenType;
 import dev.ngb.backend.identity.internal.model.session.TokenConsumptionReason;
+import dev.ngb.backend.identity.internal.repository.account.AccountHolderRepository;
 import dev.ngb.backend.identity.internal.repository.account.ContactChannelRepository;
 import dev.ngb.backend.identity.internal.repository.session.AuthTokenRepository;
 import dev.ngb.backend.identity.internal.service.account.AccountHolderFinder;
@@ -52,6 +54,7 @@ public class EmailVerificationService {
     private static final String VERIFICATION_METHOD = "EMAIL_TOKEN";
 
     private final AuthTokenRepository authTokenRepository;
+    private final AccountHolderRepository accountHolderRepository;
     private final ContactChannelRepository contactChannelRepository;
     private final AuthTokenFactory authTokenFactory;
     private final AccountHolderFinder accountHolderFinder;
@@ -150,6 +153,13 @@ public class EmailVerificationService {
         if (!emailChannel.isVerified()) {
             emailChannel.markVerified(clock.instant(), VERIFICATION_METHOD);
             emailChannel = contactChannelRepository.save(emailChannel);
+        }
+        if (holder.getStatus() == AccountHolderStatus.PENDING_VERIFICATION) {
+            // The primary channel that gated PENDING_VERIFICATION is now proven; the holder never
+            // moves back to it, and no other verification completes it, so this transition happens
+            // exactly once per holder.
+            holder.setStatus(AccountHolderStatus.ACTIVE);
+            holder = accountHolderRepository.save(holder);
         }
 
         Instant now = clock.instant();

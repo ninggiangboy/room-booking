@@ -45,7 +45,10 @@ class UserRegistrationFactory {
      * <p>The account holder is created with an unresolved market context: no market-resolution
      * signal is available at registration time, and a guest does not need to transact
      * immediately, so leaving it unresolved is honest rather than guessing a market that was
-     * never approved.</p>
+     * never approved. It starts {@link AccountHolderStatus#PENDING_VERIFICATION} rather than
+     * {@code ACTIVE}, since {@code emailChannel} below is unproven until {@code
+     * EmailVerificationService} confirms it — see
+     * {@code docs/implementation/identity/09-roadmap.md#pending_verification-state}.</p>
      *
      * @param rawEmail email exactly as the caller submitted it
      * @param normalizedEmail case-normalized login address
@@ -65,7 +68,7 @@ class UserRegistrationFactory {
                 .id(UUID.randomUUID())
                 .holderType(AccountHolderType.PERSON)
                 .displayName(displayName)
-                .status(AccountHolderStatus.ACTIVE)
+                .status(AccountHolderStatus.PENDING_VERIFICATION)
                 .marketCode(null)
                 .contextState(MarketContextState.UNRESOLVED)
                 .build();

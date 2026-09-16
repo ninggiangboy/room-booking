@@ -9,8 +9,10 @@ import dev.ngb.backend.identity.internal.model.capability.AuthorizationScopeType
 import dev.ngb.backend.identity.internal.model.capability.CapabilityGrant;
 import dev.ngb.backend.identity.internal.model.capability.GrantSource;
 import dev.ngb.backend.identity.internal.model.capability.PrincipalType;
+import dev.ngb.backend.identity.CapabilityGranted;
 import dev.ngb.backend.identity.internal.repository.capability.CapabilityGrantRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 
@@ -28,6 +30,7 @@ import org.springframework.stereotype.Service;
 public class CapabilityGrantService {
 
     private final CapabilityGrantRepository capabilityGrantRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Issues a new global, role-labeled grant.
@@ -65,7 +68,9 @@ public class CapabilityGrantService {
                 .reasonCode(reasonCode)
                 .source(source)
                 .build();
-        return capabilityGrantRepository.save(grant);
+        CapabilityGrant saved = capabilityGrantRepository.save(grant);
+        publishGranted(saved);
+        return saved;
     }
 
     /**
@@ -120,7 +125,20 @@ public class CapabilityGrantService {
                 .source(GrantSource.DELEGATION)
                 .derivedFromGrantId(parentGrant.getId())
                 .build();
-        return capabilityGrantRepository.save(grant);
+        CapabilityGrant saved = capabilityGrantRepository.save(grant);
+        publishGranted(saved);
+        return saved;
+    }
+
+    private void publishGranted(CapabilityGrant grant) {
+        eventPublisher.publishEvent(new CapabilityGranted(
+                grant.getId(),
+                grant.getGranteeType().name(),
+                grant.getGranteeId(),
+                grant.getRoleName(),
+                grant.getSource().name(),
+                grant.getReasonCode(),
+                grant.getEffectiveFrom()));
     }
 
     /**

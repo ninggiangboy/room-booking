@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import dev.ngb.backend.identity.internal.exception.DeletionNotRequestedException;
 import dev.ngb.backend.identity.internal.exception.InvalidAccountStatusTransitionException;
 import dev.ngb.backend.identity.internal.exception.UnknownMarketException;
 import dev.ngb.backend.identity.internal.model.account.AccountHolder;
@@ -160,6 +161,29 @@ class AdminAccountServiceTest {
 
         service.resolveMarket(holder.getId(), "VN", "NOOP", adminId);
 
+        verify(accountHolderRepository, never()).save(any());
+        verifyNoInteractions(auditTrailWriter);
+    }
+
+    @Test
+    void completingARequestedDeletionClosesTheAccountAndAudits() {
+        AccountHolder holder = holderWithStatus(AccountHolderStatus.DELETION_REQUESTED);
+        when(accountHolderFinder.findByIdForUpdate(holder.getId())).thenReturn(holder);
+
+        service.completeDeletion(holder.getId(), "OBLIGATIONS_CLEARED", adminId);
+
+        assertThat(holder.getStatus()).isEqualTo(AccountHolderStatus.CLOSED);
+        verify(accountHolderRepository).save(holder);
+        verify(auditTrailWriter).record(any());
+    }
+
+    @Test
+    void completingDeletionForAHolderNotAwaitingItFails() {
+        AccountHolder holder = activeHolder();
+        when(accountHolderFinder.findByIdForUpdate(holder.getId())).thenReturn(holder);
+
+        assertThatThrownBy(() -> service.completeDeletion(holder.getId(), "REASON", adminId))
+                .isInstanceOf(DeletionNotRequestedException.class);
         verify(accountHolderRepository, never()).save(any());
         verifyNoInteractions(auditTrailWriter);
     }

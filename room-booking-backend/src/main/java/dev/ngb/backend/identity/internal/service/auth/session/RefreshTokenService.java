@@ -14,10 +14,12 @@ import dev.ngb.backend.identity.internal.repository.session.AuthTokenRepository;
 import dev.ngb.backend.identity.internal.service.auth.AuthTokenFactory;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import dev.ngb.backend.identity.SessionRevoked;
 import dev.ngb.backend.identity.internal.exception.InvalidRefreshTokenException;
 import dev.ngb.backend.identity.internal.exception.SessionNotFoundException;
 import dev.ngb.backend.platform.AssuranceLevel;
@@ -58,6 +60,7 @@ public class RefreshTokenService {
     private final AuthSessionRepository authSessionRepository;
     private final AuthTokenFactory authTokenFactory;
     private final AuthSessionFactory authSessionFactory;
+    private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
     private final Duration idleExpiration;
     private final Duration sessionAbsoluteExpiration;
@@ -69,6 +72,8 @@ public class RefreshTokenService {
      * @param authSessionRepository persistence gateway for session records
      * @param authTokenFactory builder of token records and their raw secrets
      * @param authSessionFactory builder of session records
+     * @param eventPublisher publisher of {@link SessionRevoked}, whose durable delivery Spring
+     *     Modulith's registry provides once a listener exists
      * @param clock shared source of current UTC time
      * @param idleExpiration configured positive refresh-token / session idle lifetime
      * @param sessionAbsoluteExpiration configured positive session absolute lifetime
@@ -78,6 +83,7 @@ public class RefreshTokenService {
             AuthSessionRepository authSessionRepository,
             AuthTokenFactory authTokenFactory,
             AuthSessionFactory authSessionFactory,
+            ApplicationEventPublisher eventPublisher,
             Clock clock,
             @Value("${security.jwt.refresh-token-expiration:30d}") Duration idleExpiration,
             @Value("${security.jwt.session-absolute-expiration:180d}")
@@ -86,6 +92,7 @@ public class RefreshTokenService {
         this.authSessionRepository = authSessionRepository;
         this.authTokenFactory = authTokenFactory;
         this.authSessionFactory = authSessionFactory;
+        this.eventPublisher = eventPublisher;
         this.clock = clock;
         this.idleExpiration = DurationUtils.requirePositive(
                 idleExpiration, "refresh token expiration");
@@ -250,6 +257,8 @@ public class RefreshTokenService {
                     token.consume(now, TokenConsumptionReason.REUSE_DETECTED);
                     authTokenRepository.save(token);
                 });
+        eventPublisher.publishEvent(
+                new SessionRevoked(session.getId(), session.getAccountHolderId(), reason, now));
     }
 
     /**

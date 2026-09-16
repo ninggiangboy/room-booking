@@ -79,6 +79,12 @@ and [`../features/identity-accounts-and-access.md`](../features/identity-account
   [`../conventions/01-architecture-and-layering.md`](../conventions/01-architecture-and-layering.md).
 - `EmailVerificationIssued` and `PasswordResetIssued` remain published events, but deliberately do
   **not** move to the `@ApplicationModuleListener` registry — see below.
+- `AccountHolderCreated`, `CapabilityGranted`, and `SessionRevoked` are new, non-secret events on
+  the `@ApplicationModuleListener` registry — the default this module's own two exceptions above are
+  named against — published from the sole writer of each fact (`AuthenticationService.registerUser`,
+  `CapabilityGrantService`, and `RefreshTokenService`'s shared `revokeSessionAndTokens`,
+  respectively) so any future `trust`/`admin` listener sees the same fact regardless of which
+  internal path caused it.
 
 Everything else — `AuthenticationService`, `RefreshTokenService`, `EmailVerificationService`,
 `PasswordResetService`, the two factories, `UserAccountService`, `AuthorizationService`,
@@ -171,8 +177,37 @@ organization's own effective grant) — see
 Still open: nothing removes a member's own delegated grants when the member is removed, and
 `organization_members` has no invitation-notification event, unlike every other token-issuing flow
 in this module. `MfaService` gives TOTP enrollment and step-up proof issuance a caller for the
-first time, but nothing yet calls `MfaService.consumeStepUpProof` — no sensitive action in this
-codebase currently demands one.
+first time: `UserAccountService.changePassword` now demands and consumes a step-up proof when the
+holder has TOTP enrolled, but no other sensitive action does yet.
+
+`AccountHolderCreated`, `CapabilityGranted`, and `SessionRevoked` are the first non-secret identity
+facts published through Spring Modulith's durable `@ApplicationModuleListener` registry (D01's
+"other domains can react without polling" outbox), backed for now by one identity-internal listener,
+`internal.service.audit.IdentityFactAuditListener`, that records each as a coarse,
+`ActorType.SYSTEM`-attributed `identity.*` audit row — the only real listener that exists today, so
+the registry actually completes a publication rather than recording nothing (an event with zero
+registered listeners leaves no durable row at all; see
+`docs/architecture/event-publication-registry.md`). No `trust` or `admin` listener consumes them
+yet, and `identity.capability_granted` deliberately coexists with, rather than replaces, the finer
+`organization.created`/`organization.capability_delegated` rows `OrganizationService` already writes
+inline for the same grant — see
+[`../implementation/identity/09-roadmap.md`](../implementation/identity/09-roadmap.md#identity-events-through-the-outbox).
+
+`AccountHolderStatus` now has a fourth value, `PENDING_VERIFICATION`, the state a self-registered
+person starts in until `EmailVerificationService.verify` proves their primary channel.
+`AccountHolder.canTransact()` still requires `ACTIVE`, but every other "may this account
+authenticate and act" check in this module treats the two states identically — which capabilities a
+`PENDING_VERIFICATION` holder should lose beyond `canTransact()` is D01's own open question, not
+resolved here. See
+[`../implementation/identity/09-roadmap.md`](../implementation/identity/09-roadmap.md#pending_verification-state--built).
+
+A fifth value, `DELETION_REQUESTED`, sits between a live status and `CLOSED`:
+`UserAccountService.deleteOwnAccount` moves a holder there (denying re-authentication, exactly like
+`SUSPENDED`) instead of closing immediately, and `AdminAccountService.completeDeletion` is the only
+path from there to `CLOSED`. Neither obligation checks (future stays, unsettled balances, open
+cases), a legal hold, nor any anonymization of personal data exist yet — this module only owns the
+state transition D01 describes, not the workflow around it. See
+[`../implementation/identity/09-roadmap.md`](../implementation/identity/09-roadmap.md#erasure--deletion_requested-state-built-obligation-checks-and-anonymization-still-planned).
 
 ## Exit criteria
 

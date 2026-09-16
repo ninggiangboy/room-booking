@@ -48,9 +48,19 @@ public class IdentityFacts {
      */
     public AuthenticatedPrincipal resolve(UUID holderId) {
         return accountHolderRepository.findById(holderId)
-                .map(holder -> new AuthenticatedPrincipal(
-                        holderId, holder.getStatus() == AccountHolderStatus.ACTIVE, capabilityNames(holderId)))
+                .map(holder -> new AuthenticatedPrincipal(holderId, isActive(holder), capabilityNames(holderId)))
                 .orElseGet(() -> new AuthenticatedPrincipal(holderId, false, Set.of()));
+    }
+
+    /**
+     * A {@code PENDING_VERIFICATION} holder authenticates the same as an {@code ACTIVE} one — see
+     * {@code AccountHolderFinder}'s identical rule and
+     * {@code docs/implementation/identity/09-roadmap.md#pending_verification-state} for which
+     * narrower checks (such as {@code AccountHolder.canTransact()}) still require full activation.
+     */
+    private static boolean isActive(AccountHolder holder) {
+        return holder.getStatus() == AccountHolderStatus.ACTIVE
+                || holder.getStatus() == AccountHolderStatus.PENDING_VERIFICATION;
     }
 
     private Set<String> capabilityNames(UUID holderId) {

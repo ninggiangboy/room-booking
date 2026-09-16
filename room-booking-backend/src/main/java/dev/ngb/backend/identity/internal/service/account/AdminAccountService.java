@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import dev.ngb.backend.identity.internal.exception.DeletionNotRequestedException;
 import dev.ngb.backend.identity.internal.exception.InvalidAccountStatusTransitionException;
 import dev.ngb.backend.identity.internal.exception.UnknownMarketException;
 import dev.ngb.backend.identity.internal.model.account.MarketContextState;
@@ -98,6 +99,46 @@ public class AdminAccountService {
                 requestedStatus == AccountHolderStatus.SUSPENDED
                         ? "account.suspended"
                         : "account.reactivated",
+                "identity",
+                "AccountHolder",
+                holder.getId(),
+                AuditOutcome.ALLOWED,
+                reasonCode,
+                ActorType.OPERATOR,
+                actingAdminId,
+                null));
+    }
+
+    /**
+     * Completes a holder's self-requested deletion on an operator's command.
+     *
+     * <p>D01's target design blocks completion on outstanding obligations (future stays,
+     * unsettled balances, open cases) and checks a legal hold before erasing anything; nothing in
+     * this codebase checks either yet — see {@code docs/implementation/identity/09-roadmap.md#erasure}
+     * — so this method only performs the status transition itself. Sessions and tokens were already
+     * revoked when {@code UserAccountService.deleteOwnAccount} moved the holder to {@code
+     * DELETION_REQUESTED}, so there is nothing left to revoke here.</p>
+     *
+     * @param targetHolderId account holder whose deletion is being completed
+     * @param reasonCode stable reason recorded on the audit trail
+     * @param actingAdminId operator issuing the command
+     * @throws DeletionNotRequestedException when the holder is not currently
+     *     {@code DELETION_REQUESTED}
+     */
+    @Transactional
+    public void completeDeletion(UUID targetHolderId, String reasonCode, UUID actingAdminId) {
+        AccountHolder holder = accountHolderFinder.findByIdForUpdate(targetHolderId);
+        if (holder.getStatus() != AccountHolderStatus.DELETION_REQUESTED) {
+            throw new DeletionNotRequestedException(targetHolderId, holder.getStatus());
+        }
+
+        Instant now = clock.instant();
+        holder.setStatus(AccountHolderStatus.CLOSED);
+        accountHolderRepository.save(holder);
+
+        auditTrailWriter.record(new AuditEntry(
+                now,
+                "account.deletion_completed",
                 "identity",
                 "AccountHolder",
                 holder.getId(),

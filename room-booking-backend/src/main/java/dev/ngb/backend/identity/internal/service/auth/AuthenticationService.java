@@ -28,12 +28,14 @@ import dev.ngb.backend.identity.internal.service.authz.CapabilityGrantService;
 import dev.ngb.backend.identity.internal.service.authz.RoleBundle;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import dev.ngb.backend.identity.AccessTokenService;
+import dev.ngb.backend.identity.AccountHolderCreated;
 import dev.ngb.backend.identity.internal.exception.EmailAlreadyRegisteredException;
 import dev.ngb.backend.identity.internal.exception.InvalidCredentialsException;
 import dev.ngb.backend.identity.internal.exception.InvalidRefreshTokenException;
@@ -75,6 +77,7 @@ public class AuthenticationService {
     private final CapabilityGrantService capabilityGrantService;
     private final AuthorizationService authorizationService;
     private final AuthAttemptService authAttemptService;
+    private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
     /**
@@ -213,6 +216,7 @@ public class AuthenticationService {
             throw new EmailAlreadyRegisteredException(normalizedEmail, exception);
         }
         authCredentialRepository.save(newAccount.passwordCredential());
+        eventPublisher.publishEvent(new AccountHolderCreated(holder.getId(), holder.getCreatedAt()));
 
         // Reuse the holder's audited createdAt as the grant instant so every row from this
         // registration shares one decision instant instead of a second, later clock read.

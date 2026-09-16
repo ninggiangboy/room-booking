@@ -25,7 +25,7 @@ built on `AuthSessionRepository.findLiveForHolder` and the existing
 and `.registerUser` now capture `client_descriptor` (the request's `User-Agent`, truncated) and
 `origin_hash` (a digest of the remote address) so the device list is no longer empty.
 
-## Step-up, reauthentication, and multi-factor — TOTP enrollment and step-up proof built
+## Step-up, reauthentication, and multi-factor — TOTP enrollment, step-up proof, and password-change wiring built
 
 `MfaService`, behind `POST/DELETE /api/v1/users/me/mfa/totp` and
 `POST /api/v1/users/me/mfa/totp/step-up`, is `auth_credentials`' first `TOTP` writer.
@@ -39,14 +39,21 @@ submitted code against the active credential (±1 time step) and, on success, is
 once by `MfaService.consumeStepUpProof` — the same one-time-secret discipline every other opaque
 credential in this module already follows.
 
-**Not done**: this is the mechanism, not the wiring. `auth_sessions.assurance_level` and
-`last_assurance_proof_at` are still written at `AAL1` only and never read; no endpoint calls
-`consumeStepUpProof` yet, so nothing in this codebase currently *requires* a step-up proof before
-proceeding — `UserAccountService.changePassword` is the natural first caller, since "prove you can
-still authenticate before changing how you authenticate" is exactly what step-up is for, but
-wiring it in was left out of this pass to avoid touching a working, already-tested workflow in the
-same change that built the primitive it would depend on. `WEBAUTHN`/`RECOVERY_CODE` credential
-types remain unenrolled, and TOTP has no recovery-code fallback for a lost authenticator.
+`UserAccountService.changePassword` is now `consumeStepUpProof`'s first caller: when the holder has
+an active TOTP credential, the `PUT /api/v1/users/me/password` request must carry the raw
+`stepUpProof` `POST /api/v1/users/me/mfa/totp/step-up` returned, consumed with the same instant the
+password rotation itself uses. A holder with no TOTP enrolled needs no proof — there is nothing to
+step up with — so the existing current-password check alone still gates the change for them, matching
+today's behavior. A missing proof is `401 STEP_UP_REQUIRED` (distinct from the wrong-proof
+`401 INVALID_STEP_UP_PROOF`), so a client can tell "prompt for a code" apart from "the code was
+wrong."
+
+**Not done**: this is the second caller, not the whole mechanism. `auth_sessions.assurance_level`
+and `last_assurance_proof_at` are still written at `AAL1` only and never read, so step-up here is
+enforced per-action rather than through the session-level `AssuranceEvaluator` D01 describes; no
+other sensitive action (organization ownership transfer, contact-channel removal, session
+sign-out-everywhere) demands a proof yet. `WEBAUTHN`/`RECOVERY_CODE` credential types remain
+unenrolled, and TOTP has no recovery-code fallback for a lost authenticator.
 
 ## Organizations and co-host delegation — Built
 
@@ -137,7 +144,7 @@ null"; a factory that pre-assigns the id the way every other factory in this cod
 issue a silent, zero-row `UPDATE` instead of an `INSERT`. Both factories now leave `id` unset and
 let the database's own `DEFAULT gen_random_uuid()` generate it.
 
-## Identity events through the outbox
+## Identity events through the outbox — Built (published, no external consumer yet)
 
 `EmailVerificationIssued` and `PasswordResetIssued` are deliberately *not* on Spring Modulith's
 `@ApplicationModuleListener`/outbox registry, for the reason recorded in
@@ -145,19 +152,88 @@ let the database's own `DEFAULT gen_random_uuid()` generate it.
 identity facts (account created, session revoked, capability granted) published through that outbox
 so other domains (`trust`, `admin`) can react without polling.
 
-## Erasure
+`AccountHolderCreated`, `CapabilityGranted`, and `SessionRevoked` (all in `dev.ngb.backend.identity`,
+the module's public root package, since a public event's field types must themselves be consumable
+by another module — `granteeType`/`source` on `CapabilityGranted` are therefore the underlying
+enums' names rather than `identity.internal`'s `PrincipalType`/`GrantSource`) are now published, each
+from the single existing writer of the fact it names: `AuthenticationService.registerUser`,
+`CapabilityGrantService.issueRoleGrant`/`issueDelegatedGrant`, and
+`RefreshTokenService`'s shared `revokeSessionAndTokens` (which every revocation path — self-service,
+administrator suspension, and refresh-token reuse detection — already funneled through, so one
+publish point covers all three).
 
-Account closure (`DELETE /api/v1/users/me`) sets `status = CLOSED` and revokes sessions/tokens; it
-does not anonymize or erase personal data. D01's target design adds a `DELETION_REQUESTED`
-intermediate state and an erasure/anonymization workflow coordinated with D22's legal-hold and
-retention primitives.
+Spring Modulith's `EventPublicationRegistry` only records a durable row per `(event, listener)`
+pair — an event with no registered listener completes `ApplicationEventPublisher.publishEvent` and
+leaves no trace, which would make "published through the outbox" true in name only. So this pass
+also adds the first `@ApplicationModuleListener` in the codebase,
+`internal.service.audit.IdentityFactAuditListener`, which turns each fact into an `identity.*`
+`audit_events` row attributed to `ActorType.SYSTEM` (the listener runs asynchronously, after
+commit, with no access to the original caller's principal). This does not replace the
+higher-fidelity, actor-attributed `account.*`/`session.*`/`organization.*` rows `AdminAccountService`,
+`UserController`, and `OrganizationService` already write inline in the same transaction as the
+command that caused them — `identity.capability_granted` and `identity.session_revoked` coexist with
+those, deliberately, as a second and coarser trail. Registration and `HostOnboardingService`'s role
+grants had no audit coverage at all before this; they do now.
 
-## `PENDING_VERIFICATION` state
+**Not done**: no `trust` or `admin` listener exists yet to react to any of the three events — that
+is the actual cross-module reactivity D01 describes, and this pass only builds the durable primitive
+those modules would listen to. `EmailVerificationIssued`/`PasswordResetIssued` staying off the
+registry is unchanged and remains the deliberate, documented exception it always was.
 
-D01's target account lifecycle includes a `PENDING_VERIFICATION` state distinct from `ACTIVE`
-for an account whose primary channel is unverified. The live schema only has
-`ACTIVE`/`SUSPENDED`/`CLOSED`; an unverified account is fully `ACTIVE` today, which is a narrower
-lifecycle than the target design describes.
+## Erasure — `DELETION_REQUESTED` state built; obligation checks and anonymization still Planned
+
+`AccountHolderStatus` gained `DELETION_REQUESTED` (migration `042`, widening
+`ck_account_holders_status` again). `UserAccountService.deleteOwnAccount` (`DELETE
+/api/v1/users/me`) now moves a holder there instead of directly to `CLOSED`, revoking every session
+and unconsumed opaque token in the same transaction exactly as before — matching D01's lifecycle
+table, `AccountHolderFinder`'s active-check excludes this state the same way it excludes
+`SUSPENDED`, so a holder who requested deletion cannot authenticate again. A new operator command,
+`AdminAccountService.completeDeletion` (`POST /api/v1/admin/users/{userId}/complete-deletion`),
+transitions `DELETION_REQUESTED` to `CLOSED`; `AdminAccountService.updateStatus`'s existing
+`SUPPORTED_STATUSES` check (`ACTIVE`/`SUSPENDED` only) already keeps that coarser endpoint from
+touching either state, so this is the only path in or out.
+
+**Not done, deliberately**: this pass adds the state transition only, not the workflow D01 actually
+describes. `completeDeletion` performs the status change unconditionally — it does not check future
+confirmed stays, unsettled balances, or open cases before allowing completion (D01's own question 11:
+what obligations block completion, and how long the window is, are unresolved), does not check a
+legal hold (D22, not built), and does not anonymize or erase any personal data — the row and its
+personal data remain exactly as before, identical to what immediate `CLOSED` did previously. Building
+those requires: an owner for each obligation check (`booking`, `ledger`, `trust`'s cases), D22's
+legal-hold primitive, a decision on what is erased versus pseudonymized and in which stores (D01's
+question 12), and the `AccountDeletionRequested`/`AccountErased` events other data holders would
+acknowledge propagation against. None of that exists yet, so `completeDeletion` today is an operator
+manually vouching that it is safe to close the account, not an enforced workflow.
+
+## `PENDING_VERIFICATION` state — Built
+
+`AccountHolderStatus` gained `PENDING_VERIFICATION` (migration `041`, which widens
+`ck_account_holders_status`; the column default stays `'ACTIVE'`, so nothing but
+`UserRegistrationFactory` sets the new value). `UserRegistrationFactory.create` now starts a
+self-registered person there instead of `ACTIVE`, since the primary email channel registration
+creates is unproven until `EmailVerificationService.verify` confirms it — which is also the only
+place that ever moves a holder out of the state, transitioning it to `ACTIVE` in the same
+transaction as marking the channel verified. `OrganizationFactory` is unchanged and still creates
+an organization `ACTIVE`: an organization has no email of its own to verify, and its owner is
+already a verified person by the time they create one.
+
+Matching the design table's "Permitted" authentication entry, `AccountHolderFinder`'s shared
+active-check and `IdentityFacts.resolve` (the JWT filter's per-request reload) both treat
+`PENDING_VERIFICATION` the same as `ACTIVE` — a holder in this state can still log in and use every
+endpoint gated only by "does this account exist and work." `PasswordResetService.resetPassword`'s
+inline status filter was widened the same way, so a holder who forgets their password before
+verifying is not locked out of recovery. `AccountHolder.canTransact()` was deliberately left
+requiring `ACTIVE` exactly — it is the one place D01's "reduced capabilities" already has a concrete,
+existing meaning: an unverified holder cannot book or list, the same restriction an unresolved
+market already imposes.
+
+**Not done**: which capabilities beyond `canTransact()` a `PENDING_VERIFICATION` holder should lose
+remains the open product decision D01 itself flags (its question 10). Today the state changes
+nothing else — a holder can change their password, enroll MFA, manage sessions and contact channels,
+and grant themselves the host capability before ever verifying their email, identical to `ACTIVE`.
+`AdminAccountService.updateStatus` still only supports the `ACTIVE`/`SUSPENDED` pair the design's
+lifecycle diagram shows (`PENDING_VERIFICATION -> ACTIVE` only), so an operator cannot suspend an
+account still in this state.
 
 ## Market resolution — Built
 
@@ -179,7 +255,13 @@ still out of scope; only the resolving endpoint is built.
 Administrator suspend/reactivate, session inventory and sign-out-everywhere, `auth_attempts`
 velocity control, capability restrictions (single-capability), the identity audit trail, market
 resolution, contact-channel management with phone verification, organizations with co-host
-delegation, and TOTP enrollment with step-up proof issuance are **Built**. Everything else on this
-page is still **Planned**: designed in D01, in some cases already scaffolded in the schema, but
-with no live service or endpoint behind it — including wiring the built step-up mechanism into any
-actual sensitive action.
+delegation, TOTP enrollment with step-up proof issuance and password-change wiring, identity events
+through the outbox (published, durably recorded via a first identity-internal listener, but with no
+`trust`/`admin` consumer yet), the `PENDING_VERIFICATION` account state, and the `DELETION_REQUESTED`
+account state (transition only — see "Erasure" above) are **Built**. Everything else on this page is
+still **Planned**: designed in D01, in some cases already scaffolded in the schema, but with no live
+service or endpoint behind it — including wiring step-up into any other sensitive action, the
+session-level `AssuranceEvaluator` that would enforce it generally instead of per-action, any
+`trust`/`admin` reaction to the three events now published, which capabilities a
+`PENDING_VERIFICATION` holder should lose beyond `canTransact()`, and every obligation check,
+legal-hold check, and anonymization step `completeDeletion` does not yet perform.

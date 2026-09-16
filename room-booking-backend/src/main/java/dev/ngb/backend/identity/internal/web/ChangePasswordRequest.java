@@ -12,6 +12,8 @@ import jakarta.validation.constraints.Size;
  *
  * @param currentPassword raw password used to confirm the caller's identity
  * @param newPassword raw replacement password, validated before hashing
+ * @param stepUpProof raw proof from {@code POST /api/v1/users/me/mfa/totp/step-up}, required only
+ *     when the caller has an active TOTP credential enrolled
  */
 public record ChangePasswordRequest(
         @NotBlank(message = "currentPassword must not be blank")
@@ -23,5 +25,6 @@ public record ChangePasswordRequest(
                 min = 8,
                 message = "password must contain at least 8 characters, including an uppercase "
                         + "letter, a lowercase letter, a number, and a special character")
-        String newPassword) {
+        String newPassword,
+        String stepUpProof) {
 }

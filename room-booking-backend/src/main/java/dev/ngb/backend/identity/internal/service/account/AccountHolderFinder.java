@@ -168,8 +168,23 @@ public class AccountHolderFinder {
         return holder;
     }
 
+    /**
+     * Reports whether a holder's status permits authentication and ordinary business operations.
+     *
+     * <p>{@link AccountHolderStatus#PENDING_VERIFICATION} counts as active here, matching the
+     * "Permitted" authentication entry in D01's account lifecycle table — an unverified holder can
+     * still sign in and use the account. {@link AccountHolder#canTransact()} is the narrower,
+     * separate check that still requires {@link AccountHolderStatus#ACTIVE}; which capabilities
+     * beyond that a {@code PENDING_VERIFICATION} holder should lose is an open product decision,
+     * not one this shared gate resolves. See
+     * {@code docs/implementation/identity/09-roadmap.md#pending_verification-state}.</p>
+     *
+     * @param holder holder being checked
+     * @return {@code true} unless the holder is suspended or closed
+     */
     private static boolean isActive(AccountHolder holder) {
-        return holder.getStatus() == AccountHolderStatus.ACTIVE;
+        return holder.getStatus() == AccountHolderStatus.ACTIVE
+                || holder.getStatus() == AccountHolderStatus.PENDING_VERIFICATION;
     }
 
     private void requireActive(AccountHolder holder) {

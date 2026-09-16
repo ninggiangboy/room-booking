@@ -146,7 +146,8 @@ public class PasswordResetService {
         }
 
         AccountHolder holder = accountHolderRepository.findById(resetToken.getAccountHolderId())
-                .filter(candidate -> candidate.getStatus() == AccountHolderStatus.ACTIVE)
+                .filter(candidate -> candidate.getStatus() == AccountHolderStatus.ACTIVE
+                        || candidate.getStatus() == AccountHolderStatus.PENDING_VERIFICATION)
                 .orElseThrow(InvalidPasswordResetTokenException::new);
         AuthCredential currentCredential = authCredentialRepository
                 .findActive(holder.getId(), CredentialType.PASSWORD.name())

@@ -12,7 +12,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
+import dev.ngb.backend.identity.SessionRevoked;
 import dev.ngb.backend.identity.internal.exception.SessionNotFoundException;
 import dev.ngb.backend.identity.internal.model.session.AuthSession;
 import dev.ngb.backend.identity.internal.model.session.AuthenticationMethod;
@@ -41,6 +43,8 @@ class RefreshTokenServiceTest {
     private AuthTokenFactory authTokenFactory;
     @Mock
     private AuthSessionFactory authSessionFactory;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     private RefreshTokenService service;
     private UUID accountHolderId;
@@ -50,7 +54,7 @@ class RefreshTokenServiceTest {
         Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
         service = new RefreshTokenService(
                 authTokenRepository, authSessionRepository, authTokenFactory, authSessionFactory,
-                clock, Duration.ofDays(30), Duration.ofDays(180));
+                eventPublisher, clock, Duration.ofDays(30), Duration.ofDays(180));
         accountHolderId = UUID.randomUUID();
     }
 
@@ -67,6 +71,8 @@ class RefreshTokenServiceTest {
         assertThat(session.getRevokedAt()).isEqualTo(NOW);
         assertThat(session.getRevocationReason()).isEqualTo("USER_REVOKED_SESSION");
         verify(authSessionRepository).save(session);
+        verify(eventPublisher).publishEvent(
+                new SessionRevoked(session.getId(), accountHolderId, "USER_REVOKED_SESSION", NOW));
     }
 
     @Test
@@ -101,6 +107,7 @@ class RefreshTokenServiceTest {
         service.revokeSession(accountHolderId, session.getId(), NOW, "USER_REVOKED_SESSION");
 
         verify(authSessionRepository, never()).save(any());
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     private static AuthSession liveSession(UUID accountHolderId) {

@@ -22,6 +22,7 @@ import dev.ngb.backend.identity.internal.service.auth.passwordreset.PasswordCred
 import dev.ngb.backend.identity.internal.service.auth.session.RefreshTokenService;
 import dev.ngb.backend.identity.internal.service.authz.AuthorizationService;
 import dev.ngb.backend.identity.internal.service.authz.CapabilityGrantService;
+import dev.ngb.backend.identity.internal.service.mfa.MfaService;
 import dev.ngb.backend.identity.internal.service.validation.PasswordPolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import dev.ngb.backend.identity.internal.exception.InvalidCredentialsException;
+import dev.ngb.backend.identity.internal.exception.StepUpRequiredException;
 import dev.ngb.backend.identity.internal.exception.UserNotFoundException;
 import dev.ngb.backend.identity.internal.web.ChangePasswordRequest;
 import dev.ngb.backend.identity.internal.web.UserResponse;
@@ -58,6 +60,7 @@ public class UserAccountService {
     private final AccountHolderFinder accountHolderFinder;
     private final PasswordEncoder passwordEncoder;
     private final PasswordPolicy passwordPolicy;
+    private final MfaService mfaService;
     private final Clock clock;
 
     /**
@@ -101,9 +104,11 @@ public class UserAccountService {
      * Verifies the old password and enrolls a newly encoded, different password.
      *
      * @param holderId authenticated account identifier
-     * @param request current and replacement raw passwords
+     * @param request current and replacement raw passwords, plus a step-up proof when the holder
+     *     has an active TOTP credential enrolled
      * @throws InvalidCredentialsException when the current password is wrong
      * @throws ValidationException when the replacement violates policy or matches the old password
+     * @throws StepUpRequiredException when the holder has TOTP enrolled and no proof was submitted
      */
     @Transactional
     public void changePassword(UUID holderId, ChangePasswordRequest request) {
@@ -116,21 +121,55 @@ public class UserAccountService {
         validatePasswordChange(
                 request.currentPassword(), request.newPassword(), currentCredential.getVerifierDigest());
 
+        Instant now = clock.instant();
+        requireStepUpIfEnrolled(holderId, request.stepUpProof(), now);
+
         PasswordCredentialRotator.Rotation rotation = passwordCredentialRotator.rotate(
-                currentCredential, request.newPassword(), clock.instant());
+                currentCredential, request.newPassword(), now);
         authCredentialRepository.save(rotation.disabledOld());
         authCredentialRepository.save(rotation.enrolledNew());
     }
 
     /**
-     * Closes the authenticated account and revokes every outstanding session and opaque token.
+     * Demands and consumes a step-up proof before a sensitive action proceeds, but only for a
+     * holder who has actually enrolled a second factor — nothing exists to step up with otherwise.
+     *
+     * @param holderId account the action is being performed for
+     * @param rawProof proof submitted with the request, or {@code null} if none was
+     * @param decisionInstant the command's single decision instant
+     * @throws StepUpRequiredException when TOTP is enrolled and no proof was submitted
+     */
+    private void requireStepUpIfEnrolled(UUID holderId, String rawProof, Instant decisionInstant) {
+        boolean totpEnrolled = authCredentialRepository
+                .countByAccountHolderIdAndCredentialTypeAndDisabledAtIsNull(holderId, CredentialType.TOTP)
+                > 0;
+        if (!totpEnrolled) {
+            return;
+        }
+        if (rawProof == null || rawProof.isBlank()) {
+            throw new StepUpRequiredException();
+        }
+        mfaService.consumeStepUpProof(holderId, rawProof, decisionInstant);
+    }
+
+    /**
+     * Requests closure of the authenticated account and revokes every outstanding session and
+     * opaque token immediately.
+     *
+     * <p>Moves the holder to {@link AccountHolderStatus#DELETION_REQUESTED}, not directly to
+     * {@link AccountHolderStatus#CLOSED}: D01's target lifecycle interposes this state because a
+     * host with future stays, unsettled balances, or open cases cannot become unreachable
+     * instantly. This codebase does not yet check any such obligation — see {@code
+     * docs/implementation/identity/09-roadmap.md#erasure} — so completion today is a deliberate,
+     * separate step an operator takes through {@code AdminAccountService.completeDeletion} rather
+     * than something this method finishes on its own.</p>
      *
      * @param holderId authenticated account identifier
      */
     @Transactional
     public void deleteOwnAccount(UUID holderId) {
         AccountHolder holder = accountHolderFinder.findActiveByIdForUpdate(holderId);
-        applyStatus(holder, AccountHolderStatus.CLOSED);
+        applyStatus(holder, AccountHolderStatus.DELETION_REQUESTED);
     }
 
     private void validatePasswordChange(

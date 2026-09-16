@@ -77,6 +77,32 @@ public class AdminController {
     }
 
     /**
+     * Completes a holder's self-requested deletion, closing the account.
+     *
+     * @param userId account holder whose deletion is being completed
+     * @param adminId operator identifier injected from the authenticated principal
+     * @param request audit reason
+     * @return {@code 204 No Content}
+     */
+    @PostMapping("/users/{userId}/complete-deletion")
+    @Operation(summary = "Complete a requested account deletion", description = "Closes an account currently DELETION_REQUESTED. This codebase does not yet check settlement or booking obligations before allowing it — see the identity roadmap's erasure section.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Deletion completed, account closed"),
+            @ApiResponse(responseCode = "400", description = "Holder is not currently DELETION_REQUESTED (DELETION_NOT_REQUESTED or VALIDATION_ERROR)", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "401", ref = "#/components/responses/Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Caller lacks ACCOUNT_SUSPEND"),
+            @ApiResponse(responseCode = "404", ref = "#/components/responses/UserNotFound"),
+            @ApiResponse(responseCode = "500", ref = "#/components/responses/InternalServerError")
+    })
+    public ResponseEntity<Void> completeDeletion(
+            @PathVariable UUID userId,
+            @AuthenticationPrincipal UUID adminId,
+            @Valid @RequestBody AdminCompleteDeletionRequest request) {
+        adminAccountService.completeDeletion(userId, request.reasonCode(), adminId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
      * Resolves an account holder's market.
      *
      * @param userId account holder whose market is being resolved
