@@ -16,7 +16,8 @@ import org.springframework.data.relational.core.mapping.Table;
 
 
 /**
- * Persistent one-time token used for email verification or refresh-token sessions.
+ * Persistent one-time token used for email or contact-channel verification, password reset, or
+ * refresh-token sessions.
  *
  * <p>The Lombok annotations generate mutable entity boilerplate and a builder. Spring Data JDBC
  * maps the class to {@code auth_tokens}; {@code @Id} identifies rows and {@code @Version} prevents
@@ -58,6 +59,8 @@ public class AuthToken {
     private int rotationGeneration;
     /** Token that replaced this one when it was rotated. */
     private @Nullable UUID supersededBy;
+    /** Contact channel this token proves control of; {@code null} for every other token type. */
+    private @Nullable UUID channelId;
     /** UTC instant at which the token was issued, maintained by Spring Data JDBC auditing. */
     @CreatedDate
     private Instant createdAt;

@@ -57,6 +57,8 @@ public class ContactChannel {
     private @Nullable String verificationMethod;
     /** Channel that replaced this one. */
     private @Nullable UUID supersededBy;
+    /** UTC instant the holder removed this channel through self-service; {@code null} while live. */
+    private @Nullable Instant revokedAt;
     /** UTC instant the row was created, maintained by Spring Data JDBC auditing. */
     @CreatedDate
     private Instant createdAt;
@@ -89,5 +91,23 @@ public class ContactChannel {
     public void markVerified(Instant instant, String method) {
         this.verifiedAt = instant;
         this.verificationMethod = method;
+    }
+
+    /**
+     * Reports whether the holder has removed this channel through self-service.
+     *
+     * @return {@code true} when {@link #revokedAt} is set
+     */
+    public boolean isRemoved() {
+        return revokedAt != null;
+    }
+
+    /**
+     * Marks the channel removed by the holder.
+     *
+     * @param instant the command's decision instant
+     */
+    public void markRemoved(Instant instant) {
+        this.revokedAt = instant;
     }
 }

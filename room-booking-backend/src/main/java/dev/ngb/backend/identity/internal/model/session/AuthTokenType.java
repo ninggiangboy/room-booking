@@ -12,5 +12,7 @@ public enum AuthTokenType {
     /** One-time secret used to replace a forgotten password. */
     PASSWORD_RESET,
     /** Rotating session secret used to obtain a new access-token pair. */
-    REFRESH_TOKEN
+    REFRESH_TOKEN,
+    /** One-time numeric code used to prove control of a self-service contact channel. */
+    CONTACT_CHANNEL_VERIFICATION
 }

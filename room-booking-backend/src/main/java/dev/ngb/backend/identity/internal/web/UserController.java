@@ -26,8 +26,10 @@ import java.util.List;
 import java.util.UUID;
 
 import dev.ngb.backend.config.ApiErrorResponse;
+import dev.ngb.backend.identity.internal.model.account.ContactChannel;
 import dev.ngb.backend.identity.internal.repository.session.AuthSessionRepository;
 import dev.ngb.backend.identity.internal.service.auth.session.RefreshTokenService;
+import dev.ngb.backend.identity.internal.service.contact.ContactChannelService;
 import dev.ngb.backend.identity.internal.service.host.HostOnboardingService;
 import dev.ngb.backend.identity.internal.service.account.UserAccountService;
 import dev.ngb.backend.platform.ActorType;
@@ -53,6 +55,7 @@ public class UserController {
     private final HostOnboardingService hostOnboardingService;
     private final AuthSessionRepository authSessionRepository;
     private final RefreshTokenService refreshTokenService;
+    private final ContactChannelService contactChannelService;
     private final AuditTrailWriter auditTrailWriter;
     private final Clock clock;
 
@@ -235,6 +238,119 @@ public class UserController {
                 ActorType.USER,
                 userId,
                 null));
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Lists the authenticated account's live contact channels.
+     *
+     * @param userId authenticated account identifier
+     * @return possibly empty list of the holder's current channels
+     */
+    @GetMapping("/me/contact-channels")
+    @Operation(summary = "List the current user's contact channels", description = "Returns every live channel the authenticated account has registered, verified or not.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Live contact channels", content = @Content(schema = @Schema(implementation = ContactChannelResponse.class))),
+            @ApiResponse(responseCode = "401", ref = "#/components/responses/Unauthorized"),
+            @ApiResponse(responseCode = "500", ref = "#/components/responses/InternalServerError")
+    })
+    public List<ContactChannelResponse> listContactChannels(@AuthenticationPrincipal UUID userId) {
+        return contactChannelService.list(userId).stream().map(ContactChannelResponse::from).toList();
+    }
+
+    /**
+     * Registers a new, unverified contact channel for the authenticated account.
+     *
+     * @param userId authenticated account identifier
+     * @param request channel type, purpose, and value
+     * @return the newly created channel
+     */
+    @PostMapping("/me/contact-channels")
+    @Operation(summary = "Add a contact channel", description = "Registers a new, unverified channel. Becomes the holder's primary channel for its type only when none exists yet.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Channel added", content = @Content(schema = @Schema(implementation = ContactChannelResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Malformed value for the declared channel type (INVALID_CONTACT_CHANNEL_VALUE or VALIDATION_ERROR)", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "401", ref = "#/components/responses/Unauthorized"),
+            @ApiResponse(responseCode = "403", ref = "#/components/responses/AccountDisabled"),
+            @ApiResponse(responseCode = "404", ref = "#/components/responses/UserNotFound"),
+            @ApiResponse(responseCode = "409", description = "The holder already has a live channel of this type and value (CONTACT_CHANNEL_ALREADY_REGISTERED)", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "500", ref = "#/components/responses/InternalServerError")
+    })
+    public ResponseEntity<ContactChannelResponse> addContactChannel(
+            @AuthenticationPrincipal UUID userId,
+            @Valid @RequestBody AddContactChannelRequest request) {
+        ContactChannel channel = contactChannelService.add(
+                userId, request.channelType(), request.purpose(), request.value());
+        return ResponseEntity.status(201).body(ContactChannelResponse.from(channel));
+    }
+
+    /**
+     * Issues and delivers a verification code for one of the caller's own channels.
+     *
+     * @param userId authenticated account identifier
+     * @param channelId channel to verify
+     * @return {@code 204 No Content}
+     */
+    @PostMapping("/me/contact-channels/{channelId}/verification/request")
+    @Operation(summary = "Request contact-channel verification", description = "Issues a numeric code and delivers it by SMS or email depending on the channel's type.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Verification code issued"),
+            @ApiResponse(responseCode = "400", description = "Channel is already verified (CONTACT_CHANNEL_ALREADY_VERIFIED)", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "401", ref = "#/components/responses/Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "No live channel with that identifier belongs to the caller (CONTACT_CHANNEL_NOT_FOUND)", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "500", ref = "#/components/responses/InternalServerError")
+    })
+    public ResponseEntity<Void> requestContactChannelVerification(
+            @AuthenticationPrincipal UUID userId, @PathVariable UUID channelId) {
+        contactChannelService.requestVerification(userId, channelId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Confirms a verification code for one of the caller's own channels.
+     *
+     * @param userId authenticated account identifier
+     * @param channelId channel the code was requested for
+     * @param request the code as the holder typed it
+     * @return the channel after verification
+     */
+    @PostMapping("/me/contact-channels/{channelId}/verification/confirm")
+    @Operation(summary = "Confirm contact-channel verification", description = "Consumes a valid code and marks the channel verified.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Channel verified", content = @Content(schema = @Schema(implementation = ContactChannelResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid, expired, or already-verified channel (INVALID_CONTACT_CHANNEL_VERIFICATION_CODE, CONTACT_CHANNEL_ALREADY_VERIFIED, or VALIDATION_ERROR)", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "401", ref = "#/components/responses/Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "No live channel with that identifier belongs to the caller (CONTACT_CHANNEL_NOT_FOUND)", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "500", ref = "#/components/responses/InternalServerError")
+    })
+    public ContactChannelResponse confirmContactChannelVerification(
+            @AuthenticationPrincipal UUID userId,
+            @PathVariable UUID channelId,
+            @Valid @RequestBody ConfirmContactChannelVerificationRequest request) {
+        ContactChannel channel = contactChannelService.confirmVerification(
+                userId, channelId, request.code());
+        return ContactChannelResponse.from(channel);
+    }
+
+    /**
+     * Removes one of the caller's own, non-primary contact channels.
+     *
+     * @param userId authenticated account identifier
+     * @param channelId channel to remove
+     * @return {@code 204 No Content}
+     */
+    @DeleteMapping("/me/contact-channels/{channelId}")
+    @Operation(summary = "Remove a contact channel", description = "Marks a non-primary channel removed. The current primary channel for its type cannot be removed through this endpoint.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Channel removed, or already removed"),
+            @ApiResponse(responseCode = "400", description = "The channel is currently primary for its type (PRIMARY_CONTACT_CHANNEL_CANNOT_BE_REMOVED)", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "401", ref = "#/components/responses/Unauthorized"),
+            @ApiResponse(responseCode = "404", description = "No live channel with that identifier belongs to the caller (CONTACT_CHANNEL_NOT_FOUND)", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "500", ref = "#/components/responses/InternalServerError")
+    })
+    public ResponseEntity<Void> removeContactChannel(
+            @AuthenticationPrincipal UUID userId, @PathVariable UUID channelId) {
+        contactChannelService.remove(userId, channelId);
         return ResponseEntity.noContent().build();
     }
 }

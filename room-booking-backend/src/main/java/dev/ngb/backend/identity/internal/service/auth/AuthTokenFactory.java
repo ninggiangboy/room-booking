@@ -81,6 +81,37 @@ public class AuthTokenFactory {
     }
 
     /**
+     * Builds an unsaved numeric verification code scoped to one contact channel.
+     *
+     * <p>Unlike {@link #create}, the secret is a fixed-width numeric code from {@link
+     * dev.ngb.backend.platform.util.SecureTokenUtils#generateNumericCode} rather than an opaque
+     * URL-safe token: this code is delivered by SMS or a short email message and typed back by
+     * hand, not followed as a link. {@code channelId} lets the confirming workflow tell which of a
+     * holder's several channels of the same type this code proves control of, which {@link
+     * AuthTokenType#EMAIL_VERIFICATION}'s "resolve to the current primary channel" shortcut cannot
+     * express once a holder may register more than one.</p>
+     *
+     * @param accountHolderId account the token belongs to
+     * @param channelId contact channel this code proves control of
+     * @param issuedAt workflow's single decision instant
+     * @param ttl positive lifetime added to {@code issuedAt} to obtain the expiry
+     * @return token row to persist and the raw numeric code to deliver to the client
+     */
+    public IssuedToken createChannelVerificationCode(
+            UUID accountHolderId, UUID channelId, Instant issuedAt, Duration ttl) {
+        String rawCode = SecureTokenUtils.generateNumericCode(6);
+        AuthToken token = AuthToken.builder()
+                .id(UUID.randomUUID())
+                .accountHolderId(accountHolderId)
+                .type(AuthTokenType.CONTACT_CHANNEL_VERIFICATION)
+                .tokenHash(HashUtils.sha256Hex(rawCode))
+                .expiresAt(issuedAt.plus(ttl))
+                .channelId(channelId)
+                .build();
+        return new IssuedToken(token, rawCode);
+    }
+
+    /**
      * Token row and the secret that is never recoverable from it afterwards.
      *
      * @param token unsaved token record holding only the secret's digest

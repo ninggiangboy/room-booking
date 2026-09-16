@@ -121,4 +121,16 @@ public interface AuthTokenRepository extends ListCrudRepository<AuthToken, UUID>
      * @return possibly empty list of unconsumed tokens issued under that session
      */
     List<AuthToken> findAllBySessionIdAndConsumedAtIsNull(UUID sessionId);
+
+    /**
+     * Finds every unconsumed verification code outstanding for one contact channel.
+     *
+     * <p>Spring derives {@code WHERE channel_id = ? AND consumed_at IS NULL}, so a newly issued
+     * code can supersede every earlier one for the same channel before a holder can be confused
+     * about which code is still valid.</p>
+     *
+     * @param channelId contact channel the codes were issued for
+     * @return possibly empty list of unconsumed verification codes
+     */
+    List<AuthToken> findAllByChannelIdAndConsumedAtIsNull(UUID channelId);
 }

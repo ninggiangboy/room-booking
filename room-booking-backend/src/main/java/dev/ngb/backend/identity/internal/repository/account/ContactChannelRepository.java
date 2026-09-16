@@ -63,6 +63,7 @@ public interface ContactChannelRepository extends ListCrudRepository<ContactChan
      *   AND channel_type = :channelType
      *   AND is_primary = true
      *   AND superseded_by IS NULL
+     *   AND revoked_at IS NULL
      * }</pre>
      *
      * <p>{@code uk_contact_channels_one_primary} guarantees at most one row matches. This is where a
@@ -79,6 +80,7 @@ public interface ContactChannelRepository extends ListCrudRepository<ContactChan
               AND channel_type = :channelType
               AND is_primary = true
               AND superseded_by IS NULL
+              AND revoked_at IS NULL
             """)
     Optional<ContactChannel> findCurrentPrimary(
             @Param("accountHolderId") UUID accountHolderId,
@@ -126,4 +128,17 @@ public interface ContactChannelRepository extends ListCrudRepository<ContactChan
      */
     boolean existsByChannelTypeAndNormalizedValue(
             ContactChannelType channelType, String normalizedValue);
+
+    /**
+     * Returns every live channel a principal has registered, of any type.
+     *
+     * <p>Spring derives {@code WHERE account_holder_id = ? AND superseded_by IS NULL AND
+     * revoked_at IS NULL}. Superseded and self-service-removed rows are excluded because they are
+     * history, not something the holder can act on today.</p>
+     *
+     * @param accountHolderId principal whose channels are listed
+     * @return possibly empty list of the principal's current channels
+     */
+    List<ContactChannel> findAllByAccountHolderIdAndSupersededByIsNullAndRevokedAtIsNull(
+            UUID accountHolderId);
 }

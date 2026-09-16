@@ -28,4 +28,24 @@ public final class SecureTokenUtils {
         SECURE_RANDOM.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
+
+    /**
+     * Generates a fixed-width numeric one-time code, left-padded with zeros.
+     *
+     * <p>A code is used, rather than {@link #generateUrlSafe()}'s opaque token, wherever the value
+     * must be typed back by hand instead of followed as a link — an SMS-delivered contact-channel
+     * verification code, for instance. {@link SecureRandom#nextInt(int)} is uniform over its bound,
+     * so every digit position is uniform once the result is left-padded.</p>
+     *
+     * @param digits width of the code; must be positive
+     * @return numeric string of exactly {@code digits} characters, {@code '0'}-{@code '9'} only
+     */
+    public static String generateNumericCode(int digits) {
+        if (digits <= 0) {
+            throw new IllegalArgumentException("digits must be positive");
+        }
+        int bound = (int) Math.pow(10, digits);
+        int value = SECURE_RANDOM.nextInt(bound);
+        return String.format("%0" + digits + "d", value);
+    }
 }
