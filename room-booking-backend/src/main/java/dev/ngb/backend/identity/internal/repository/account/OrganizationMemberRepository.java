@@ -24,14 +24,15 @@ public interface OrganizationMemberRepository
     /**
      * Finds one person's membership of one organization.
      *
-     * <p>Spring derives {@code WHERE organization_id = ? AND user_id = ?}, matching the
+     * <p>Spring derives {@code WHERE organization_id = ? AND member_holder_id = ?}, matching the
      * {@code uk_organization_members_pair} unique constraint.</p>
      *
      * @param organizationId organization in question
-     * @param userId person in question
+     * @param memberHolderId person in question
      * @return the membership when one exists, in any status
      */
-    Optional<OrganizationMember> findByOrganizationIdAndUserId(UUID organizationId, UUID userId);
+    Optional<OrganizationMember> findByOrganizationIdAndMemberHolderId(
+            UUID organizationId, UUID memberHolderId);
 
     /**
      * Returns an organization's members in one status.
@@ -79,14 +80,28 @@ public interface OrganizationMemberRepository
     /**
      * Returns every organization a person belongs to in one status.
      *
-     * <p>Spring derives {@code WHERE user_id = ? AND status = ?}. Backs the organization switcher a
-     * session uses to select its acting context.</p>
+     * <p>Spring derives {@code WHERE member_holder_id = ? AND status = ?}. Backs the organization
+     * switcher a session uses to select its acting context.</p>
      *
-     * @param userId person whose memberships are listed
+     * @param memberHolderId person whose memberships are listed
      * @param status status to filter by
      * @return possibly empty list of memberships
      */
-    List<OrganizationMember> findAllByUserIdAndStatus(
-            UUID userId,
+    List<OrganizationMember> findAllByMemberHolderIdAndStatus(
+            UUID memberHolderId,
             OrganizationMemberStatus status);
+
+    /**
+     * Returns every membership a person holds that has not been removed, active and pending
+     * invitations alike.
+     *
+     * <p>Spring derives {@code WHERE member_holder_id = ? AND status != 'REMOVED'}. Backs a
+     * "my organizations" view that must show both, distinguished by {@code status} in the
+     * response, rather than two separate calls.</p>
+     *
+     * @param memberHolderId person whose memberships are listed
+     * @return possibly empty list of the person's non-removed memberships
+     */
+    List<OrganizationMember> findAllByMemberHolderIdAndStatusNot(
+            UUID memberHolderId, OrganizationMemberStatus status);
 }

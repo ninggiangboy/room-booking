@@ -69,6 +69,61 @@ public class CapabilityGrantService {
     }
 
     /**
+     * Issues a resource-scoped grant delegated from another principal's own grant.
+     *
+     * <p>Unlike {@link #issueRoleGrant}, the scope narrows to a specific resource rather than
+     * staying {@link AuthorizationScopeType#GLOBAL} — {@code parentGrant} is what proves the
+     * grantor actually holds the authority it is handing down, and {@code capabilities} must be
+     * validated by the caller as a subset of {@code parentGrant}'s own capabilities before this
+     * method is reached; it trusts that check rather than repeating it, since only
+     * {@code OrganizationService} today knows what "the organization's own authority" means for its
+     * caller.</p>
+     *
+     * @param granteeType kind of principal receiving the delegated authority
+     * @param granteeId identifier of that principal
+     * @param grantorType kind of principal delegating the authority
+     * @param grantorId identifier of the delegating principal
+     * @param parentGrant the grantor's own grant this delegation narrows; revoking it must cascade
+     *     to this one through {@link #revoke}
+     * @param capabilities capability names this delegation confers, a subset of
+     *     {@code parentGrant}'s own capabilities
+     * @param scopeType resource kind the delegation is confined to; never {@code GLOBAL}
+     * @param scopeId identifier of that resource
+     * @param reasonCode stable reason recorded for operator review
+     * @param decisionInstant the command's single decision instant, used as the grant's effective
+     *     start and, since the row is inserted by explicit save rather than derived from another
+     *     audited instant, its own creation time
+     * @return the saved grant
+     */
+    public CapabilityGrant issueDelegatedGrant(
+            PrincipalType granteeType,
+            UUID granteeId,
+            PrincipalType grantorType,
+            UUID grantorId,
+            CapabilityGrant parentGrant,
+            String[] capabilities,
+            AuthorizationScopeType scopeType,
+            UUID scopeId,
+            String reasonCode,
+            Instant decisionInstant) {
+        CapabilityGrant grant = CapabilityGrant.builder()
+                .id(UUID.randomUUID())
+                .granteeType(granteeType)
+                .granteeId(granteeId)
+                .grantorType(grantorType)
+                .grantorId(grantorId)
+                .capabilities(capabilities)
+                .scopeType(scopeType)
+                .scopeId(scopeId)
+                .effectiveFrom(decisionInstant)
+                .reasonCode(reasonCode)
+                .source(GrantSource.DELEGATION)
+                .derivedFromGrantId(parentGrant.getId())
+                .build();
+        return capabilityGrantRepository.save(grant);
+    }
+
+    /**
      * Finds a principal's effective global grant for one role, if it already holds one.
      *
      * <p>Used to make issuing a role idempotent: repeating a request that grants the same role

@@ -26,6 +26,17 @@ import org.springframework.data.relational.core.mapping.Table;
  * other rows, so it cannot be a row constraint; the service enforces it inside the transaction that
  * would break it, backed by a reconciliation query. Removed members are retained so the actions they
  * took while active stay attributable.</p>
+ *
+ * <p>{@link #memberHolderId} and {@link #invitedByAccountHolderId} were fixed to their current
+ * names before this module had a reader or writer: migration {@code 037} renamed the underlying
+ * columns from {@code user_id}/{@code invited_by} to {@code member_holder_id}/
+ * {@code invited_by_account_holder_id} once the legacy {@code users} table those names referred to
+ * was retired, but the Java fields still named themselves {@code userId}/{@code invitedBy} — the
+ * same class of latent mismatch migration {@code 037}'s cleanup fixed for {@code AuthAttempt}, only
+ * discovered here while wiring up this module's first live service instead of while wiring up
+ * {@code auth_attempts}'s. Spring Data JDBC's default naming strategy would otherwise have derived
+ * {@code user_id} from the field name and failed the query against the actual column at execution
+ * time, not at startup.</p>
  */
 @Getter
 @Setter
@@ -40,14 +51,14 @@ public class OrganizationMember {
     private @Nullable UUID id;
     /** Organization account holder being joined. */
     private UUID organizationId;
-    /** User who is the member. */
-    private UUID userId;
+    /** Account holder who is the member. */
+    private UUID memberHolderId;
     /** Role label the member holds. */
     private OrganizationMemberRole memberRole;
     /** Lifecycle of the membership. */
     private OrganizationMemberStatus status;
-    /** User who issued the invitation. */
-    private @Nullable UUID invitedBy;
+    /** Account holder who issued the invitation. */
+    private @Nullable UUID invitedByAccountHolderId;
     /** UTC instant the invitation was issued. */
     private Instant invitedAt;
     /** UTC instant the invitation was accepted; {@code null} while merely invited. */
