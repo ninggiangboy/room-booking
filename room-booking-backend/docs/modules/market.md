@@ -51,14 +51,17 @@ itself never grows a `pricing_rules` or `tax_registrations` table.
 
 `markets`, `legal_entities`, `market_policy_bundles`, and their lookups — every module that needs to
 resolve "which market, which entity, which policy version governs this fact" depends on this
-module's root package for that lookup. No aggregate root here has a live service yet (this module
-has no code today beyond its schema; a `MarketLookup`-shaped API is future work, added when the first
-consuming service is written).
+module's root package for that lookup. `MarketLookup` is the module's first live service, added when
+`identity` became its first consumer: `findUsableByCode` resolves a market code to a `MarketSummary`
+only when the market is `ACTIVE`, so a dependent module never has to reach into `market.internal` or
+reimplement the lifecycle check itself. `legal_entities` and `market_policy_bundles` still have no
+live service — this is the first slice of the eventual `MarketLookup`-shaped API, not the whole of
+it.
 
 ## Allowed dependencies
 
-None. No live code exists in this module yet, and even once it does, `market` has no legitimate
-reason to import from any business module — it is upstream of all of them.
+None. `market` has no legitimate reason to import from any business module — it is upstream of all
+of them, and `MarketLookup` only reads its own repositories and `platform`'s `ConfigurationLifecycle`.
 
 ## Data coupling `verify()` cannot see
 
@@ -83,5 +86,6 @@ trail); whether the two converge is a decision left to when `admin`'s live code 
 
 - All 11 tables and their entities/repositories live under `dev.ngb.backend.market.internal.model`
   / `.repository`, in the `market`, `entity`, and `content` sub-packages above.
-- `ApplicationModules.verify()` finds no `allowedDependencies` entry needed for `market` and no
-  incoming violation, since it is a leaf with no Java consumers yet.
+- `ApplicationModules.verify()` finds no `allowedDependencies` entry needed for `market` itself and
+  no incoming violation, now that `identity` has declared `market` as one of its own dependencies to
+  call `MarketLookup`.

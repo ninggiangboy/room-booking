@@ -11,8 +11,11 @@
  * legacy {@code users} table was retired by migration {@code 037}: {@link
  * dev.ngb.backend.identity.internal.model.account.AccountHolder} is now the single principal
  * root, which is why {@code AccessTokenService} and {@code IdentityFacts} are promoted here
- * rather than kept internal.</p>
+ * rather than kept internal. {@code market} is also a declared dependency: {@link
+ * dev.ngb.backend.identity.internal.service.account.AdminAccountService#resolveMarket} calls
+ * {@code market}'s {@code MarketLookup} to validate an operator-supplied market code before
+ * recording it on a holder.</p>
  */
-@org.springframework.modulith.ApplicationModule(allowedDependencies = {"config", "platform", "platform :: exception.base", "platform :: util"})
+@org.springframework.modulith.ApplicationModule(allowedDependencies = {"config", "market", "platform", "platform :: exception.base", "platform :: util"})
 @org.jspecify.annotations.NullMarked
 package dev.ngb.backend.identity;

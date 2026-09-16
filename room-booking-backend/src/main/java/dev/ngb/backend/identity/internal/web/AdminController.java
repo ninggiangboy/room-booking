@@ -77,6 +77,32 @@ public class AdminController {
     }
 
     /**
+     * Resolves an account holder's market.
+     *
+     * @param userId account holder whose market is being resolved
+     * @param adminId operator identifier injected from the authenticated principal
+     * @param request market code and audit reason
+     * @return {@code 204 No Content}
+     */
+    @PutMapping("/users/{userId}/market")
+    @Operation(summary = "Resolve an account's market", description = "Records the market an account holder operates in, unblocking consequential workflows that require canTransact().")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Market resolved"),
+            @ApiResponse(responseCode = "400", description = "Unknown or unusable market code (UNKNOWN_MARKET or VALIDATION_ERROR)", content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "401", ref = "#/components/responses/Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Caller lacks ACCOUNT_SUSPEND"),
+            @ApiResponse(responseCode = "404", ref = "#/components/responses/UserNotFound"),
+            @ApiResponse(responseCode = "500", ref = "#/components/responses/InternalServerError")
+    })
+    public ResponseEntity<Void> resolveMarket(
+            @PathVariable UUID userId,
+            @AuthenticationPrincipal UUID adminId,
+            @Valid @RequestBody AdminResolveMarketRequest request) {
+        adminAccountService.resolveMarket(userId, request.marketCode(), request.reasonCode(), adminId);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
      * Issues a new capability restriction.
      *
      * @param adminId operator identifier injected from the authenticated principal

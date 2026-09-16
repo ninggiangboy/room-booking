@@ -12,15 +12,21 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import dev.ngb.backend.identity.internal.exception.InvalidAccountStatusTransitionException;
+import dev.ngb.backend.identity.internal.exception.UnknownMarketException;
 import dev.ngb.backend.identity.internal.model.account.AccountHolder;
 import dev.ngb.backend.identity.internal.model.account.AccountHolderStatus;
+import dev.ngb.backend.identity.internal.model.account.MarketContextState;
 import dev.ngb.backend.identity.internal.repository.account.AccountHolderRepository;
 import dev.ngb.backend.identity.internal.repository.session.AuthTokenRepository;
 import dev.ngb.backend.identity.internal.service.auth.session.RefreshTokenService;
+import dev.ngb.backend.market.MarketLookup;
+import dev.ngb.backend.market.MarketSummary;
 import dev.ngb.backend.platform.AuditTrailWriter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import java.util.Optional;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -41,6 +47,8 @@ class AdminAccountServiceTest {
     @Mock
     private RefreshTokenService refreshTokenService;
     @Mock
+    private MarketLookup marketLookup;
+    @Mock
     private AuditTrailWriter auditTrailWriter;
 
     private AdminAccountService service;
@@ -51,7 +59,7 @@ class AdminAccountServiceTest {
         Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
         service = new AdminAccountService(
                 accountHolderFinder, accountHolderRepository, authTokenRepository,
-                refreshTokenService, auditTrailWriter, clock);
+                refreshTokenService, marketLookup, auditTrailWriter, clock);
         adminId = UUID.randomUUID();
     }
 
@@ -112,6 +120,54 @@ class AdminAccountServiceTest {
         assertThatThrownBy(() ->
                 service.updateStatus(holder.getId(), AccountHolderStatus.CLOSED, "REASON", adminId))
                 .isInstanceOf(InvalidAccountStatusTransitionException.class);
+    }
+
+    @Test
+    void resolvingAKnownMarketRecordsItAndAudits() {
+        AccountHolder holder = unresolvedHolder();
+        when(accountHolderFinder.findByIdForUpdate(holder.getId())).thenReturn(holder);
+        when(marketLookup.findUsableByCode("VN"))
+                .thenReturn(Optional.of(new MarketSummary("VN", "Vietnam")));
+
+        service.resolveMarket(holder.getId(), "VN", "OPERATOR_ONBOARDING", adminId);
+
+        assertThat(holder.getMarketCode()).isEqualTo("VN");
+        assertThat(holder.getContextState()).isEqualTo(MarketContextState.RESOLVED);
+        verify(accountHolderRepository).save(holder);
+        verify(auditTrailWriter).record(any());
+    }
+
+    @Test
+    void resolvingAnUnknownMarketFailsWithoutSaving() {
+        AccountHolder holder = unresolvedHolder();
+        when(accountHolderFinder.findByIdForUpdate(holder.getId())).thenReturn(holder);
+        when(marketLookup.findUsableByCode("ZZ")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.resolveMarket(holder.getId(), "ZZ", "REASON", adminId))
+                .isInstanceOf(UnknownMarketException.class);
+        verify(accountHolderRepository, never()).save(any());
+        verifyNoInteractions(auditTrailWriter);
+    }
+
+    @Test
+    void resolvingTheSameMarketAgainIsANoOp() {
+        AccountHolder holder = activeHolder();
+        holder.setMarketCode("VN");
+        holder.setContextState(MarketContextState.RESOLVED);
+        when(accountHolderFinder.findByIdForUpdate(holder.getId())).thenReturn(holder);
+        when(marketLookup.findUsableByCode("VN"))
+                .thenReturn(Optional.of(new MarketSummary("VN", "Vietnam")));
+
+        service.resolveMarket(holder.getId(), "VN", "NOOP", adminId);
+
+        verify(accountHolderRepository, never()).save(any());
+        verifyNoInteractions(auditTrailWriter);
+    }
+
+    private static AccountHolder unresolvedHolder() {
+        AccountHolder holder = activeHolder();
+        holder.setContextState(MarketContextState.UNRESOLVED);
+        return holder;
     }
 
     private static AccountHolder activeHolder() {
