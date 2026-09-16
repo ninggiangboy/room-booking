@@ -139,7 +139,10 @@ both check for it — but nothing in this codebase currently sets an account to 
 | `identity.internal.service.auth.session` | `RefreshTokenService`, `AuthSessionFactory` |
 | `identity.internal.service.auth.verification` | `EmailVerificationService` |
 | `identity.internal.service.auth.passwordreset` | `PasswordResetService`, `PasswordCredentialRotator` |
-| `identity.internal.service.account` | `UserAccountService`, `AccountHolderFinder` |
+| `identity.internal.service.account` | `UserAccountService`, `AccountHolderFinder`, `AdminAccountService` |
+| `identity.internal.service.contact` | `ContactChannelService`, `ContactChannelFactory` |
+| `identity.internal.service.organization` | `OrganizationService`, `OrganizationFactory` |
+| `identity.internal.service.mfa` | `MfaService`, `TotpCredentialFactory` |
 | `identity.internal.service.authz` | `Capability`, `RoleBundle`, `AuthorizationService`, `CapabilityGrantService` |
 | `identity.internal.service.host` | `HostOnboardingService` |
 | `identity.internal.service.validation` | `PasswordPolicy` |
@@ -160,9 +163,12 @@ both check for it — but nothing in this codebase currently sets an account to 
 | `app.email-verification.rate-limit-max-requests` | `5` | `EmailVerificationService` |
 | `app.password-reset.url` | `http://localhost:3000/reset-password` | `AuthEmailNotifier` |
 | `app.password-reset.token-ttl` | `30m` | `PasswordResetService` |
+| `app.contact-channel-verification.code-ttl` | `15m` | `ContactChannelService` |
+| `app.mfa.step-up-token-ttl` | `5m` | `MfaService` |
+| `app.secret-box.key` | *(required, no default)* | `platform.internal.service.secret.AesGcmSecretBox` |
 
 ## Status
 
-Implemented, for the shape described above. `organization_members` and `capability_restrictions`
-exist and are read by `AuthorizationService`/join queries but nothing yet writes a row into either
-one — see [`09-roadmap.md`](09-roadmap.md).
+Implemented, for the shape described above. `organization_members` now has a reader and writer
+(`OrganizationService`) and `capability_restrictions` has a writer (`CapabilityRestrictionService`)
+— see [`09-roadmap.md`](09-roadmap.md) for what else is still planned.

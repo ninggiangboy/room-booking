@@ -114,13 +114,22 @@ default for a new event between modules" — see
 
 ## Allowed dependencies
 
-- `market`: `identity`'s schema carries 2 foreign keys into `market`'s tables. No live code crosses
-  this boundary yet.
+- `market`: `identity`'s schema carries 2 foreign keys into `market`'s tables. `market`'s first
+  public root type, `MarketLookup`, is now a live dependency: `AdminAccountService.resolveMarket`
+  calls `MarketLookup.findUsableByCode` to validate an operator-supplied market code before
+  recording it on a holder — see
+  [`../implementation/identity/09-roadmap.md`](../implementation/identity/09-roadmap.md#market-resolution--built).
 - `platform`: `service/mail/*` moves to `platform.internal.service.mail`, with its port,
   `EmailSender`, promoted to `platform`'s root — the same promotion `AccessTokenService` needed, for
   the same reason: `AuthEmailNotifier` is a genuine external consumer, not an internal collaborator
   of `platform`'s mail adapter. `identity`'s auth services depend on `platform`'s exception base
-  types and `util` the same way they always have.
+  types and `util` the same way they always have. `ContactChannelVerificationNotifier`
+  (`service.contact`) similarly depends on `platform.SmsSender`, the port added for phone
+  contact-channel verification, and `service.mfa.MfaService` depends on `platform.SecretBox`, the
+  port added to hold a TOTP seed through `AuthCredential`'s documented "secret boundary" — see
+  [`../implementation/identity/09-roadmap.md`](../implementation/identity/09-roadmap.md#contact-channel-management-and-phone-verification--built)
+  and
+  [`../implementation/identity/09-roadmap.md`](../implementation/identity/09-roadmap.md#step-up-reauthentication-and-multi-factor--totp-enrollment-and-step-up-proof-built).
 - `config`: `identity`'s own `ApiErrorResponse` usage points at `config`, which owns that DTO now
   (see [`config.md`](config.md)) — the one dependency in this module that runs in the direction a
   reader might not expect, since `config` is usually the dependent, not the dependency.
@@ -153,12 +162,17 @@ change, not a cross-module contract change, exactly as this document predicted i
 
 ## What it leaves open
 
-`Capability`/`RoleBundle`/`AuthorizationService`/`CapabilityGrantService` exist and are the live
-authorization mechanism, but nothing yet issues a resource-scoped grant (only `GLOBAL`-scoped
-`GUEST`/`HOST` grants exist), nothing issues a `capability_restrictions` row, and delegation
-(`derived_from_grant_id`) has no caller. See
-[`../implementation/identity/09-roadmap.md`](../implementation/identity/09-roadmap.md) for what is
-designed but not built.
+`Capability`/`RoleBundle`/`AuthorizationService`/`CapabilityGrantService` are the live
+authorization mechanism. `capability_restrictions` now has a writer
+(`CapabilityRestrictionService`), and delegation (`derived_from_grant_id`) now has a caller
+(`OrganizationService.delegate`, scoped below `GLOBAL` and bounded to a subset of the delegating
+organization's own effective grant) — see
+[`../implementation/identity/09-roadmap.md`](../implementation/identity/09-roadmap.md#organizations-and-co-host-delegation--built).
+Still open: nothing removes a member's own delegated grants when the member is removed, and
+`organization_members` has no invitation-notification event, unlike every other token-issuing flow
+in this module. `MfaService` gives TOTP enrollment and step-up proof issuance a caller for the
+first time, but nothing yet calls `MfaService.consumeStepUpProof` — no sensitive action in this
+codebase currently demands one.
 
 ## Exit criteria
 
