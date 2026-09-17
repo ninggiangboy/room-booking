@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.time.Instant;
 import dev.ngb.backend.identity.internal.model.account.AccountHolder;
 import dev.ngb.backend.identity.internal.model.account.AccountHolderStatus;
+import dev.ngb.backend.identity.internal.model.account.ContactChannel;
 import dev.ngb.backend.identity.internal.model.account.ContactChannelType;
 import dev.ngb.backend.identity.internal.model.credential.AuthCredential;
 import dev.ngb.backend.identity.internal.model.credential.CredentialType;
@@ -192,7 +193,7 @@ public class PasswordResetService {
         authTokenRepository.save(issued.token());
         String email = contactChannelRepository
                 .findCurrentPrimary(holder.getId(), ContactChannelType.EMAIL.name())
-                .map(channel -> channel.getNormalizedValue())
+                .map(ContactChannel::getNormalizedValue)
                 .orElseThrow(() -> new IllegalStateException(
                         "registration must create a primary email channel"));
         eventPublisher.publishEvent(new PasswordResetIssued(email, issued.rawToken()));

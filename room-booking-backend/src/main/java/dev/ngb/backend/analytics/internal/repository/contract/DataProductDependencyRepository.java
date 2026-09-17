@@ -3,7 +3,6 @@ package dev.ngb.backend.analytics.internal.repository.contract;
 import dev.ngb.backend.analytics.internal.model.contract.DataProductDependency;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.ListCrudRepository;
-import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.UUID;
 

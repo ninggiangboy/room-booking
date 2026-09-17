@@ -46,6 +46,7 @@ public final class SecureTokenUtils {
         }
         int bound = (int) Math.pow(10, digits);
         int value = SECURE_RANDOM.nextInt(bound);
-        return String.format("%0" + digits + "d", value);
+        String pattern = "%0" + digits + "d";
+        return String.format(pattern, value);
     }
 }

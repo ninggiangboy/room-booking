@@ -7,7 +7,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -50,7 +49,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * Attempts bearer authentication, then always continues to the next filter.
      *
      * <p>{@code @Override} asks the compiler to verify that this signature implements the parent
-     * hook. {@code @NonNull} documents Spring's nullness contract for framework-provided values.</p>
+     * hook. Parameters are non-null by default under this package's {@code @NullMarked}.</p>
      *
      * @param request     current HTTP request
      * @param response    current HTTP response
@@ -61,8 +60,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
-            @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain) throws ServletException, IOException {
+            HttpServletResponse response,
+            FilterChain filterChain) throws ServletException, IOException {
         String authorization = request.getHeader("Authorization");
         if (authorization != null
                 && authorization.startsWith(BEARER_PREFIX)

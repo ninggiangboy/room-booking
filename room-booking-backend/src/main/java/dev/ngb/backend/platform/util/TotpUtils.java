@@ -168,6 +168,7 @@ public final class TotpUtils {
                 | ((hash[offset + 2] & 0xFF) << 8)
                 | (hash[offset + 3] & 0xFF);
         int truncated = binary % (int) Math.pow(10, digits);
-        return String.format("%0" + digits + "d", truncated);
+        String pattern = "%0" + digits + "d";
+        return String.format(pattern, truncated);
     }
 }

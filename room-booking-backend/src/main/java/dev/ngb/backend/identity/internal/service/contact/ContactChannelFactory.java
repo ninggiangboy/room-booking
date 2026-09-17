@@ -11,9 +11,9 @@ import dev.ngb.backend.identity.internal.model.account.ContactChannelType;
  * Constructs a new, unverified contact channel row.
  *
  * <p>{@code @Component} makes the factory injectable; it needs no collaborators today, unlike
- * {@link dev.ngb.backend.identity.internal.service.auth.UserRegistrationFactory}'s encoder, but
- * still exists as its own type so this workflow never assembles the entity with an inline builder
- * at its call site. Package-private visibility matches every other factory in this codebase.</p>
+ * {@code UserRegistrationFactory}'s encoder, but still exists as its own type so this workflow
+ * never assembles the entity with an inline builder at its call site. Package-private visibility
+ * matches every other factory in this codebase.</p>
  *
  * <p>Whether the new row becomes primary is decided by the caller, not computed here: answering
  * "does this holder already have a live primary channel of this type" requires a repository read,

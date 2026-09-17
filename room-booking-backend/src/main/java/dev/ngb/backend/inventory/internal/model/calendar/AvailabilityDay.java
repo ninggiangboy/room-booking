@@ -2,7 +2,6 @@ package dev.ngb.backend.inventory.internal.model.calendar;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

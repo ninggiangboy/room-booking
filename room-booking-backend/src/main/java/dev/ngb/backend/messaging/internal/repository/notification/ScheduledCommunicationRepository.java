@@ -1,5 +1,6 @@
 package dev.ngb.backend.messaging.internal.repository.notification;
 
+import dev.ngb.backend.messaging.internal.model.notification.ScheduleAnchorDomain;
 import dev.ngb.backend.messaging.internal.model.notification.ScheduledCommunication;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.ListCrudRepository;
@@ -83,6 +84,6 @@ public interface ScheduledCommunicationRepository extends ListCrudRepository<Sch
      * @param anchorAggregateId the anchoring aggregate
      * @return possibly empty list
      */
-    List<ScheduledCommunication> findAllByAnchorDomainAndAnchorAggregateId(String anchorDomain,
+    List<ScheduledCommunication> findAllByAnchorDomainAndAnchorAggregateId(ScheduleAnchorDomain anchorDomain,
                                                                            UUID anchorAggregateId);
 }

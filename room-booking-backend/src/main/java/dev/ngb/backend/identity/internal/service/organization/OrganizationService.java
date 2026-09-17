@@ -156,7 +156,7 @@ public class OrganizationService {
         organizationMemberRepository
                 .findByOrganizationIdAndMemberHolderId(organizationId, inviteeHolderId)
                 .filter(existing -> existing.getStatus() != REMOVED)
-                .ifPresent(existing -> {
+                .ifPresent(_ -> {
                     throw new OrganizationMembershipConflictException(organizationId, inviteeHolderId);
                 });
 

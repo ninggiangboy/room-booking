@@ -6,10 +6,10 @@ package dev.ngb.backend.platform;
  *
  * <p>An interface defines behavior without implementation, matching {@link EmailSender} and
  * {@link SmsSender}: a module depends on this abstraction, while Spring injects the concrete
- * implementation. Unlike a digest, sealing is reversible by design — {@link
- * dev.ngb.backend.identity.internal.model.credential.AuthCredential}'s class documentation calls
- * this "the secret boundary": material the application must recover to use is kept as a reference
- * through this boundary rather than as one more column the application reads directly.</p>
+ * implementation. Unlike a digest, sealing is reversible by design — {@code
+ * AuthCredential}'s class documentation calls this "the secret boundary": material the application
+ * must recover to use is kept as a reference through this boundary rather than as one more column
+ * the application reads directly.</p>
  */
 public interface SecretBox {
 
