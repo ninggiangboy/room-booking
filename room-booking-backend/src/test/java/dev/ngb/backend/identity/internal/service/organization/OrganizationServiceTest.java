@@ -1,7 +1,6 @@
 package dev.ngb.backend.identity.internal.service.organization;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
