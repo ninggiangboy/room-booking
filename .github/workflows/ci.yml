@@ -29,7 +29,7 @@ jobs:
       run:
         working-directory: room-booking-backend
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           # git diff --check below needs the PR's base commit, which a shallow (depth-1) checkout
           # doesn't have.
@@ -102,7 +102,7 @@ jobs:
     steps:
       # gitleaks scans the HEAD^..HEAD diff, which needs the parent commit present --
       # actions/checkout's default fetch-depth: 1 leaves it missing.
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
