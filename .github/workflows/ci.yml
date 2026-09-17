@@ -100,7 +100,11 @@ jobs:
     name: Security scan
     runs-on: ubuntu-latest
     steps:
+      # gitleaks scans the HEAD^..HEAD diff, which needs the parent commit present --
+      # actions/checkout's default fetch-depth: 1 leaves it missing.
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Secret scan (gitleaks)
         uses: gitleaks/gitleaks-action@v3
