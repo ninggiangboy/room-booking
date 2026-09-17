@@ -33,7 +33,7 @@ Every backend needs a single application entry point, dependency configuration, 
 - Provide a repeatable local environment for dependencies such as databases, message brokers, object storage, and email capture.
 - Expose a health endpoint so people and deployment systems can tell whether the application is alive.
 
-In Room Booking, `RoomBookingBackendApplication` starts Spring Boot, `application.properties` defines shared settings, `application-local.properties` supplies development values, `compose.local.yaml` runs PostgreSQL, MinIO, and Mailpit, and `/actuator/health` provides the health check.
+In Room Booking, `RoomBookingBackendApplication` starts Spring Boot, `application.properties` defines shared settings, `application-local.properties` supplies development-only secrets, `room-booking-infra/compose.local.yaml` runs PostgreSQL, MinIO, Mailpit, and the local observability stack, and `/actuator/health` provides the health check.
 
 ## 3. API boundary: controllers, DTOs, validation, and errors
 
@@ -160,7 +160,12 @@ A service that cannot be understood in production cannot be safely operated.
 - Define backups, restore tests, data retention, and disaster-recovery ownership for persistent systems.
 - Use repeatable builds and deployments, environment-specific configuration, least-privilege service accounts, and a rollback strategy.
 
-Room Booking already exposes an actuator health endpoint and logs unexpected API failures. Structured request tracing, metrics/alerts, CI/CD, backup verification, and a full audit trail should be treated as production-readiness requirements as the service expands.
+Room Booking exposes an actuator health endpoint and pushes structured logs, distributed traces,
+and metrics over OTLP to a central Grafana LGTM stack, tagged by environment, with trace and span
+identifiers correlating logs to traces. `room-booking-infra/` holds the deployment platform: the
+five environment definitions, the CI/CD pipeline, the release and rollback procedure, and a
+runbook per environment. Alert rules, backup verification, and a full audit trail remain
+production-readiness requirements as the service expands.
 
 ## 12. Feature delivery checklist
 

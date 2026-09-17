@@ -131,7 +131,7 @@ should be made against a real externalization requirement rather than in advance
 
 Compilation proves nothing about any of this. The cycle that does:
 
-1. `docker compose -f compose.local.yaml up -d`, then start the application and confirm Liquibase
+1. `cd room-booking-infra && make local-mini`, then start the application and confirm Liquibase
    applied `035` and the framework did not also try to create the table.
 2. Publish an event handled by an `@ApplicationModuleListener` and confirm exactly one
    `event_publication` row exists with a null `completion_date` at the moment of commit.

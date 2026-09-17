@@ -1,0 +1,43 @@
+# Single-binary (monolithic) mode -- one process, one PVC-equivalent volume, no read/write split.
+# Grafana's own recommendation at this scale; see room-booking-infra/docs/platform-architecture.md
+# for why simple-scalable mode isn't warranted for a side project. Also accepts the Docker `loki`
+# logging driver's push API (used by every deployed environment's Postgres/MinIO/postgres-exporter
+# containers) and native OTLP ingestion (used by the OTel Collector's logs pipeline).
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9096
+
+common:
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+schema_config:
+  configs:
+    - from: 2024-01-01
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+# Short retention: this is operational telemetry, not a system of record -- explicitly not backed
+# up, per docs/observability.md.
+limits_config:
+  retention_period: 336h # 14 days
+  reject_old_samples: true
+  reject_old_samples_max_age: 168h
+
+compactor:
+  working_directory: /loki/compactor
+  retention_enabled: true
+  delete_request_store: filesystem

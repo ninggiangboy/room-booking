@@ -33,10 +33,12 @@ A change is done when all of the following hold:
 
 ## Verification commands
 
-Run from `room-booking-backend/` using the checked-in Gradle wrapper:
+Start infrastructure from `room-booking-infra/`, then run the rest from `room-booking-backend/`
+using the checked-in Gradle wrapper. CI (`room-booking-infra/docs/cicd.md`) runs the same four
+Gradle commands on every pull request:
 
 ```bash
-docker compose -f compose.local.yaml up -d          # PostgreSQL, MinIO, Mailpit
+(cd ../room-booking-infra && make local-mini)       # PostgreSQL, MinIO, Mailpit, observability
 ./gradlew bootRun --args='--spring.profiles.active=local'
 ./gradlew test
 ./gradlew build

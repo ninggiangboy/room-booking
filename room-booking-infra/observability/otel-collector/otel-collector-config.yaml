@@ -1,0 +1,43 @@
+# Central ingestion point for every deployed environment's traces and logs (metrics arrive by
+# scrape instead -- see room-booking-infra/docs/observability.md). Caddy terminates TLS and checks
+# basic auth in front of this Collector; the Collector itself listens on the plain internal Docker
+# network only (no host port published) -- see compose.observability.yaml and caddy/Caddyfile.
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+processors:
+  batch: {}
+
+exporters:
+  # "otlphttp" is a deprecated alias for "otlp_http" as of otelcol-contrib 0.159.0 (confirmed via
+  # the container's own startup warning during local verification) -- using the current name.
+  otlp_http/tempo:
+    endpoint: http://tempo:4318
+    tls:
+      insecure: true
+  # Loki's own lokiexporter is deprecated upstream in favor of its native OTLP ingestion endpoint
+  # (Loki 3.x+, confirmed for the pinned grafana/loki:3.7.7 below) -- verified via Grafana's own
+  # migration guidance before writing this rather than assuming the older exporter still applied.
+  otlp_http/loki:
+    endpoint: http://loki:3100/otlp
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp_http/tempo]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp_http/loki]
+  telemetry:
+    logs:
+      level: info

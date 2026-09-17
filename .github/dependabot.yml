@@ -1,0 +1,20 @@
+# Automated dependency updates -- the ongoing half of the Security Scan stage; ci.yml's Trivy step
+# catches what's already vulnerable, this catches what's about to fall behind. Native to GitHub,
+# free on every plan. See room-booking-infra/docs/cicd.md.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /room-booking-backend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
+      - ci

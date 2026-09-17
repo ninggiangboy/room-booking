@@ -1,0 +1,51 @@
+# Overlay for the `local` environment: `local-mini` plus infrastructure instrumentation. Run as
+#   docker compose -f compose.local.yaml -f compose.local-instrumented.yaml up -d
+# (or `make local`, which does exactly this). See room-booking-infra/docs/observability.md and
+# docs/runbook-local.md.
+
+services:
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.19.1
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: "postgresql://room_booking:room_booking@postgres:5432/room_booking?sslmode=disable"
+    ports:
+      - "9187:9187"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://localhost:3100/loki/api/v1/push"
+
+  minio:
+    # MinIO serves Prometheus metrics natively at /minio/v2/metrics/cluster; no sidecar exporter is
+    # needed. Public auth is acceptable only because this port never leaves the machine — see
+    # docs/platform-architecture.md. Deployed environments authenticate this endpoint instead
+    # (docs/observability.md).
+    environment:
+      MINIO_PROMETHEUS_AUTH_TYPE: public
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://localhost:3100/loki/api/v1/push"
+
+  mailpit:
+    # No metrics endpoint exists for Mailpit; it gets log shipping only, below.
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://localhost:3100/loki/api/v1/push"
+
+  postgres:
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://localhost:3100/loki/api/v1/push"
+
+  grafana-lgtm:
+    ports:
+      - "3100:3100"   # Loki push endpoint, additional to the base file's Grafana/OTLP ports
+    volumes:
+      - ./prometheus/prometheus.local.yml:/otel-lgtm/prometheus.yaml:ro

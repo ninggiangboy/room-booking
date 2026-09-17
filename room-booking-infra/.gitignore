@@ -1,0 +1,13 @@
+# Filled-in secrets -- rule 2, docs/conventions.md. Only the .example files are committed.
+.env
+deploy/.env
+observability/.env
+
+# Terraform: provider binaries and state -- state especially, since it can carry secret values in
+# plain text. The lock file (.terraform.lock.hcl) IS committed; everything else here is not.
+terraform/.terraform/
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/*.tfvars
+!terraform/*.tfvars.example
+terraform/room-booking-config

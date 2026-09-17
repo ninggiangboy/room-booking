@@ -1,0 +1,30 @@
+# Exactly two ingestion hostnames plus Grafana -- see room-booking-infra/docs/observability.md
+# ("The central stack's two public ingestion hostnames"). Automatic HTTPS needs no separate
+# configuration; Caddy issues and renews each certificate on its own.
+
+# The OpenTelemetry Collector's OTLP HTTP endpoint: every deployed environment's application
+# pushes traces and logs here (not metrics -- those arrive by scrape; see
+# observability/prometheus/prometheus.yml).
+{$OTEL_HOSTNAME} {
+	basic_auth {
+		{$INGEST_AUTH_USERNAME} {$INGEST_AUTH_PASSWORD_HASH}
+	}
+	reverse_proxy otel-collector:4318
+}
+
+# Loki's push endpoint only -- the Docker `loki` logging driver on every deployed host's
+# Postgres/MinIO/postgres-exporter containers has no OTLP client, so it needs this path in
+# directly. Loki's query API stays off the public internet; only Grafana (internal Docker network)
+# queries it.
+{$LOKI_HOSTNAME} {
+	basic_auth {
+		{$INGEST_AUTH_USERNAME} {$INGEST_AUTH_PASSWORD_HASH}
+	}
+	reverse_proxy /loki/api/v1/push loki:3100
+	respond 404
+}
+
+# Grafana authenticates itself (its own login) -- no second basic-auth layer here.
+{$GRAFANA_HOSTNAME} {
+	reverse_proxy grafana:3000
+}

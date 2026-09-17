@@ -51,18 +51,21 @@ docker --version
 docker compose version
 ```
 
-Run all commands below from the `room-booking-backend` directory.
+Run infrastructure commands from `room-booking-infra`; run every other command below from
+`room-booking-backend`.
 
 ## 3. Start the application locally
 
 ### Step 1: Start infrastructure
 
 ```bash
-docker compose -f compose.local.yaml up -d
+cd ../room-booking-infra
+make local-mini
 docker compose -f compose.local.yaml ps
+cd ../room-booking-backend
 ```
 
-The Compose file starts:
+`make local-mini` starts:
 
 | Service | Address | Purpose |
 | --- | --- | --- |
@@ -71,6 +74,10 @@ The Compose file starts:
 | MinIO console | `http://localhost:9001` | Browser UI for local object storage |
 | Mailpit SMTP | `localhost:1025` | Captures outgoing development email |
 | Mailpit UI | `http://localhost:8025` | Displays captured email in a browser |
+| Grafana (traces/metrics/logs) | `http://localhost:3001` | The local observability stack |
+
+`make local` instead adds Postgres/MinIO metrics and container log shipping — see
+`room-booking-infra/docs/runbook-local.md`.
 
 ### Step 2: Run the API with the local profile
 
@@ -91,10 +98,12 @@ A healthy response contains `"status":"UP"`.
 Press `Ctrl+C` in the terminal running Spring Boot, then stop the containers:
 
 ```bash
-docker compose -f compose.local.yaml down
+cd ../room-booking-infra
+make down
+cd ../room-booking-backend
 ```
 
-This keeps the named Docker volumes. To erase local container data as well, use `docker compose -f compose.local.yaml down --volumes` only when you intentionally want a clean database.
+This keeps the named Docker volumes. To erase local container data as well, use `docker compose -f compose.local.yaml down --volumes` (from `room-booking-infra`) only when you intentionally want a clean database.
 
 ## 4. Configuration
 
@@ -827,7 +836,7 @@ If the feature changes the database, add a new numbered Liquibase file and inclu
 
 ### The API cannot connect to PostgreSQL
 
-Confirm Docker is running, execute `docker compose -f compose.local.yaml ps`, and check that PostgreSQL is healthy on port `5432`. Make sure the `local` Spring profile is active.
+Confirm Docker is running, execute `docker compose -f compose.local.yaml ps` from `room-booking-infra`, and check that PostgreSQL is healthy on port `5432`. Make sure the `local` Spring profile is active.
 
 ### Port 5432, 8080, 8025, 9000, or 9001 is already in use
 

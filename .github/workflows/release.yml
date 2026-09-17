@@ -1,0 +1,132 @@
+name: Release
+
+# On merge to main: build the image, tag it with the commit SHA (the release identity -- see
+# room-booking-infra/docs/release-and-rollback.md), push to GHCR, deploy to dev automatically, then
+# smoke-test the deployed instance. See room-booking-infra/docs/cicd.md.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "room-booking-backend/**"
+      - "room-booking-infra/deploy/**"
+      - ".github/workflows/release.yml"
+
+concurrency:
+  group: release-dev
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  build-and-push:
+    name: Build and push image
+    runs-on: ubuntu-latest
+    outputs:
+      image-ref: ${{ steps.tag.outputs.ref }}
+    defaults:
+      run:
+        working-directory: room-booking-backend
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('room-booking-backend/**/*.gradle*', 'room-booking-backend/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image tag
+        id: tag
+        run: echo "ref=${{ env.IMAGE }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+      # Explicit --imageName is required -- confirmed locally (room-booking-infra/docs/cicd.md):
+      # without it, Buildpacks names the image from the Gradle project name and build.gradle's
+      # `version`, never the commit SHA that is this platform's actual release identity.
+      - name: ./gradlew bootBuildImage
+        run: ./gradlew bootBuildImage --imageName=${{ steps.tag.outputs.ref }}
+
+      # Security Scan, container stage: the image itself (OS packages the Paketo base image
+      # brings in, not just the JVM dependency graph ci.yml's Trivy fs scan already covers). Blocks
+      # the push on HIGH/CRITICAL -- a vulnerable image should never reach a registry a deploy step
+      # might later pull from.
+      - name: Scan image for vulnerabilities (Trivy)
+        uses: aquasecurity/trivy-action@0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ steps.tag.outputs.ref }}
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          format: table
+
+      - name: Push image
+        run: docker push ${{ steps.tag.outputs.ref }}
+
+  deploy-dev:
+    name: Deploy to dev
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Deploy over SSH
+        # DEV_SSH_HOST / DEV_SSH_USER / DEV_SSH_KEY are GitHub Actions secrets scoped to the `dev`
+        # environment; they don't exist until a dev host is provisioned
+        # (room-booking-infra/docs/vps-setup-guide.md) and this environment's secrets are set in the
+        # repository's Settings > Environments > dev. Until then this step fails loudly rather than
+        # silently skipping, which is the correct behavior -- see the deploy script's own precondition
+        # check below for why a missing target is a hard failure, not a soft one.
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEV_SSH_HOST }}
+          username: ${{ secrets.DEV_SSH_USER }}
+          key: ${{ secrets.DEV_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd /opt/room-booking-infra/deploy
+            sed -i "s|^IMAGE_TAG=.*|IMAGE_TAG=${{ needs.build-and-push.outputs.image-ref }}|" .env
+            docker compose -f compose.deploy.yaml pull app
+            docker compose -f compose.deploy.yaml up -d
+
+  smoke-test:
+    name: Smoke test dev
+    needs: deploy-dev
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health check
+        run: |
+          curl -sf --retry 10 --retry-delay 5 --retry-connrefused \
+            "https://${{ vars.DEV_APP_HOSTNAME }}/actuator/health" | grep -q '"status":"UP"'
+
+      - name: Register/login round trip
+        run: |
+          email="smoke-$(date +%s)@example.com"
+          curl -sf -X POST "https://${{ vars.DEV_APP_HOSTNAME }}/api/v1/auth/register" \
+            -H "Content-Type: application/json" \
+            -d "{\"email\":\"$email\",\"password\":\"Smoke-Test-Pass1\",\"displayName\":\"Smoke Test\"}"
+          curl -sf -X POST "https://${{ vars.DEV_APP_HOSTNAME }}/api/v1/auth/login" \
+            -H "Content-Type: application/json" \
+            -d "{\"email\":\"$email\",\"password\":\"Smoke-Test-Pass1\"}" | grep -q accessToken

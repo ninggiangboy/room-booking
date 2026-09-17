@@ -74,8 +74,8 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/email-exists")
                         .permitAll()
-                        .requestMatchers("/actuator/health", "/error", "/v3/api-docs/**",
-                                "/swagger-ui.html", "/swagger-ui/**")
+                        .requestMatchers("/actuator/health", "/actuator/prometheus", "/error",
+                                "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**")
                         .permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

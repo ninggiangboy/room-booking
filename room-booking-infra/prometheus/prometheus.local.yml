@@ -1,0 +1,55 @@
+# Bind-mounted over grafana-lgtm's own /otel-lgtm/prometheus.yaml (see compose.local-instrumented.yaml)
+# to add scrape targets for postgres-exporter and MinIO. The image's own Prometheus takes metrics
+# only via OTLP push through the bundled Collector — it has no scrape_configs of its own — so this
+# file is a REPLACEMENT, not an extension, and everything below the "--- image defaults ---" marker
+# is copied verbatim from grafana/otel-lgtm:0.32.1's docker/prometheus.yaml (confirmed in
+# room-booking-infra/docs/observability.md's Phase 0 fact-check). Dropping that block would silently
+# stop deployment.environment and other resource attributes from being promoted to Prometheus
+# labels, breaking the environment-filtering story this whole platform depends on — re-verify it
+# against the pinned image tag if that tag ever changes.
+
+scrape_configs:
+  - job_name: postgres-exporter
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+  - job_name: minio
+    metrics_path: /minio/v2/metrics/cluster
+    static_configs:
+      - targets: ["minio:9000"]
+
+# --- image defaults (grafana/otel-lgtm:0.32.1, docker/prometheus.yaml) ---
+global:
+  scrape_native_histograms: true
+otlp:
+  keep_identifying_resource_attributes: true
+  promote_resource_attributes:
+    - service.instance.id
+    - service.name
+    - service.namespace
+    - service.version
+    - cloud.availability_zone
+    - cloud.region
+    - container.name
+    - deployment.environment # backward compatibility
+    - deployment.environment.name
+    - k8s.cluster.name
+    - k8s.container.name
+    - k8s.cronjob.name
+    - k8s.daemonset.name
+    - k8s.deployment.name
+    - k8s.job.name
+    - k8s.namespace.name
+    - k8s.node.name
+    - k8s.pod.name
+    - k8s.replicaset.name
+    - k8s.statefulset.name
+    - host.name
+    - postgresql.database.name
+    - postgresql.schema.name
+    - postgresql.table.name
+    - postgresql.index.name
+    - database # used by otelcol/receiver/mongodb
+    - kafka.cluster.alias
+storage:
+  tsdb:
+    out_of_order_time_window: 10m

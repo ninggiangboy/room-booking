@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Boot's OpenTelemetry starter (build.gradle) configures OTLP log export but does not attach a
+  Logback appender on its own; see the comment next to the opentelemetry-logback-appender-1.0
+  dependency. This file keeps Boot's default console appender (with its trace/span correlation
+  pattern, populated automatically once a Tracer bean exists) and adds the OTEL appender alongside
+  it, so console output and the OTLP export to room-booking-infra's LGTM stack carry the same
+  log records. dev.ngb.backend.config.OpenTelemetryLogbackAppenderInstaller wires this appender to
+  the actual OpenTelemetry SDK instance at startup.
+-->
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <appender name="OTEL" class="io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="OTEL"/>
+    </root>
+</configuration>

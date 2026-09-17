@@ -1,0 +1,33 @@
+# Shared across dev/staging/production (docs/conventions.md rule 8: staging matches production
+# structurally); only the hostname and credentials in .env differ per environment. Automatic HTTPS
+# needs no separate configuration -- Caddy issues and renews the certificate for {$APP_HOSTNAME} on
+# its own the first time it's requested. See room-booking-infra/docs/vps-setup-guide.md.
+
+{$APP_HOSTNAME} {
+	# The application's public API.
+	reverse_proxy app:8080
+
+	# The central Prometheus scrapes these three paths (observability/prometheus/prometheus.yml),
+	# authenticated with SCRAPE_AUTH_USERNAME/PASSWORD_HASH from this environment's .env -- the
+	# credential Prometheus's scrape job for this environment must be configured with. Caddy checks
+	# it here; nothing behind these paths checks it again.
+	@metrics {
+		path /metrics/*
+	}
+	basic_auth @metrics {
+		{$SCRAPE_AUTH_USERNAME} {$SCRAPE_AUTH_PASSWORD_HASH}
+	}
+
+	handle_path /metrics/app {
+		rewrite * /actuator/prometheus
+		reverse_proxy app:8080
+	}
+	handle_path /metrics/postgres {
+		rewrite * /metrics
+		reverse_proxy postgres-exporter:9187
+	}
+	handle_path /metrics/minio {
+		rewrite * /minio/v2/metrics/cluster
+		reverse_proxy minio:9000
+	}
+}

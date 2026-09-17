@@ -54,6 +54,7 @@ When a change touches the left column, update the right column in the same commi
 | New or changed engineering rule | This directory, plus `AGENTS.md` if the summary there is now wrong |
 | Renamed or removed type | Search README, GUIDE, JavaDoc links, tests, and examples for the old name |
 | Identity use case behavior | [`docs/implementation/identity/`](../implementation/) |
+| New OTLP/observability property, deployment environment, or platform component | `room-booking-infra/docs/observability.md` and `platform-architecture.md`, plus that environment's runbook per the deployment documentation discipline in `room-booking-infra/docs/conventions.md` |
 
 Never edit comments inside an already-applied Liquibase changeset merely to improve prose.
 

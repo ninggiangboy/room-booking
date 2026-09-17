@@ -1,0 +1,126 @@
+# Shared by dev, staging, and production (docs/conventions.md rule 8: staging matches production
+# structurally). Every environment runs this exact file; only deploy/.env differs -- see
+# docs/platform-architecture.md and docs/configuration-and-secrets.md. The image is always pulled
+# by commit SHA (IMAGE_TAG), never built here (docs/release-and-rollback.md's "one artifact,
+# promoted"). Mailpit does not exist past the local environments -- SMTP_* in .env points at a real
+# provider instead.
+name: room-booking-${DEPLOY_ENV:?DEPLOY_ENV must be set in .env}
+
+services:
+  app:
+    image: ghcr.io/__ORG__/room-booking-backend:${IMAGE_TAG:?IMAGE_TAG must be set in .env}
+    restart: unless-stopped
+    environment:
+      DEPLOY_ENV: ${DEPLOY_ENV}
+      DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      DATASOURCE_USERNAME: ${POSTGRES_USER}
+      DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_AUTH: ${SMTP_AUTH}
+      SMTP_STARTTLS: ${SMTP_STARTTLS}
+      JWT_SECRET: ${JWT_SECRET}
+      SECRET_BOX_KEY: ${SECRET_BOX_KEY}
+      EMAIL_VERIFICATION_URL: ${EMAIL_VERIFICATION_URL}
+      PASSWORD_RESET_URL: ${PASSWORD_RESET_URL}
+      OTLP_ENDPOINT: ${OTLP_ENDPOINT}
+      OTLP_AUTH_HEADER: ${OTLP_AUTH_HEADER}
+      OTLP_SAMPLE_RATE: ${OTLP_SAMPLE_RATE}
+      OTLP_METRICS_PUSH_ENABLED: ${OTLP_METRICS_PUSH_ENABLED:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      # /actuator/health/liveness, not plain /actuator/health -- confirmed empirically during
+      # Kubernetes verification (docs/observability.md) that plain /actuator/health aggregates
+      # every registered indicator, including Boot's MailHealthIndicator; a transient SMTP outage
+      # would otherwise make Docker restart a perfectly healthy container. See
+      # k8s/room-booking/deployment.yaml, which uses the same scoped path for its probes.
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/actuator/health/liveness"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  postgres:
+    image: postgis/postgis:17-3.6-alpine
+    platform: linux/amd64
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: loki
+      options:
+        loki-url: ${LOKI_PUSH_URL}
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      # Not public here, unlike the local overlay -- Caddy authenticates the scrape path instead
+      # (caddy/Caddyfile), and this port is never published to the host in a deployed environment.
+      MINIO_PROMETHEUS_AUTH_TYPE: public
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: loki
+      options:
+        loki-url: ${LOKI_PUSH_URL}
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.19.1
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging:
+      driver: loki
+      options:
+        loki-url: ${LOKI_PUSH_URL}
+
+  caddy:
+    image: caddy:2.10.2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      APP_HOSTNAME: ${APP_HOSTNAME}
+      SCRAPE_AUTH_USERNAME: ${SCRAPE_AUTH_USERNAME}
+      SCRAPE_AUTH_PASSWORD_HASH: ${SCRAPE_AUTH_PASSWORD_HASH}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  minio_data:
+  caddy_data:
+  caddy_config:

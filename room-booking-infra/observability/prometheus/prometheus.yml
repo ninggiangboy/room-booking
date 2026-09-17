@@ -1,0 +1,108 @@
+# Central Prometheus: pulls metrics from every deployed environment through that environment's own
+# Caddy, rather than each environment running its own Prometheus and pushing via remote_write --
+# see room-booking-infra/docs/platform-architecture.md for why. Fill in each environment's real
+# hostname and the SCRAPE_AUTH_USERNAME/PASSWORD it was deployed with (deploy/.env on that host)
+# before this file is meaningful; the placeholders below will not resolve.
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+
+scrape_configs:
+  - job_name: room-booking-dev
+    scheme: https
+    static_configs:
+      - targets: ["dev.room-booking.example.com"]
+        labels:
+          deployment_environment: dev
+    metrics_path: /metrics/app
+    basic_auth:
+      username: __DEV_SCRAPE_AUTH_USERNAME__
+      password: __DEV_SCRAPE_AUTH_PASSWORD__
+
+  - job_name: room-booking-dev-postgres
+    scheme: https
+    static_configs:
+      - targets: ["dev.room-booking.example.com"]
+        labels:
+          deployment_environment: dev
+    metrics_path: /metrics/postgres
+    basic_auth:
+      username: __DEV_SCRAPE_AUTH_USERNAME__
+      password: __DEV_SCRAPE_AUTH_PASSWORD__
+
+  - job_name: room-booking-dev-minio
+    scheme: https
+    static_configs:
+      - targets: ["dev.room-booking.example.com"]
+        labels:
+          deployment_environment: dev
+    metrics_path: /metrics/minio
+    basic_auth:
+      username: __DEV_SCRAPE_AUTH_USERNAME__
+      password: __DEV_SCRAPE_AUTH_PASSWORD__
+
+  - job_name: room-booking-staging
+    scheme: https
+    static_configs:
+      - targets: ["staging.room-booking.example.com"]
+        labels:
+          deployment_environment: staging
+    metrics_path: /metrics/app
+    basic_auth:
+      username: __STAGING_SCRAPE_AUTH_USERNAME__
+      password: __STAGING_SCRAPE_AUTH_PASSWORD__
+
+  - job_name: room-booking-staging-postgres
+    scheme: https
+    static_configs:
+      - targets: ["staging.room-booking.example.com"]
+        labels:
+          deployment_environment: staging
+    metrics_path: /metrics/postgres
+    basic_auth:
+      username: __STAGING_SCRAPE_AUTH_USERNAME__
+      password: __STAGING_SCRAPE_AUTH_PASSWORD__
+
+  - job_name: room-booking-staging-minio
+    scheme: https
+    static_configs:
+      - targets: ["staging.room-booking.example.com"]
+        labels:
+          deployment_environment: staging
+    metrics_path: /metrics/minio
+    basic_auth:
+      username: __STAGING_SCRAPE_AUTH_USERNAME__
+      password: __STAGING_SCRAPE_AUTH_PASSWORD__
+
+  - job_name: room-booking-production
+    scheme: https
+    static_configs:
+      - targets: ["room-booking.example.com"]
+        labels:
+          deployment_environment: production
+    metrics_path: /metrics/app
+    basic_auth:
+      username: __PRODUCTION_SCRAPE_AUTH_USERNAME__
+      password: __PRODUCTION_SCRAPE_AUTH_PASSWORD__
+
+  - job_name: room-booking-production-postgres
+    scheme: https
+    static_configs:
+      - targets: ["room-booking.example.com"]
+        labels:
+          deployment_environment: production
+    metrics_path: /metrics/postgres
+    basic_auth:
+      username: __PRODUCTION_SCRAPE_AUTH_USERNAME__
+      password: __PRODUCTION_SCRAPE_AUTH_PASSWORD__
+
+  - job_name: room-booking-production-minio
+    scheme: https
+    static_configs:
+      - targets: ["room-booking.example.com"]
+        labels:
+          deployment_environment: production
+    metrics_path: /metrics/minio
+    basic_auth:
+      username: __PRODUCTION_SCRAPE_AUTH_USERNAME__
+      password: __PRODUCTION_SCRAPE_AUTH_PASSWORD__

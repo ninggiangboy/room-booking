@@ -1,0 +1,93 @@
+name: Promote
+
+# Manually dispatched with a commit SHA already built and pushed by release.yml: deploys it to
+# staging, then -- gated by the `production` GitHub Environment's required reviewer -- to
+# production. Never rebuilds anything (docs/release-and-rollback.md's "one artifact, promoted").
+# See room-booking-infra/docs/cicd.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Commit SHA to promote (must already exist in GHCR, tagged by release.yml)"
+        required: true
+        type: string
+
+env:
+  IMAGE_REF: ghcr.io/${{ github.repository }}:${{ inputs.sha }}
+
+jobs:
+  verify-image-exists:
+    name: Verify the image was actually built
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Confirm the tag exists
+        run: docker manifest inspect ${{ env.IMAGE_REF }} >/dev/null
+
+  deploy-staging:
+    name: Deploy to staging
+    needs: verify-image-exists
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd /opt/room-booking-infra/deploy
+            sed -i "s|^IMAGE_TAG=.*|IMAGE_TAG=${{ env.IMAGE_REF }}|" .env
+            docker compose -f compose.deploy.yaml pull app
+            docker compose -f compose.deploy.yaml up -d
+
+  smoke-test-staging:
+    name: Smoke test staging
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health check
+        run: |
+          curl -sf --retry 10 --retry-delay 5 --retry-connrefused \
+            "https://${{ vars.STAGING_APP_HOSTNAME }}/actuator/health" | grep -q '"status":"UP"'
+
+  deploy-production:
+    name: Deploy to production
+    needs: smoke-test-staging
+    runs-on: ubuntu-latest
+    # The `production` GitHub Environment's required reviewer is the approval gate -- this job
+    # pauses here until someone with access approves it in the Actions run's UI. Configure the
+    # reviewer under Settings > Environments > production before this is meaningful.
+    environment: production
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PRODUCTION_SSH_HOST }}
+          username: ${{ secrets.PRODUCTION_SSH_USER }}
+          key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd /opt/room-booking-infra/deploy
+            sed -i "s|^IMAGE_TAG=.*|IMAGE_TAG=${{ env.IMAGE_REF }}|" .env
+            docker compose -f compose.deploy.yaml pull app
+            docker compose -f compose.deploy.yaml up -d
+
+  smoke-test-production:
+    name: Smoke test production
+    needs: deploy-production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health check
+        run: |
+          curl -sf --retry 10 --retry-delay 5 --retry-connrefused \
+            "https://${{ vars.PRODUCTION_APP_HOSTNAME }}/actuator/health" | grep -q '"status":"UP"'

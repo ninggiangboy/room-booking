@@ -32,6 +32,8 @@ Backend for a room-booking platform, built with Java and Spring Boot. The applic
 - Gradle
 - Mailpit for local email testing
 - MinIO for target media and protected-evidence object storage
+- A Grafana LGTM stack (Loki, Grafana, Tempo, Prometheus) for traces, metrics, and logs, local
+  through production — see [`room-booking-infra/`](room-booking-infra/)
 
 ## Prerequisites
 
@@ -42,11 +44,13 @@ Gradle does not need to be installed separately because the project includes the
 
 ## Quick start
 
-Run all backend commands from `room-booking-backend`:
+Start local infrastructure from `room-booking-infra`, then run the backend from
+`room-booking-backend`:
 
 ```bash
-cd room-booking-backend
-docker compose -f compose.local.yaml up -d
+cd room-booking-infra
+make local-mini
+cd ../room-booking-backend
 ./gradlew bootRun --args='--spring.profiles.active=local'
 ```
 
@@ -65,11 +69,16 @@ Local services:
 | MinIO console | `http://localhost:9001` |
 | Mailpit SMTP | `localhost:1025` |
 | Mailpit UI | `http://localhost:8025` |
+| Grafana (traces/metrics/logs) | `http://localhost:3001` |
+
+`make local` instead of `make local-mini` adds Postgres/MinIO metrics and container log shipping —
+see [`room-booking-infra/docs/runbook-local.md`](room-booking-infra/docs/runbook-local.md).
 
 Stop the local infrastructure with:
 
 ```bash
-docker compose -f compose.local.yaml down
+cd room-booking-infra
+make down
 ```
 
 ## API overview
@@ -114,12 +123,20 @@ parsing its human-readable `message`.
 
 ## Configuration
 
-Shared configuration is stored in `room-booking-backend/src/main/resources/application.properties`. Development defaults are in `application-local.properties` and match `compose.local.yaml`.
+Shared configuration is stored in `room-booking-backend/src/main/resources/application.properties`
+using `${VARIABLE:local-default}` for anything that varies by environment, so `local-mini` needs no
+configuration and every deployed environment overrides only the variables — never a separate
+properties file. `application-local.properties` supplies the two development-only secrets that stay
+profile-scoped. See
+[`room-booking-infra/docs/configuration-and-secrets.md`](room-booking-infra/docs/configuration-and-secrets.md)
+for the full mechanism.
 
 Important settings include:
 
 - `spring.datasource.*` for PostgreSQL
 - `spring.mail.*` for SMTP
+- `management.opentelemetry.*` and `management.otlp.metrics.*` for traces, logs, and metrics —
+  see [`room-booking-infra/docs/observability.md`](room-booking-infra/docs/observability.md)
 - `app.email-verification.*` for verification links, token lifetime, cooldown, and rate limit
 - `app.password-reset.*` for reset links and token lifetime
 - `security.jwt.*` for token signing and expiration
@@ -144,42 +161,46 @@ full module index and
 for why this shape exists.
 
 ```text
-room-booking-backend/
-├── src/main/java/dev/ngb/backend/
-│   ├── platform/     # Shared kernel: idempotency, outbox, audit, the ~35-type value/enum kernel
-│   ├── config/       # Security, OpenAPI, JDBC conversion, global exception handling (open module)
-│   ├── market/       # Legal entity, provider account, policy bundle, localized content
-│   ├── identity/     # Account holder, session, credential, capability -- the only running auth code
-│   ├── hostverification/  # Seller KYC/KYB, screening, tax, payout-destination eligibility
-│   ├── supply/       # Property, accommodation type, physical unit, listing, rate plan, geo catalog
-│   ├── inventory/    # Availability day, hold, claim, block, iCal sync
-│   ├── pricing/      # Price rule, promotion, quote, tax
-│   ├── booking/      # The stay contract plus its revision, cancellation, and refund-instruction chain
-│   ├── payment/      # Provider-independent payment state, webhook, refund execution, dispute gateway
-│   ├── ledger/       # Double-entry accounting, host payable, payout, statement, reconciliation
-│   ├── messaging/    # Conversation, message, notification intent, delivery
-│   ├── stay/         # Operational stay, access grant, task, incident, evidence
-│   ├── review/       # Review right, revision, publication, aspect intelligence, reputation
-│   ├── trust/        # Risk signal/decision/enforcement, challenge, restriction, moderation
-│   ├── support/      # Support case, evidence custody, damage claim, remedy, appeal
-│   ├── discovery/    # Search/recommendation projections, ranking epoch, exposure
-│   ├── analytics/    # Event/dataset contract, lineage, quality, metric, experiment
-│   ├── ml/           # Feature store, label, model registry, prediction
-│   ├── admin/        # Operator role, break-glass, configuration, change request, feature flag
-│   ├── hostops/      # Host metric, benchmark, forecast, advice, bulk edit
-│   └── growth/       # Program, referral, stored value, loyalty, campaign, affiliate
-├── src/main/resources/
-│   └── db/changelog/ # Liquibase migrations, 000-037 (037 retires the legacy identity schema)
-├── docs/
-│   ├── architecture/ # The modular-monolith decision and the event publication registry
-│   ├── modules/      # One document per module: ownership, clusters, API, allowed dependencies
-│   ├── conventions/  # The binding rule set for code changes
-│   ├── data-model/   # One note per migration, plus the schema overview
-│   ├── features/     # Authoritative feature designs
-│   ├── implementation/ # Per-use-case behavior for the code that actually runs, starting with identity
-│   ├── learning/     # Background notes
-│   └── templates/    # Document prompts
-└── compose.local.yaml
+room-booking/
+├── room-booking-infra/          # The deployment platform -- see room-booking-infra/README.md
+│   ├── compose.local.yaml       # local-mini: app dependencies + the all-in-one observability stack
+│   ├── compose.local-instrumented.yaml  # local overlay: + Postgres/MinIO metrics and log shipping
+│   └── docs/                    # Conventions, architecture, service contract, runbooks
+└── room-booking-backend/
+    ├── src/main/java/dev/ngb/backend/
+    │   ├── platform/     # Shared kernel: idempotency, outbox, audit, the ~35-type value/enum kernel
+    │   ├── config/       # Security, OpenAPI, JDBC conversion, global exception handling (open module)
+    │   ├── market/       # Legal entity, provider account, policy bundle, localized content
+    │   ├── identity/     # Account holder, session, credential, capability -- the only running auth code
+    │   ├── hostverification/  # Seller KYC/KYB, screening, tax, payout-destination eligibility
+    │   ├── supply/       # Property, accommodation type, physical unit, listing, rate plan, geo catalog
+    │   ├── inventory/    # Availability day, hold, claim, block, iCal sync
+    │   ├── pricing/      # Price rule, promotion, quote, tax
+    │   ├── booking/      # The stay contract plus its revision, cancellation, and refund-instruction chain
+    │   ├── payment/      # Provider-independent payment state, webhook, refund execution, dispute gateway
+    │   ├── ledger/       # Double-entry accounting, host payable, payout, statement, reconciliation
+    │   ├── messaging/    # Conversation, message, notification intent, delivery
+    │   ├── stay/         # Operational stay, access grant, task, incident, evidence
+    │   ├── review/       # Review right, revision, publication, aspect intelligence, reputation
+    │   ├── trust/        # Risk signal/decision/enforcement, challenge, restriction, moderation
+    │   ├── support/      # Support case, evidence custody, damage claim, remedy, appeal
+    │   ├── discovery/    # Search/recommendation projections, ranking epoch, exposure
+    │   ├── analytics/    # Event/dataset contract, lineage, quality, metric, experiment
+    │   ├── ml/           # Feature store, label, model registry, prediction
+    │   ├── admin/        # Operator role, break-glass, configuration, change request, feature flag
+    │   ├── hostops/      # Host metric, benchmark, forecast, advice, bulk edit
+    │   └── growth/       # Program, referral, stored value, loyalty, campaign, affiliate
+    ├── src/main/resources/
+    │   └── db/changelog/ # Liquibase migrations, 000-037 (037 retires the legacy identity schema)
+    └── docs/
+        ├── architecture/ # The modular-monolith decision and the event publication registry
+        ├── modules/      # One document per module: ownership, clusters, API, allowed dependencies
+        ├── conventions/  # The binding rule set for code changes
+        ├── data-model/   # One note per migration, plus the schema overview
+        ├── features/     # Authoritative feature designs
+        ├── implementation/ # Per-use-case behavior for the code that actually runs, starting with identity
+        ├── learning/     # Background notes
+        └── templates/    # Document prompts
 ```
 
 Inside a module, the same responsibility split the codebase always used still applies, just nested
@@ -199,6 +220,7 @@ cd room-booking-backend
 
 ## Documentation
 
+- [Deployment platform — environments, CI/CD, observability, release and rollback](room-booking-infra/README.md)
 - [Engineering conventions — the binding rule set for all code changes](room-booking-backend/docs/conventions/README.md)
 - [Modules — the binding map of Spring Modulith module ownership and boundaries](room-booking-backend/docs/modules/README.md)
 - [Modular monolith architecture decision](room-booking-backend/docs/architecture/modular-monolith.md)

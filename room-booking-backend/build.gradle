@@ -3,6 +3,13 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '4.1.1'
     id 'io.spring.dependency-management' version '1.1.7'
+    // Code quality: bytecode-level bug detection (null derefs, resource leaks, concurrency bugs)
+    // plus find-sec-bugs's security-focused rules (injection, weak crypto, hardcoded secrets) --
+    // room-booking-infra/docs/cicd.md's "Code Quality" and "Security Scan" stages.
+    id 'com.github.spotbugs' version '6.5.11'
+    // Code quality: source-level smells (excess complexity, copy-paste, unused code) --
+    // complementary to SpotBugs, which works on bytecode.
+    id 'pmd'
 }
 
 group = 'dev.ngb'
@@ -24,6 +31,19 @@ repositories {
 // match for this project; the 2.2 line already targets Boot 4.2 milestones.
 dependencyManagement {
     imports { mavenBom 'org.springframework.modulith:spring-modulith-bom:2.1.1' }
+    dependencies {
+        // Spring Boot 4.1.1's own BOM pins the embedded Tomcat vulnerable to three CRITICAL CVEs
+        // (CVE-2026-65182, CVE-2026-65905, CVE-2026-68525 -- a security-constraint bypass, a DIGEST
+        // auth replay bypass, and a FORM-auth resource-access bypass) -- found by the Security Scan
+        // stage's Trivy dependency check, not assumed. 11.0.25 is Apache's fixed release for the
+        // 11.0.x line Boot 4.1.1 otherwise tracks; revisit this override once Boot's own BOM catches
+        // up (its next patch release), rather than leaving it pinned indefinitely.
+        dependencySet(group: 'org.apache.tomcat.embed', version: '11.0.25') {
+            entry 'tomcat-embed-core'
+            entry 'tomcat-embed-el'
+            entry 'tomcat-embed-websocket'
+        }
+    }
 }
 
 dependencies {
@@ -35,6 +55,31 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    // Traces and logs pushed over OTLP to the LGTM stack (room-booking-infra/): this starter wires
+    // Micrometer Tracing's OTel bridge, the OTLP trace exporter, and an auto-installed Logback OTLP
+    // appender for logs. Metrics use the separate OTLP Micrometer registry below, since Boot 4.1
+    // keeps metrics export independent of this starter. See room-booking-infra/docs/observability.md.
+    implementation 'org.springframework.boot:spring-boot-starter-opentelemetry'
+    // Two Micrometer registries active at once, deliberately: OTLP push (used by local-mini/local,
+    // where nothing scrapes) and the Prometheus-format /actuator/prometheus endpoint (used by every
+    // deployed environment's central-Prometheus scrape, room-booking-infra/docs/observability.md).
+    // Without this second registry /actuator/prometheus does not exist at all -- confirmed
+    // empirically: it 401'd from Spring Security's default deny-all on an unmatched path rather
+    // than existing and needing permitAll, until both this dependency and the SecurityConfig entry
+    // were added.
+    implementation 'io.micrometer:micrometer-registry-otlp'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+    // Boot's OpenTelemetry starter configures the OTLP log-export infrastructure but does not
+    // install a Logback appender into it -- confirmed empirically (a Boot-only setup exported no
+    // logs to Loki), contradicting an early blog claim that it auto-installs one. This appender,
+    // plus src/main/resources/logback-spring.xml and the wiring bean, are what actually connect
+    // Logback to it. Pinned explicitly: it isn't part of Spring's own dependency management, and
+    // every release is tagged -alpha upstream; 2.28.1-alpha requires opentelemetry-api 1.62.0+,
+    // which matches the version Boot 4.1.1 already pins.
+    implementation 'io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0:2.28.1-alpha'
+    // Module-boundary spans: instruments every module entry point as a Micrometer span, so Tempo
+    // shows the module graph (which of the 22 modules called which) alongside HTTP spans.
+    implementation 'org.springframework.modulith:spring-modulith-observability'
     // Module boundaries, the ArchUnit-backed verification test, and the event publication registry
     // that backs @ApplicationModuleListener. JDBC (not JPA) because this application already runs
     // on Spring Data JDBC; it also pulls in spring-modulith-moments, disabled explicitly below.
@@ -65,6 +110,19 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testAnnotationProcessor 'org.projectlombok:lombok'
+
+    // find-sec-bugs adds security-focused rules (injection, weak crypto, hardcoded secrets,
+    // insecure deserialization) on top of SpotBugs's own correctness rules.
+    spotbugsPlugins 'com.h3xstream.findsecbugs:findsecbugs-plugin:1.14.0'
+}
+
+// Resolved dependency versions, committed as gradle.lockfile: reproducible builds, and required
+// for the Security Scan stage's dependency vulnerability check to see anything at all --
+// confirmed empirically that Trivy's filesystem scanner cannot resolve a plain build.gradle's
+// transitive dependency graph on its own and reports zero files scanned without a lockfile.
+// Regenerate after any dependency change with `./gradlew dependencies --write-locks`.
+dependencyLocking {
+    lockAllConfigurations()
 }
 
 tasks.named('test') {
@@ -73,4 +131,34 @@ tasks.named('test') {
     // A Spring test context bootstraps directly instead of through main; pin its default zone so
     // JDBC conversion tests exercise the same UTC runtime as the application process.
     systemProperty 'user.timezone', 'UTC'
+}
+
+// Code quality / security static analysis -- room-booking-infra/docs/cicd.md's "Code Quality" and
+// "Security Scan" stages. Both run as part of `check` (and therefore `build`), matching the
+// project's existing convention that `./gradlew build` is one of the four definition-of-done
+// commands rather than a separate step someone has to remember to run.
+spotbugs {
+    // 'max' effort finds more real bugs at the cost of analysis time; 'medium' reportLevel drops
+    // the lowest-confidence findings, which are disproportionately noise on a codebase this size.
+    effort = 'max'
+    reportLevel = 'medium'
+    ignoreFailures = true // findings are visible in CI (report + summary), not yet a merge gate --
+                          // see docs/cicd.md for why and the plan to tighten this.
+}
+
+tasks.withType(com.github.spotbugs.snom.SpotBugsTask).configureEach {
+    reports {
+        html.required = true
+        sarif.required = true // consumed by ci.yml's "Upload SARIF" step for GitHub code scanning
+    }
+}
+
+pmd {
+    toolVersion = '7.18.0'
+    // Correctness and reliability rules, not the default ruleset's opinionated style rules --
+    // this codebase's style is already governed by docs/conventions/02-java-style-and-naming.md
+    // and enforced through review, not tooling.
+    ruleSets = []
+    ruleSetFiles = files('config/pmd/ruleset.xml')
+    ignoreFailures = true // same rationale as SpotBugs above
 }

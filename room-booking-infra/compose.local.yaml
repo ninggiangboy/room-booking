@@ -22,9 +22,11 @@ services:
       retries: 5
       start_period: 10s
 
-  # MinIO provides S3-compatible object storage for future listing images.
+  # MinIO provides S3-compatible object storage for future listing images. MinIO removed
+  # minio/minio from Docker Hub around 2026-09-11; quay.io/minio/minio is now the official registry,
+  # same tags and digests. Pinned rather than :latest per docs/conventions.md rule 3.
   minio:
-    image: minio/minio:latest
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -44,13 +46,33 @@ services:
 
   # Mailpit captures development email and displays it in a browser instead of delivering it.
   mailpit:
-    image: axllent/mailpit:latest
+    image: axllent/mailpit:v1.31.1
     restart: unless-stopped
     ports:
       - "1025:1025"
       - "8025:8025"
 
+  # Grafana's all-in-one LGTM image (Loki + Tempo + Prometheus + Grafana) receives OTLP traces,
+  # metrics, and logs and correlates them in one pre-provisioned UI. local-mini and local only:
+  # deployed environments send to the central stack, which runs these components separately — see
+  # room-booking-infra/docs/observability.md.
+  grafana-lgtm:
+    image: grafana/otel-lgtm:0.32.1
+    restart: unless-stopped
+    ports:
+      - "3001:3000"   # Grafana UI on 3001; 3000 is the frontend's port in local configuration
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    healthcheck:
+      # The image has curl but not wget.
+      test: ["CMD", "curl", "-sf", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
 volumes:
-  # Named volumes keep local database and object-storage data between runs.
+  # Named volumes keep local database and object-storage data between runs. grafana-lgtm has none:
+  # local telemetry is disposable, matching mailpit.
   postgres_data:
   minio_data:

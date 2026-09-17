@@ -13,7 +13,7 @@ The application lives in `room-booking-backend/` and uses Java 25 with Spring Bo
 
 Run commands from `room-booking-backend/` and use the checked-in Gradle wrapper.
 
-- `docker compose -f compose.local.yaml up -d` starts PostgreSQL, MinIO, and Mailpit.
+- `cd ../room-booking-infra && make local-mini` starts PostgreSQL, MinIO, Mailpit, and the local observability stack (`make local` adds Postgres/MinIO metrics and log shipping — see `room-booking-infra/docs/runbook-local.md`).
 - `./gradlew bootRun --args='--spring.profiles.active=local'` runs the API with local service settings.
 - `./gradlew test` runs the JUnit Platform test suite.
 - `./gradlew build` compiles, tests, and packages the application.

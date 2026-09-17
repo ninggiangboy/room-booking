@@ -1751,7 +1751,7 @@ java -Duser.timezone=UTC -jar build/libs/room-booking-backend-0.0.1-SNAPSHOT.jar
   --spring.profiles.active=prod
 ```
 
-Gradle wrapper pin tool; build artifact một lần rồi promote qua environments. Docker image nên multi-stage/buildpack, non-root, pin base, không bake secret, giới hạn resources và chỉ chứa artifact cần. File [compose.local.yaml](../../compose.local.yaml) dùng **Docker Compose** để dựng PostgreSQL/PostGIS, MinIO, Mailpit cho local; Compose không tự cung cấp HA/autoscaling/secret management.
+Gradle wrapper pin tool; build artifact một lần rồi promote qua environments. Docker image nên multi-stage/buildpack, non-root, pin base, không bake secret, giới hạn resources và chỉ chứa artifact cần. File [compose.local.yaml](../../../room-booking-infra/compose.local.yaml) dùng **Docker Compose** để dựng PostgreSQL/PostGIS, MinIO, Mailpit, và stack observability cho local; Compose không tự cung cấp HA/autoscaling/secret management. Xem [room-booking-infra/docs/platform-architecture.md](../../../room-booking-infra/docs/platform-architecture.md) cho các môi trường deploy thật (dev/staging/production) và lộ trình sang Kubernetes.
 
 Inject DB/JWT/mail config từ platform config/secret manager, validate lúc startup và lên kế hoạch rotate. JWT rotation cần nhiều verification keys/`kid` trong transition. Không dùng local credential ngoài production.
 

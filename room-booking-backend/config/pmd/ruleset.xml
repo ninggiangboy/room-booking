@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="room-booking-backend"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+    <description>
+        Correctness, reliability, and security rules only. Style, formatting, and naming are
+        already governed by room-booking-backend/docs/conventions/02-java-style-and-naming.md and
+        enforced through review -- duplicating that as tool-enforced rules here would just produce
+        a second, competing source of truth.
+    </description>
+
+    <rule ref="category/java/bestpractices.xml">
+        <!-- Lombok-generated accessors and constructors are the project's established pattern
+             (docs/conventions/02-java-style-and-naming.md); this rule fights that convention. -->
+        <exclude name="AccessorMethodGeneration"/>
+    </rule>
+
+    <rule ref="category/java/errorprone.xml">
+        <!-- Conflicts with Lombok's generated equals/hashCode/toString and with records. -->
+        <exclude name="AvoidFieldNameMatchingMethodName"/>
+        <!-- This codebase never relies on Java's built-in serialization (persistence goes through
+             Spring Data JDBC, not object serialization); flagging every Serializable-adjacent class
+             for a missing serialVersionUID is noise, not a real risk here. -->
+        <exclude name="MissingSerialVersionUID"/>
+        <!-- Repeated string literals (validation messages, error codes) are deliberate and
+             readable here; extracting every one to a constant would fight
+             docs/conventions/05-api-dto-and-errors.md's inline-message style, not improve it. -->
+        <exclude name="AvoidDuplicateLiterals"/>
+    </rule>
+
+    <rule ref="category/java/security.xml"/>
+
+    <rule ref="category/java/multithreading.xml">
+        <!-- The codebase deliberately keeps most services stateless and Spring-managed; rules
+             about explicit synchronization primitives are mostly not applicable and noisy here. -->
+        <exclude name="UseConcurrentHashMap"/>
+    </rule>
+
+</ruleset>
