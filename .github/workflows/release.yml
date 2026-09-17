@@ -73,7 +73,7 @@ jobs:
       # the push on HIGH/CRITICAL -- a vulnerable image should never reach a registry a deploy step
       # might later pull from.
       - name: Scan image for vulnerabilities (Trivy)
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: image
           image-ref: ${{ steps.tag.outputs.ref }}

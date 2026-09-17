@@ -111,7 +111,7 @@ jobs:
       # fails the job on HIGH/CRITICAL findings -- unlike the code-quality stage, a known-vulnerable
       # dependency is a hard gate from day one, not a baseline to tighten into later.
       - name: Dependency vulnerability scan (Trivy)
-        uses: aquasecurity/trivy-action@0.36.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: room-booking-backend
