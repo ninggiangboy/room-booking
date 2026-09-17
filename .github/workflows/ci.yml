@@ -87,7 +87,7 @@ jobs:
 
       - name: Upload quality and test reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: quality-and-test-reports
           path: |
