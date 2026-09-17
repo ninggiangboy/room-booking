@@ -76,7 +76,7 @@ dependencies {
     // Logback to it. Pinned explicitly: it isn't part of Spring's own dependency management, and
     // every release is tagged -alpha upstream; 2.28.1-alpha requires opentelemetry-api 1.62.0+,
     // which matches the version Boot 4.1.1 already pins.
-    implementation 'io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0:2.28.1-alpha'
+    implementation 'io.opentelemetry.instrumentation:opentelemetry-logback-appender-1.0:2.31.1-alpha'
     // Module-boundary spans: instruments every module entry point as a Micrometer span, so Tempo
     // shows the module graph (which of the 22 modules called which) alongside HTTP spans.
     implementation 'org.springframework.modulith:spring-modulith-observability'
