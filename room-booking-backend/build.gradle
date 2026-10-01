@@ -6,7 +6,7 @@ plugins {
     // Code quality: bytecode-level bug detection (null derefs, resource leaks, concurrency bugs)
     // plus find-sec-bugs's security-focused rules (injection, weak crypto, hardcoded secrets) --
     // room-booking-infra/docs/cicd.md's "Code Quality" and "Security Scan" stages.
-    id 'com.github.spotbugs' version '6.5.11'
+    id 'com.github.spotbugs' version '6.5.12'
     // Code quality: source-level smells (excess complexity, copy-paste, unused code) --
     // complementary to SpotBugs, which works on bytecode.
     id 'pmd'
