@@ -38,7 +38,7 @@ dependencyManagement {
         // stage's Trivy dependency check, not assumed. 11.0.25 is Apache's fixed release for the
         // 11.0.x line Boot 4.1.1 otherwise tracks; revisit this override once Boot's own BOM catches
         // up (its next patch release), rather than leaving it pinned indefinitely.
-        dependencySet(group: 'org.apache.tomcat.embed', version: '11.0.25') {
+        dependencySet(group: 'org.apache.tomcat.embed', version: '11.0.27') {
             entry 'tomcat-embed-core'
             entry 'tomcat-embed-el'
             entry 'tomcat-embed-websocket'
