@@ -30,7 +30,7 @@ repositories {
 // imported explicitly. 2.1.1 is pinned because its POM declares spring-boot-starter:4.1.1, an exact
 // match for this project; the 2.2 line already targets Boot 4.2 milestones.
 dependencyManagement {
-    imports { mavenBom 'org.springframework.modulith:spring-modulith-bom:2.1.1' }
+    imports { mavenBom 'org.springframework.modulith:spring-modulith-bom:2.1.2' }
     dependencies {
         // Spring Boot 4.1.1's own BOM pins the embedded Tomcat vulnerable to three CRITICAL CVEs
         // (CVE-2026-65182, CVE-2026-65905, CVE-2026-68525 -- a security-constraint bypass, a DIGEST
