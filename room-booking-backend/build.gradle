@@ -1,7 +1,7 @@
 // Build a Java application and add Spring Boot packaging and dependency-version management.
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '4.1.1'
+    id 'org.springframework.boot' version '4.1.2'
     id 'io.spring.dependency-management' version '1.1.7'
     // Code quality: bytecode-level bug detection (null derefs, resource leaks, concurrency bugs)
     // plus find-sec-bugs's security-focused rules (injection, weak crypto, hardcoded secrets) --
